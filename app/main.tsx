@@ -1,6 +1,6 @@
 import React, { lazy } from 'react';
 import ReactDOM from 'react-dom/client';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { Toaster } from 'react-hot-toast';
 import App from './App';
@@ -51,6 +51,7 @@ const Wallet = lazy(() => import('./pages/user/WalletNew'));
 const Deposit = lazy(() => import('./pages/user/Deposit'));
 const Withdraw = lazy(() => import('./pages/user/Withdraw'));
 const Team = lazy(() => import('./pages/user/TeamNew'));
+const TeamReport = lazy(() => import('./pages/user/TeamReport'));
 const Referrals = lazy(() => import('./pages/user/ReferralsNew'));
 const Transactions = lazy(() => import('./pages/user/TransactionsNew'));
 const Profile = lazy(() => import('./pages/user/ProfileNew'));
@@ -66,7 +67,7 @@ const Logout = lazy(() => import('./pages/user/Logout'));
 const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'));
 const UserManagement = lazy(() => import('./pages/admin/UserManagement'));
 const KYCManagement = lazy(() => import('./pages/admin/KYCManagement'));
-const PackageManagement = lazy(() => import('./pages/admin/PackageManagementNew'));
+const PackageManagement = lazy(() => import('./pages/admin/PackageManagementComplete'));
 const FinancialManagement = lazy(() => import('./pages/admin/FinancialManagement'));
 const CommissionManagement = lazy(() => import('./pages/admin/CommissionManagement'));
 const RankManagement = lazy(() => import('./pages/admin/RankManagement'));
@@ -77,6 +78,7 @@ const CommunicationsAdmin = lazy(() => import('./pages/admin/CommunicationsAdmin
 const SupportManagement = lazy(() => import('./pages/admin/SupportManagement'));
 const AuditLogs = lazy(() => import('./pages/admin/AuditLogs'));
 const SystemConfiguration = lazy(() => import('./pages/admin/SystemConfiguration'));
+const IncomeSimulator = lazy(() => import('./pages/admin/IncomeSimulator'));
 
 async function loadRuntimeConfig() {
   return new Promise<void>((resolve) => {
@@ -246,6 +248,17 @@ const router = createBrowserRouter([
         ],
       },
       {
+        path: 'team-report',
+        element: (
+          <ProtectedRoute allowedRoles={[UserRole.USER, 'user']}>
+            <UserLayoutComponent />
+          </ProtectedRoute>
+        ),
+        children: [
+          { index: true, element: <TeamReport /> },
+        ],
+      },
+      {
         path: 'referrals',
         element: (
           <ProtectedRoute allowedRoles={[UserRole.USER, 'user']}>
@@ -356,12 +369,15 @@ const router = createBrowserRouter([
           { index: true, element: <AdminDashboard /> },
           { path: 'dashboard', element: <AdminDashboard /> },
           { path: 'users', element: <UserManagement /> },
+          { path: 'user-management', element: <Navigate to="/admin/users" replace /> },
           { path: 'kyc', element: <KYCManagement /> },
           { path: 'packages', element: <PackageManagement /> },
           { path: 'financial', element: <FinancialManagement /> },
           { path: 'commissions', element: <CommissionManagement /> },
+          { path: 'income-simulator', element: <IncomeSimulator /> },
           { path: 'ranks', element: <RankManagement /> },
           { path: 'binary', element: <BinaryManagement /> },
+          { path: 'team-report', element: <TeamReport /> },
           { path: 'reports', element: <ReportsAdmin /> },
           { path: 'communications', element: <CommunicationsAdmin /> },
           { path: 'support', element: <SupportManagement /> },

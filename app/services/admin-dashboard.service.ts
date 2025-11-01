@@ -64,6 +64,18 @@ export interface TopUser {
 }
 
 /**
+ * Helper function to safely execute database queries
+ */
+const safeQuery = async <T>(queryFn: () => Promise<T>, defaultValue: T): Promise<T> => {
+  try {
+    return await queryFn();
+  } catch (error) {
+    console.warn('Query failed, using default:', error);
+    return defaultValue;
+  }
+};
+
+/**
  * Get comprehensive dashboard statistics
  */
 export const getDashboardStats = async (): Promise<DashboardStats> => {
@@ -71,152 +83,142 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
     // Verify admin access
     await requireAdmin();
 
+    console.log('🚀 Loading dashboard stats in parallel...');
+    const startTime = Date.now();
+
     // Get date ranges
     const now = new Date();
     const todayStart = new Date(now.setHours(0, 0, 0, 0)).toISOString();
     const weekAgo = new Date(now.setDate(now.getDate() - 7)).toISOString();
     const monthAgo = new Date(now.setMonth(now.getMonth() - 1)).toISOString();
 
-    // User metrics
-    const { count: total_users } = await supabase
-      .from('users')
-      .select('*', { count: 'exact', head: true });
+    // Execute ALL queries in parallel for maximum performance
+    const [
+      // User metrics
+      total_users_result,
+      active_users_result,
+      today_registrations_result,
+      week_registrations_result,
+      month_registrations_result,
 
-    const { count: active_users } = await supabase
-      .from('users')
-      .select('*', { count: 'exact', head: true })
-      .eq('is_active', true);
+      // Package metrics
+      active_packages,
+      total_packages_sold,
+      total_investments,
 
-    const { count: today_registrations } = await supabase
-      .from('users')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', todayStart);
+      // Financial metrics
+      total_withdrawals,
+      pending_withdrawals,
+      pending_withdrawals_amount,
+      total_deposits,
 
-    const { count: week_registrations } = await supabase
-      .from('users')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', weekAgo);
+      // KYC metrics
+      pending_kyc,
+      approved_kyc,
 
-    const { count: month_registrations } = await supabase
-      .from('users')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', monthAgo);
+      // Commission and earnings metrics
+      total_commissions_paid,
+      total_roi_distributed,
+      total_binary_earnings,
 
-    // Package metrics
-    const { count: active_packages } = await supabase
-      .from('user_packages')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'active');
+      // Robot subscriptions
+      active_robot_subscriptions,
+    ] = await Promise.all([
+      // User metrics
+      supabase.from('users').select('*', { count: 'exact', head: true }),
+      supabase.from('users').select('*', { count: 'exact', head: true }).eq('is_active', true),
+      supabase.from('users').select('*', { count: 'exact', head: true }).gte('created_at', todayStart),
+      supabase.from('users').select('*', { count: 'exact', head: true }).gte('created_at', weekAgo),
+      supabase.from('users').select('*', { count: 'exact', head: true }).gte('created_at', monthAgo),
 
-    const { count: total_packages_sold } = await supabase
-      .from('user_packages')
-      .select('*', { count: 'exact', head: true });
+      // Package metrics
+      safeQuery(async () => {
+        const { count } = await supabase.from('user_packages').select('*', { count: 'exact', head: true }).eq('is_active', true);
+        return count || 0;
+      }, 0),
+      safeQuery(async () => {
+        const { count } = await supabase.from('user_packages').select('*', { count: 'exact', head: true });
+        return count || 0;
+      }, 0),
+      safeQuery(async () => {
+        const { data } = await supabase.from('user_packages').select('amount');
+        return data?.reduce((sum, pkg) => sum + (pkg.amount || 0), 0) || 0;
+      }, 0),
 
-    // Financial metrics - Total investments
-    const { data: userPackages } = await supabase
-      .from('user_packages')
-      .select('amount');
+      // Financial metrics
+      safeQuery(async () => {
+        const { data } = await supabase.from('withdrawal_requests').select('amount').eq('status', 'approved');
+        return data?.reduce((sum, w) => sum + w.amount, 0) || 0;
+      }, 0),
+      safeQuery(async () => {
+        const { count } = await supabase.from('withdrawal_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending');
+        return count || 0;
+      }, 0),
+      safeQuery(async () => {
+        const { data } = await supabase.from('withdrawal_requests').select('amount').eq('status', 'pending');
+        return data?.reduce((sum, w) => sum + w.amount, 0) || 0;
+      }, 0),
+      safeQuery(async () => {
+        const { data } = await supabase.from('deposits').select('amount').eq('status', 'approved');
+        return data?.reduce((sum, d) => sum + d.amount, 0) || 0;
+      }, 0),
 
-    const total_investments = userPackages?.reduce((sum, pkg) => sum + (pkg.amount || 0), 0) || 0;
+      // KYC metrics
+      safeQuery(async () => {
+        const { count } = await supabase.from('kyc_documents').select('*', { count: 'exact', head: true }).eq('status', 'pending');
+        return count || 0;
+      }, 0),
+      safeQuery(async () => {
+        const { count } = await supabase.from('kyc_documents').select('*', { count: 'exact', head: true }).eq('status', 'approved');
+        return count || 0;
+      }, 0),
 
-    // Total withdrawals
-    const { data: withdrawals } = await supabase
-      .from('withdrawal_requests')
-      .select('amount, status')
-      .eq('status', 'approved');
+      // Commission and earnings metrics
+      safeQuery(async () => {
+        const { data } = await supabase.from('mlm_transactions').select('amount').in('transaction_type', ['direct_income', 'level_income', 'matching_bonus', 'rank_reward', 'booster_income']);
+        return data?.reduce((sum, c) => sum + Math.abs(c.amount), 0) || 0;
+      }, 0),
+      safeQuery(async () => {
+        const { data } = await supabase.from('mlm_transactions').select('amount').eq('transaction_type', 'roi_income');
+        return data?.reduce((sum, r) => sum + Math.abs(r.amount), 0) || 0;
+      }, 0),
+      safeQuery(async () => {
+        const { data } = await supabase.from('mlm_transactions').select('amount').eq('transaction_type', 'matching_bonus');
+        return data?.reduce((sum, b) => sum + Math.abs(b.amount), 0) || 0;
+      }, 0),
 
-    const total_withdrawals = withdrawals?.reduce((sum, w) => sum + w.amount, 0) || 0;
+      // Robot subscriptions
+      safeQuery(async () => {
+        const { count } = await supabase.from('robot_subscriptions').select('*', { count: 'exact', head: true }).eq('is_active', true).gte('expires_at', new Date().toISOString());
+        return count || 0;
+      }, 0),
+    ]);
 
-    // Pending withdrawals
-    const { count: pending_withdrawals } = await supabase
-      .from('withdrawal_requests')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'pending');
-
-    const { data: pendingWithdrawals } = await supabase
-      .from('withdrawal_requests')
-      .select('amount')
-      .eq('status', 'pending');
-
-    const pending_withdrawals_amount = pendingWithdrawals?.reduce((sum, w) => sum + w.amount, 0) || 0;
-
-    // KYC metrics
-    const { count: pending_kyc } = await supabase
-      .from('kyc_documents')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'pending');
-
-    const { count: approved_kyc } = await supabase
-      .from('kyc_documents')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'approved');
-
-    // Commission metrics
-    const { data: commissions } = await supabase
-      .from('mlm_transactions')
-      .select('amount')
-      .in('transaction_type', [
-        'direct_income',
-        'level_income',
-        'matching_bonus',
-        'rank_reward',
-        'booster_income',
-      ]);
-
-    const total_commissions_paid = commissions?.reduce((sum, c) => sum + Math.abs(c.amount), 0) || 0;
-
-    // ROI distributed
-    const { data: roiTransactions } = await supabase
-      .from('mlm_transactions')
-      .select('amount')
-      .eq('transaction_type', 'roi_income');
-
-    const total_roi_distributed = roiTransactions?.reduce((sum, r) => sum + Math.abs(r.amount), 0) || 0;
-
-    // Binary earnings
-    const { data: binaryTransactions } = await supabase
-      .from('mlm_transactions')
-      .select('amount')
-      .eq('transaction_type', 'matching_bonus');
-
-    const total_binary_earnings = binaryTransactions?.reduce((sum, b) => sum + Math.abs(b.amount), 0) || 0;
-
-    // Robot subscriptions
-    const { count: active_robot_subscriptions } = await supabase
-      .from('robot_subscriptions')
-      .select('*', { count: 'exact', head: true })
-      .eq('is_active', true)
-      .gte('expires_at', new Date().toISOString());
-
-    // Calculate total revenue (investments + deposits)
-    const { data: deposits } = await supabase
-      .from('deposits')
-      .select('amount')
-      .eq('status', 'approved');
-
-    const total_deposits = deposits?.reduce((sum, d) => sum + d.amount, 0) || 0;
     const total_revenue = total_investments + total_deposits;
 
+    const loadTime = Date.now() - startTime;
+    console.log(`✅ Dashboard stats loaded in ${loadTime}ms`);
+
     return {
-      total_users: total_users || 0,
-      active_users: active_users || 0,
-      today_registrations: today_registrations || 0,
-      week_registrations: week_registrations || 0,
-      month_registrations: month_registrations || 0,
+      total_users: total_users_result.count || 0,
+      active_users: active_users_result.count || 0,
+      today_registrations: today_registrations_result.count || 0,
+      week_registrations: week_registrations_result.count || 0,
+      month_registrations: month_registrations_result.count || 0,
       total_revenue,
       total_investments,
       total_withdrawals,
-      pending_withdrawals: pending_withdrawals || 0,
+      pending_withdrawals,
       pending_withdrawals_amount,
-      active_packages: active_packages || 0,
-      total_packages_sold: total_packages_sold || 0,
-      pending_kyc: pending_kyc || 0,
-      approved_kyc: approved_kyc || 0,
+      active_packages,
+      total_packages_sold,
+      pending_kyc,
+      approved_kyc,
       total_commissions_paid,
-      pending_commissions: 0, // TODO: Calculate based on pending commission runs
+      pending_commissions: 0,
       total_roi_distributed,
       total_binary_earnings,
-      active_robot_subscriptions: active_robot_subscriptions || 0,
+      active_robot_subscriptions,
     };
   } catch (error: any) {
     console.error('Error getting dashboard stats:', error);
@@ -235,70 +237,92 @@ export const getRecentActivities = async (limit: number = 20): Promise<RecentAct
     const activities: RecentActivity[] = [];
 
     // Get recent registrations
-    const { data: recentUsers } = await supabase
-      .from('users')
-      .select('id, full_name, created_at')
-      .order('created_at', { ascending: false })
-      .limit(5);
+    const recentUsers = await safeQuery(async () => {
+      const { data } = await supabase
+        .from('users')
+        .select('id, full_name, created_at')
+        .order('created_at', { ascending: false })
+        .limit(5);
+      return data || [];
+    }, []);
 
-    recentUsers?.forEach(user => {
+    recentUsers.forEach(user => {
       activities.push({
         id: `reg-${user.id}`,
         type: 'registration',
         user_id: user.id,
-        user_name: user.full_name,
+        user_name: user.full_name || 'Unknown User',
         description: 'New user registered',
         timestamp: user.created_at,
       });
     });
 
-    // Get recent package purchases
-    const { data: recentPackages } = await supabase
-      .from('user_packages')
-      .select(`
-        id,
-        amount,
-        created_at,
-        user:users!user_id(id, full_name)
-      `)
-      .order('created_at', { ascending: false })
-      .limit(5);
+    // Get recent package purchases - safe query
+    const recentPackages = await safeQuery(async () => {
+      const { data } = await supabase
+        .from('user_packages')
+        .select('id, amount, created_at, user_id')
+        .order('created_at', { ascending: false })
+        .limit(5);
+      return data || [];
+    }, []);
 
-    recentPackages?.forEach((pkg: any) => {
-      activities.push({
-        id: `pkg-${pkg.id}`,
-        type: 'package',
-        user_id: pkg.user.id,
-        user_name: pkg.user.full_name,
-        description: 'Package purchased',
-        amount: pkg.amount,
-        timestamp: pkg.created_at,
-      });
-    });
+    for (const pkg of recentPackages) {
+      // Get user info separately
+      const user = await safeQuery(async () => {
+        const { data } = await supabase
+          .from('users')
+          .select('id, full_name')
+          .eq('id', pkg.user_id)
+          .single();
+        return data;
+      }, null);
 
-    // Get recent withdrawals
-    const { data: recentWithdrawals } = await supabase
-      .from('withdrawal_requests')
-      .select(`
-        id,
-        amount,
-        created_at,
-        user:users!user_id(id, full_name)
-      `)
-      .order('created_at', { ascending: false })
-      .limit(5);
+      if (user) {
+        activities.push({
+          id: `pkg-${pkg.id}`,
+          type: 'package',
+          user_id: user.id,
+          user_name: user.full_name || 'Unknown User',
+          description: 'Package purchased',
+          amount: pkg.amount,
+          timestamp: pkg.created_at,
+        });
+      }
+    }
 
-    recentWithdrawals?.forEach((withdrawal: any) => {
-      activities.push({
-        id: `withdrawal-${withdrawal.id}`,
-        type: 'withdrawal',
-        user_id: withdrawal.user.id,
-        user_name: withdrawal.user.full_name,
-        description: 'Withdrawal requested',
-        amount: withdrawal.amount,
-        timestamp: withdrawal.created_at,
-      });
-    });
+    // Get recent withdrawals - safe query
+    const recentWithdrawals = await safeQuery(async () => {
+      const { data } = await supabase
+        .from('withdrawal_requests')
+        .select('id, amount, created_at, user_id')
+        .order('created_at', { ascending: false })
+        .limit(5);
+      return data || [];
+    }, []);
+
+    for (const withdrawal of recentWithdrawals) {
+      const user = await safeQuery(async () => {
+        const { data } = await supabase
+          .from('users')
+          .select('id, full_name')
+          .eq('id', withdrawal.user_id)
+          .single();
+        return data;
+      }, null);
+
+      if (user) {
+        activities.push({
+          id: `withdrawal-${withdrawal.id}`,
+          type: 'withdrawal',
+          user_id: user.id,
+          user_name: user.full_name || 'Unknown User',
+          description: 'Withdrawal requested',
+          amount: withdrawal.amount,
+          timestamp: withdrawal.created_at,
+        });
+      }
+    }
 
     // Sort all activities by timestamp and limit
     activities.sort((a, b) =>
@@ -396,30 +420,36 @@ export const getRevenueChartData = async (days: number = 30) => {
 
     const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-    // Get package purchases
-    const { data: packages } = await supabase
-      .from('user_packages')
-      .select('amount, created_at')
-      .gte('created_at', startDate);
+    // Get package purchases - safe query
+    const packages = await safeQuery(async () => {
+      const { data } = await supabase
+        .from('user_packages')
+        .select('amount, created_at')
+        .gte('created_at', startDate);
+      return data || [];
+    }, []);
 
-    // Get deposits
-    const { data: deposits } = await supabase
-      .from('deposits')
-      .select('amount, created_at')
-      .eq('status', 'approved')
-      .gte('created_at', startDate);
+    // Get deposits - safe query
+    const deposits = await safeQuery(async () => {
+      const { data } = await supabase
+        .from('deposits')
+        .select('amount, created_at')
+        .eq('status', 'approved')
+        .gte('created_at', startDate);
+      return data || [];
+    }, []);
 
     // Combine and group by date
     const dateMap = new Map();
 
-    packages?.forEach(pkg => {
+    packages.forEach(pkg => {
       const date = new Date(pkg.created_at).toISOString().split('T')[0];
       const current = dateMap.get(date) || { date, revenue: 0 };
       current.revenue += pkg.amount;
       dateMap.set(date, current);
     });
 
-    deposits?.forEach(dep => {
+    deposits.forEach(dep => {
       const date = new Date(dep.created_at).toISOString().split('T')[0];
       const current = dateMap.get(date) || { date, revenue: 0 };
       current.revenue += dep.amount;

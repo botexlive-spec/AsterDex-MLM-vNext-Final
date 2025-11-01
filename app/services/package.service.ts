@@ -19,20 +19,25 @@ import {
  */
 export const getAvailablePackages = async (): Promise<Package[]> => {
   try {
+    console.log('🔍 Fetching available packages...');
     const { data, error } = await supabase
       .from('packages')
       .select('*')
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true })
+      .eq('status', 'active')  // Changed from 'is_active' to 'status'
       .order('price', { ascending: true });
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Error fetching packages:', error);
+      throw error;
+    }
+
+    console.log(`✅ Found ${data?.length || 0} active packages`);
 
     // Calculate return values for each package
     const packagesWithCalculations = (data || []).map((pkg: Package) => ({
       ...pkg,
       daily_return: (pkg.price * pkg.daily_return_percentage) / 100,
-      total_return: (pkg.price * pkg.max_return_percentage) / 100,
+      total_return: (pkg.price * (pkg.max_return_percentage || 100)) / 100,
     }));
 
     return packagesWithCalculations;

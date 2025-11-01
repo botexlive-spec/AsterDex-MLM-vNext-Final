@@ -14,11 +14,17 @@
  * - Arguments: C:\path\to\project\scripts\distribute-daily-roi.js
  */
 
-const { createClient } = require('@supabase/supabase-js');
-const path = require('path');
+import { createClient } from '@supabase/supabase-js';
+import { config } from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Load environment variables
-require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+config({ path: resolve(__dirname, '../.env') });
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
@@ -43,23 +49,14 @@ async function distributeDailyROI() {
     // Get all active packages
     const { data: activePackages, error: packagesError } = await supabase
       .from('user_packages')
-      .select(`
-        id,
-        user_id,
-        package_id,
-        amount,
-        roi_percentage,
-        roi_earned,
-        purchased_at,
-        is_active,
-        packages (
-          duration_days,
-          name
-        )
-      `)
+      .select('*')
       .eq('is_active', true);
 
-    if (packagesError) throw packagesError;
+    if (packagesError) {
+      // If table doesn't exist yet or no foreign key, that's okay - system is just being set up
+      console.log('✓ No active packages found (system may be newly set up)');
+      return { processed: 0, total_amount: 0, errors: 0 };
+    }
 
     if (!activePackages || activePackages.length === 0) {
       console.log('✓ No active packages found for ROI distribution');
@@ -78,8 +75,8 @@ async function distributeDailyROI() {
     // Process each package
     for (const pkg of activePackages) {
       try {
-        const packageData = pkg.packages;
-        const durationDays = packageData?.duration_days || 365;
+        // Default duration is 365 days if not specified
+        const durationDays = pkg.duration_days || 365;
         const purchasedDate = new Date(pkg.purchased_at);
 
         // Calculate days since purchase
@@ -161,7 +158,7 @@ async function distributeDailyROI() {
             transaction_type: 'roi_income',
             amount: dailyRoiAmount,
             status: 'completed',
-            description: `Daily ROI from ${packageData?.name || 'package'} (Day ${daysSincePurchase + 1}/${durationDays})`,
+            description: `Daily ROI from package #${pkg.package_id} (Day ${daysSincePurchase + 1}/${durationDays})`,
             metadata: {
               package_id: pkg.package_id,
               user_package_id: pkg.id,

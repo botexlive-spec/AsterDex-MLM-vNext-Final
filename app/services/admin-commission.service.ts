@@ -48,6 +48,19 @@ export interface CommissionSettings {
   roi_settings: ROISettings;
   rank_rewards: RankReward[];
   booster_settings: BoosterSettings;
+  active_levels?: number;
+}
+
+export interface ChangelogEntry {
+  id: string;
+  changed_by: string;
+  change_type: string;
+  section: string;
+  old_value: any;
+  new_value: any;
+  description: string;
+  affected_users: number;
+  created_at: string;
 }
 
 export interface CommissionRun {
@@ -86,6 +99,7 @@ export const getCommissionSettings = async (): Promise<CommissionSettings> => {
       roi_settings: data.roi_settings || getDefaultSettings().roi_settings,
       rank_rewards: data.rank_rewards || getDefaultSettings().rank_rewards,
       booster_settings: data.booster_settings || getDefaultSettings().booster_settings,
+      active_levels: data.active_levels || 30,
     };
   } catch (error: any) {
     console.error('Error getting commission settings:', error);
@@ -159,6 +173,7 @@ export const saveCommissionSettings = async (settings: CommissionSettings): Prom
           roi_settings: settings.roi_settings,
           rank_rewards: settings.rank_rewards,
           booster_settings: settings.booster_settings,
+          active_levels: settings.active_levels || 30,
           updated_at: new Date().toISOString(),
         })
         .eq('id', existing.id);
@@ -174,10 +189,19 @@ export const saveCommissionSettings = async (settings: CommissionSettings): Prom
           roi_settings: settings.roi_settings,
           rank_rewards: settings.rank_rewards,
           booster_settings: settings.booster_settings,
+          active_levels: settings.active_levels || 30,
         }]);
 
       if (error) throw error;
     }
+
+    // Log the change to changelog
+    await logCommissionChange({
+      change_type: 'settings_update',
+      section: 'all',
+      new_value: settings,
+      description: 'Commission settings updated',
+    });
 
     console.log('Commission settings saved successfully');
   } catch (error: any) {
@@ -355,5 +379,87 @@ export const getCommissionStats = async () => {
   } catch (error: any) {
     console.error('Error getting commission stats:', error);
     return { by_type: {}, total: 0 };
+  }
+};
+// Add these functions to the end of app/services/admin-commission.service.ts
+
+/**
+ * Log a commission change to the changelog
+ */
+export const logCommissionChange = async (change: {
+  change_type: string;
+  section: string;
+  old_value?: any;
+  new_value?: any;
+  description: string;
+  affected_users?: number;
+}): Promise<void> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const { error } = await supabase
+      .from('commission_changelog')
+      .insert([{
+        changed_by: user?.id,
+        change_type: change.change_type,
+        section: change.section,
+        old_value: change.old_value,
+        new_value: change.new_value,
+        description: change.description,
+        affected_users: change.affected_users || 0,
+      }]);
+
+    if (error) {
+      console.error('Error logging change:', error);
+    }
+  } catch (error: any) {
+    console.error('Error logging commission change:', error);
+  }
+};
+
+/**
+ * Get commission changelog
+ */
+export const getCommissionChangelog = async (limit: number = 50): Promise<ChangelogEntry[]> => {
+  try {
+    await requireAdmin();
+
+    const { data, error } = await supabase
+      .from('commission_changelog')
+      .select(`
+        *,
+        user:changed_by(email, raw_user_meta_data)
+      `)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+
+    return data || [];
+  } catch (error: any) {
+    console.error('Error getting changelog:', error);
+    return [];
+  }
+};
+
+/**
+ * Get commission runs
+ */
+export const getCommissionRuns = async (limit: number = 50): Promise<any[]> => {
+  try {
+    await requireAdmin();
+
+    const { data, error } = await supabase
+      .from('commission_runs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+
+    return data || [];
+  } catch (error: any) {
+    console.error('Error getting commission runs:', error);
+    return [];
   }
 };

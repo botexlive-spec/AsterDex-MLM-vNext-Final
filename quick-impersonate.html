@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quick Impersonate</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 40px;
+            background: #0f172a;
+            color: #fff;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 10px;
+        }
+        h1 {
+            color: #00C7D1;
+            margin-bottom: 20px;
+        }
+        .user-card {
+            background: #334155;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 4px solid #00C7D1;
+        }
+        .user-card h3 {
+            color: #00C7D1;
+            margin-top: 0;
+        }
+        .user-info {
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .user-info span {
+            color: #94a3b8;
+        }
+        button {
+            background: #00C7D1;
+            color: #000;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #00e5f0;
+        }
+        .stats {
+            color: #10b981;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Quick Impersonation Tool</h1>
+        <p style="color: #94a3b8; margin-bottom: 30px;">Click "Impersonate" to instantly switch to that user's view</p>
+
+        <div class="user-card">
+            <h3>👑 Admin Root</h3>
+            <div class="user-info">
+                <span>Email:</span> admin@finaster.com<br>
+                <span>User ID:</span> 0dbd1895-200f-4ec3-859e-b6d4a0861e91<br>
+                <span class="stats">Total Downline: 149 members</span>
+            </div>
+            <button onclick="impersonate('0dbd1895-200f-4ec3-859e-b6d4a0861e91', 'admin@finaster.com', 'Admin Root')">
+                Impersonate Admin Root
+            </button>
+        </div>
+
+        <div class="user-card">
+            <h3>💼 Betty Miller</h3>
+            <div class="user-info">
+                <span>Email:</span> user.betty.miller.2.1@finaster.com<br>
+                <span>User ID:</span> 901f921c-c514-43d0-885e-fe82997964f2<br>
+                <span class="stats">Total Downline: 119 members</span>
+            </div>
+            <button onclick="impersonate('901f921c-c514-43d0-885e-fe82997964f2', 'user.betty.miller.2.1@finaster.com', 'Betty Miller')">
+                Impersonate Betty Miller
+            </button>
+        </div>
+
+        <div class="user-card">
+            <h3>💼 Edward Hernandez</h3>
+            <div class="user-info">
+                <span>Email:</span> user.edward.hernandez.3.0@finaster.com<br>
+                <span>User ID:</span> 49215542-c313-4ae6-bbc6-b9a3ca562f8a<br>
+                <span class="stats">Total Downline: 117 members</span>
+            </div>
+            <button onclick="impersonate('49215542-c313-4ae6-bbc6-b9a3ca562f8a', 'user.edward.hernandez.3.0@finaster.com', 'Edward Hernandez')">
+                Impersonate Edward Hernandez
+            </button>
+        </div>
+
+        <div class="user-card">
+            <h3>💼 John Miller</h3>
+            <div class="user-info">
+                <span>Email:</span> user.john.miller.2.0@finaster.com<br>
+                <span>User ID:</span> d8f060d2-4b5a-4c33-ab92-9f3edb9895a2<br>
+                <span class="stats">Total Downline: 25 members (3 direct)</span>
+            </div>
+            <button onclick="impersonate('d8f060d2-4b5a-4c33-ab92-9f3edb9895a2', 'user.john.miller.2.0@finaster.com', 'John Miller')">
+                Impersonate John Miller
+            </button>
+        </div>
+
+        <div style="margin-top: 30px; padding: 20px; background: #f59e0b20; border-left: 4px solid #f59e0b; border-radius: 5px;">
+            <strong style="color: #f59e0b;">⚠️ Note:</strong>
+            <p style="color: #fbbf24; margin: 10px 0 0 0; font-size: 14px;">
+                Make sure you're logged in as an admin first! After clicking "Impersonate", you'll be redirected to the user's dashboard.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Get current admin info from localStorage
+        const getCurrentAdmin = () => {
+            const authData = localStorage.getItem('auth');
+            if (authData) {
+                const auth = JSON.parse(authData);
+                return {
+                    id: auth.user?.id,
+                    email: auth.user?.email
+                };
+            }
+            return null;
+        };
+
+        function impersonate(userId, userEmail, userName) {
+            const admin = getCurrentAdmin();
+
+            if (!admin || !admin.id) {
+                alert('Error: You must be logged in as an admin first!');
+                window.location.href = '/admin/dashboard';
+                return;
+            }
+
+            // Create impersonation data
+            const impersonationData = {
+                adminId: admin.id,
+                adminEmail: admin.email,
+                targetUserId: userId,
+                targetUserEmail: userEmail,
+                timestamp: new Date().toISOString()
+            };
+
+            // Store in localStorage
+            localStorage.setItem('impersonation', JSON.stringify(impersonationData));
+
+            // Show confirmation
+            alert(`✅ Now impersonating: ${userName}\n\nYou will be redirected to their Team page.\n\nUser: ${userName}\nEmail: ${userEmail}`);
+
+            // Redirect to user's team page instead of dashboard
+            window.location.href = '/team';
+
+            // Force reload after redirect
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        }
+
+        // Show current status
+        window.onload = () => {
+            const impersonation = localStorage.getItem('impersonation');
+            if (impersonation) {
+                const data = JSON.parse(impersonation);
+                console.log('Currently impersonating:', data.targetUserEmail);
+            }
+        };
+    </script>
+</body>
+</html>

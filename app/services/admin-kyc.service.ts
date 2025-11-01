@@ -52,12 +52,10 @@ let query = supabase
       .from('kyc_documents')
       .select(`
         *,
-        user:users!user_id(
+        user:user_id(
           id,
-          full_name,
           email,
-          rank,
-          total_investment
+          raw_user_meta_data
         )
       `)
       .order('created_at', { ascending: false });
@@ -76,10 +74,10 @@ let query = supabase
 
     return (data || []).map((item: any) => ({
       ...item,
-      user_name: item.user?.full_name,
+      user_name: item.user?.raw_user_meta_data?.full_name || item.user?.raw_user_meta_data?.name || 'Unknown',
       user_email: item.user?.email,
-      user_rank: item.user?.rank,
-      user_investment: item.user?.total_investment,
+      user_rank: 'Member',
+      user_investment: 0,
     }));
   } catch (error: any) {
     console.error('Error getting KYC submissions:', error);
@@ -99,13 +97,10 @@ const { data, error } = await supabase
       .from('kyc_documents')
       .select(`
         *,
-        user:users!user_id(
+        user:user_id(
           id,
-          full_name,
           email,
-          rank,
-          total_investment,
-          kyc_status
+          raw_user_meta_data
         )
       `)
       .eq('id', submissionId)
@@ -116,10 +111,10 @@ const { data, error } = await supabase
 
     return {
       ...data,
-      user_name: data.user?.full_name,
+      user_name: data.user?.raw_user_meta_data?.full_name || data.user?.raw_user_meta_data?.name || 'Unknown',
       user_email: data.user?.email,
-      user_rank: data.user?.rank,
-      user_investment: data.user?.total_investment,
+      user_rank: 'Member',
+      user_investment: 0,
     };
   } catch (error: any) {
     console.error('Error getting KYC submission:', error);

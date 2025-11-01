@@ -4,11 +4,12 @@ import OrderlyProvider from "@/components/orderlyProvider";
 import { HttpsRequiredWarning } from "@/components/HttpsRequiredWarning";
 import { withBasePath } from "./utils/base-path";
 import { getSEOConfig, getUserLanguage } from "./utils/seo";
+import ImpersonationBanner from "./components/ImpersonationBanner";
 
 export default function App() {
   const seoConfig = getSEOConfig();
   const defaultLanguage = getUserLanguage();
-  
+
   return (
     <>
       <Helmet>
@@ -18,6 +19,7 @@ export default function App() {
         <link rel="icon" type="image/webp" href={withBasePath("/favicon.webp")} />
       </Helmet>
       <HttpsRequiredWarning />
+      <ImpersonationBanner />
       <OrderlyProvider>
         <Outlet />
       </OrderlyProvider>

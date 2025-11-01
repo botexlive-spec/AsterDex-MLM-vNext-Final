@@ -53,6 +53,7 @@ const menuItems: MenuItem[] = [
     icon: '👥',
     subItems: [
       { id: 'team-overview', label: 'My Team', icon: '🌳', path: '/team' },
+      { id: 'team-report', label: 'Team Report', icon: '📈', path: '/team-report' },
       { id: 'team-referrals', label: 'Referrals', icon: '🔗', path: '/referrals' },
       { id: 'team-genealogy', label: 'Genealogy', icon: '📊', path: '/genealogy' },
     ],
@@ -130,6 +131,12 @@ const adminMenuItems: MenuItem[] = [
     path: '/admin/commissions',
   },
   {
+    id: 'admin-income-simulator',
+    label: 'Income Simulator',
+    icon: '🧮',
+    path: '/admin/income-simulator',
+  },
+  {
     id: 'admin-ranks',
     label: 'Rank Management',
     icon: '🏆',
@@ -140,6 +147,12 @@ const adminMenuItems: MenuItem[] = [
     label: 'Binary Tree',
     icon: '🌳',
     path: '/admin/binary',
+  },
+  {
+    id: 'admin-team-report',
+    label: 'Team Report',
+    icon: '📊',
+    path: '/admin/team-report',
   },
   {
     id: 'admin-reports',

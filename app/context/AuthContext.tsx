@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User, UserRole, AuthState, LoginCredentials, AuthResponse } from '../types/auth.types';
 import toast from 'react-hot-toast';
+import { getImpersonationStatus, getImpersonatedUserData } from '../services/admin-impersonate.service';
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>;
@@ -9,6 +10,8 @@ interface AuthContextType extends AuthState {
   isUser: boolean;
   hasPermission: (permission: string) => boolean;
   checkAuth: () => void;
+  isImpersonating: boolean;
+  actualUser: User | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,8 +26,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     error: null,
   });
 
+  const [isImpersonating, setIsImpersonating] = useState(false);
+  const [actualUser, setActualUser] = useState<User | null>(null);
+
   // Load auth state from localStorage on mount
-  const checkAuth = useCallback(() => {
+  const checkAuth = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const userStr = localStorage.getItem('user');
@@ -33,16 +39,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (token && userStr) {
         const user = JSON.parse(userStr) as User;
 
-        // Verify token is not expired (basic check)
-        // In production, you'd verify with backend
-        setAuthState({
-          user,
-          token,
-          refreshToken,
-          isAuthenticated: true,
-          isLoading: false,
-          error: null,
-        });
+        // Check if impersonating
+        const impersonationStatus = getImpersonationStatus();
+
+        if (impersonationStatus.isImpersonating) {
+          // Admin is impersonating a user
+          setActualUser(user); // Store the actual admin user
+          setIsImpersonating(true);
+
+          // Load the impersonated user's data
+          const impersonatedUser = await getImpersonatedUserData();
+
+          if (impersonatedUser) {
+            // Override the user with impersonated user data, but keep admin token
+            setAuthState({
+              user: impersonatedUser as User,
+              token,
+              refreshToken,
+              isAuthenticated: true,
+              isLoading: false,
+              error: null,
+            });
+          } else {
+            // Failed to load impersonated user, use normal flow
+            setIsImpersonating(false);
+            setActualUser(null);
+            setAuthState({
+              user,
+              token,
+              refreshToken,
+              isAuthenticated: true,
+              isLoading: false,
+              error: null,
+            });
+          }
+        } else {
+          // Normal authentication
+          setIsImpersonating(false);
+          setActualUser(null);
+          setAuthState({
+            user,
+            token,
+            refreshToken,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null,
+          });
+        }
       } else {
         setAuthState(prev => ({ ...prev, isLoading: false }));
       }
@@ -121,6 +164,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
+    localStorage.removeItem('impersonation'); // Clear impersonation data
 
     setAuthState({
       user: null,
@@ -131,14 +175,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       error: null,
     });
 
+    setIsImpersonating(false);
+    setActualUser(null);
+
     toast.success('Logged out successfully');
   }, []);
 
-  const isAdmin = authState.user?.role === UserRole.ADMIN || authState.user?.role === 'admin';
+  // When impersonating, actualUser holds the admin, authState.user holds the impersonated user
+  // So we check actualUser for admin status when impersonating
+  const isAdmin = isImpersonating
+    ? (actualUser?.role === UserRole.ADMIN || actualUser?.role === 'admin')
+    : (authState.user?.role === UserRole.ADMIN || authState.user?.role === 'admin');
+
   const isUser = authState.user?.role === UserRole.USER || authState.user?.role === 'user';
 
   const hasPermission = (permission: string): boolean => {
     if (!authState.user) return false;
+    // When impersonating, check actual admin user for permissions
+    if (isImpersonating && actualUser) {
+      return actualUser.role === UserRole.ADMIN || actualUser.role === 'admin';
+    }
     if (isAdmin) return true; // Admin has all permissions
 
     // Add your permission logic here based on user role
@@ -157,6 +213,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isUser,
         hasPermission,
         checkAuth,
+        isImpersonating,
+        actualUser,
       }}
     >
       {children}

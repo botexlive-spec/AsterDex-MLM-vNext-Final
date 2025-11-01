@@ -241,21 +241,28 @@ const { data, error } = await supabase
  */
 export const getUserTeam = async (userId: string): Promise<TeamMember[]> => {
   try {
-        // Verify admin access
+    // Verify admin access
     await requireAdmin();
 
-const { data, error } = await supabase
+    console.log('🔍 Fetching team members for user:', userId);
+
+    const { data, error } = await supabase
       .from('users')
-      .select('id, full_name, email, rank, total_investment, wallet_balance, created_at, is_active')
-      .eq('referred_by', userId)
+      .select('id, full_name, email, current_rank, total_investment, wallet_balance, created_at, is_active')
+      .eq('sponsor_id', userId)  // Changed from 'referred_by' to 'sponsor_id'
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.warn('Error getting user team:', error);
+      console.warn('❌ Error getting user team:', error);
       return []; // Return empty array instead of throwing
     }
 
-    return data || [];
+    console.log(`✅ Found ${data?.length || 0} team members`);
+
+    return (data || []).map(member => ({
+      ...member,
+      rank: member.current_rank || 'starter', // Map current_rank to rank
+    }));
   } catch (error: any) {
     console.error('Error getting user team:', error);
     return []; // Return empty array instead of throwing

@@ -9,6 +9,13 @@ import {
   manualCommissionAdjustment,
   getCommissionStats,
 } from '../../services/admin-commission.service';
+import {
+  getAllRankRewards,
+  createRankReward,
+  updateRankReward,
+  deleteRankReward,
+  type RankReward,
+} from '../../services/admin-rank.service';
 
 // Types
 interface LevelCommission {
@@ -69,13 +76,22 @@ export const CommissionManagement: React.FC = () => {
   });
 
   // Rank Rewards
-  const [rankRewards, setRankRewards] = useState([
-    { rank: 'Bronze', reward: 500, requirement: '5 directs' },
-    { rank: 'Silver', reward: 1500, requirement: '10 directs + $5k team volume' },
-    { rank: 'Gold', reward: 5000, requirement: '20 directs + $20k team volume' },
-    { rank: 'Platinum', reward: 15000, requirement: '50 directs + $100k team volume' },
-    { rank: 'Diamond', reward: 50000, requirement: '100 directs + $500k team volume' },
-  ]);
+  const [rankRewards, setRankRewards] = useState<RankReward[]>([]);
+  const [showRankModal, setShowRankModal] = useState(false);
+  const [editingRank, setEditingRank] = useState<RankReward | null>(null);
+  const [rankForm, setRankForm] = useState<Partial<RankReward>>({
+    rank_name: '',
+    reward_amount: 0,
+    rank_order: 1,
+    min_direct_referrals: 0,
+    min_team_volume: 0,
+    min_active_directs: 0,
+    min_personal_sales: 0,
+    terms_conditions: '',
+    is_active: true,
+    reward_type: 'one_time',
+    bonus_percentage: 0,
+  });
 
   // Booster Settings
   const [boosterSettings, setBoosterSettings] = useState({
@@ -148,7 +164,6 @@ export const CommissionManagement: React.FC = () => {
         setLevelCommissions(settings.level_commissions);
         setBinarySettings(settings.binary_settings);
         setROISettings(settings.roi_settings);
-        setRankRewards(settings.rank_rewards);
         setBoosterSettings(settings.booster_settings);
 
         toast.success('Commission settings loaded');
@@ -161,6 +176,21 @@ export const CommissionManagement: React.FC = () => {
     };
 
     loadSettings();
+  }, []);
+
+  // Load rank rewards from database
+  useEffect(() => {
+    const loadRankRewards = async () => {
+      try {
+        const ranks = await getAllRankRewards();
+        setRankRewards(ranks);
+      } catch (error) {
+        console.error('Error loading rank rewards:', error);
+        toast.error('Failed to load rank rewards');
+      }
+    };
+
+    loadRankRewards();
   }, []);
 
   // Save settings to database
@@ -217,6 +247,75 @@ export const CommissionManagement: React.FC = () => {
     }
   };
 
+  // Rank Management Handlers
+  const handleOpenRankModal = (rank?: RankReward) => {
+    if (rank) {
+      setEditingRank(rank);
+      setRankForm(rank);
+    } else {
+      setEditingRank(null);
+      setRankForm({
+        rank_name: '',
+        reward_amount: 0,
+        rank_order: rankRewards.length + 1,
+        min_direct_referrals: 0,
+        min_team_volume: 0,
+        min_active_directs: 0,
+        min_personal_sales: 0,
+        terms_conditions: '',
+        is_active: true,
+        reward_type: 'one_time',
+        bonus_percentage: 0,
+      });
+    }
+    setShowRankModal(true);
+  };
+
+  const handleSaveRank = async () => {
+    try {
+      if (!rankForm.rank_name || !rankForm.reward_amount) {
+        toast.error('Rank name and reward amount are required');
+        return;
+      }
+
+      if (editingRank && editingRank.id) {
+        // Update existing rank
+        await updateRankReward(editingRank.id, rankForm as Partial<RankReward>);
+        toast.success('Rank updated successfully');
+      } else {
+        // Create new rank
+        await createRankReward(rankForm as Omit<RankReward, 'id' | 'created_at' | 'updated_at'>);
+        toast.success('Rank created successfully');
+      }
+
+      // Reload ranks
+      const ranks = await getAllRankRewards();
+      setRankRewards(ranks);
+      setShowRankModal(false);
+    } catch (error: any) {
+      console.error('Error saving rank:', error);
+      toast.error(error.message || 'Failed to save rank');
+    }
+  };
+
+  const handleDeleteRank = async (rankId: string) => {
+    if (!confirm('Are you sure you want to delete this rank?')) {
+      return;
+    }
+
+    try {
+      await deleteRankReward(rankId);
+      toast.success('Rank deleted successfully');
+
+      // Reload ranks
+      const ranks = await getAllRankRewards();
+      setRankRewards(ranks);
+    } catch (error: any) {
+      console.error('Error deleting rank:', error);
+      toast.error(error.message || 'Failed to delete rank');
+    }
+  };
+
   const handleCalculateCommission = () => {
     // Validate date range
     if (!processingForm.dateFrom || !processingForm.dateTo) {
@@ -252,7 +351,7 @@ export const CommissionManagement: React.FC = () => {
       case 'rank':
         // Calculate rank rewards
         affectedUsers = rankRewards.length * 8;
-        totalAmount = rankRewards.reduce((sum, r) => sum + r.reward, 0) / 5; // Weighted estimate
+        totalAmount = rankRewards.reduce((sum, r) => sum + (r.reward_amount || 0), 0) / 5; // Weighted estimate
         break;
 
       case 'booster':
@@ -762,59 +861,82 @@ export const CommissionManagement: React.FC = () => {
           {/* Rank Rewards */}
           {configSection === 'rank' && (
             <div className="space-y-6">
-              <h3 className="text-lg font-semibold text-[#f8fafc]">Rank Achievement Rewards</h3>
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-[#f8fafc]">Rank Achievement Rewards</h3>
+                <button
+                  onClick={() => handleOpenRankModal()}
+                  className="bg-[#00C7D1] hover:bg-[#00b3bd] text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <span>+</span> Add New Rank
+                </button>
+              </div>
 
               <div className="bg-[#1e293b] rounded-xl border border-[#334155] overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-[#334155]">
                       <tr>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-[#cbd5e1] uppercase">Order</th>
                         <th className="px-6 py-4 text-left text-xs font-medium text-[#cbd5e1] uppercase">Rank</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-[#cbd5e1] uppercase">Requirement</th>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-[#cbd5e1] uppercase">Requirements</th>
                         <th className="px-6 py-4 text-right text-xs font-medium text-[#cbd5e1] uppercase">Reward ($)</th>
+                        <th className="px-6 py-4 text-center text-xs font-medium text-[#cbd5e1] uppercase">Bonus %</th>
+                        <th className="px-6 py-4 text-center text-xs font-medium text-[#cbd5e1] uppercase">Status</th>
                         <th className="px-6 py-4 text-center text-xs font-medium text-[#cbd5e1] uppercase">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#334155]">
-                      {rankRewards.map((rank, idx) => (
-                        <tr key={idx} className="hover:bg-[#334155]/50">
-                          <td className="px-6 py-4 text-[#f8fafc] font-semibold">{rank.rank}</td>
-                          <td className="px-6 py-4 text-[#cbd5e1]">{rank.requirement}</td>
-                          <td className="px-6 py-4 text-right">
-                            <input
-                              type="number"
-                              value={rank.reward}
-                              onChange={(e) => {
-                                const updated = [...rankRewards];
-                                updated[idx].reward = Number(e.target.value);
-                                setRankRewards(updated);
-                              }}
-                              className="w-32 bg-[#0f172a] border border-[#334155] rounded px-3 py-1 text-[#f8fafc] text-right"
-                            />
-                          </td>
-                          <td className="px-6 py-4 text-center">
-                            <button className="text-[#00C7D1] hover:text-[#00b3bd] text-sm">Edit</button>
+                      {rankRewards.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="px-6 py-8 text-center text-[#94a3b8]">
+                            No rank rewards configured. Click "Add New Rank" to create one.
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        rankRewards.map((rank) => (
+                          <tr key={rank.id} className="hover:bg-[#334155]/50">
+                            <td className="px-6 py-4 text-[#cbd5e1]">{rank.rank_order}</td>
+                            <td className="px-6 py-4 text-[#f8fafc] font-semibold">{rank.rank_name}</td>
+                            <td className="px-6 py-4 text-[#cbd5e1] text-sm">
+                              {rank.min_direct_referrals} directs • ${rank.min_team_volume.toLocaleString()} volume
+                            </td>
+                            <td className="px-6 py-4 text-right text-[#10b981] font-semibold">
+                              ${rank.reward_amount.toLocaleString()}
+                            </td>
+                            <td className="px-6 py-4 text-center text-[#f8fafc]">
+                              {rank.bonus_percentage}%
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                rank.is_active
+                                  ? 'bg-[#10b981]/20 text-[#10b981]'
+                                  : 'bg-[#64748b]/20 text-[#94a3b8]'
+                              }`}>
+                                {rank.is_active ? 'Active' : 'Inactive'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              <div className="flex gap-2 justify-center">
+                                <button
+                                  onClick={() => handleOpenRankModal(rank)}
+                                  className="text-[#00C7D1] hover:text-[#00b3bd] text-sm"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteRank(rank.id!)}
+                                  className="text-[#ef4444] hover:text-[#dc2626] text-sm"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
-              </div>
-
-              <div className="flex gap-4">
-                <button
-                  onClick={() => handleSaveConfiguration('Rank Rewards')}
-                  className="bg-[#10b981] hover:bg-[#059669] text-white px-6 py-2 rounded-lg transition-colors"
-                >
-                  Save Rank Rewards
-                </button>
-                <button
-                  onClick={() => handleResetRequest('rank')}
-                  className="bg-[#ef4444] hover:bg-[#dc2626] text-white px-6 py-2 rounded-lg transition-colors"
-                >
-                  Reset to Defaults
-                </button>
               </div>
             </div>
           )}
@@ -1222,6 +1344,176 @@ export const CommissionManagement: React.FC = () => {
               >
                 Confirm & Process
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add/Edit Rank Modal */}
+      {showRankModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4 overflow-y-auto">
+          <div className="bg-[#1e293b] rounded-xl max-w-2xl w-full border border-[#334155] my-8">
+            <div className="p-6">
+              <h2 className="text-xl font-bold text-[#f8fafc] mb-6">
+                {editingRank ? 'Edit Rank' : 'Add New Rank'}
+              </h2>
+
+              <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[#94a3b8] text-sm mb-2">Rank Name *</label>
+                    <input
+                      type="text"
+                      value={rankForm.rank_name}
+                      onChange={(e) => setRankForm({ ...rankForm, rank_name: e.target.value })}
+                      placeholder="e.g., Bronze, Silver, Gold"
+                      className="w-full bg-[#0f172a] border border-[#334155] rounded-lg px-4 py-2 text-[#f8fafc]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[#94a3b8] text-sm mb-2">Rank Order *</label>
+                    <input
+                      type="number"
+                      value={rankForm.rank_order}
+                      onChange={(e) => setRankForm({ ...rankForm, rank_order: Number(e.target.value) })}
+                      min="1"
+                      className="w-full bg-[#0f172a] border border-[#334155] rounded-lg px-4 py-2 text-[#f8fafc]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[#94a3b8] text-sm mb-2">Reward Amount ($) *</label>
+                    <input
+                      type="number"
+                      value={rankForm.reward_amount}
+                      onChange={(e) => setRankForm({ ...rankForm, reward_amount: Number(e.target.value) })}
+                      min="0"
+                      step="100"
+                      className="w-full bg-[#0f172a] border border-[#334155] rounded-lg px-4 py-2 text-[#f8fafc]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[#94a3b8] text-sm mb-2">Bonus Percentage (%)</label>
+                    <input
+                      type="number"
+                      value={rankForm.bonus_percentage}
+                      onChange={(e) => setRankForm({ ...rankForm, bonus_percentage: Number(e.target.value) })}
+                      min="0"
+                      max="100"
+                      step="0.5"
+                      className="w-full bg-[#0f172a] border border-[#334155] rounded-lg px-4 py-2 text-[#f8fafc]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[#94a3b8] text-sm mb-2">Min Direct Referrals</label>
+                    <input
+                      type="number"
+                      value={rankForm.min_direct_referrals}
+                      onChange={(e) => setRankForm({ ...rankForm, min_direct_referrals: Number(e.target.value) })}
+                      min="0"
+                      className="w-full bg-[#0f172a] border border-[#334155] rounded-lg px-4 py-2 text-[#f8fafc]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[#94a3b8] text-sm mb-2">Min Active Directs</label>
+                    <input
+                      type="number"
+                      value={rankForm.min_active_directs}
+                      onChange={(e) => setRankForm({ ...rankForm, min_active_directs: Number(e.target.value) })}
+                      min="0"
+                      className="w-full bg-[#0f172a] border border-[#334155] rounded-lg px-4 py-2 text-[#f8fafc]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[#94a3b8] text-sm mb-2">Min Team Volume ($)</label>
+                    <input
+                      type="number"
+                      value={rankForm.min_team_volume}
+                      onChange={(e) => setRankForm({ ...rankForm, min_team_volume: Number(e.target.value) })}
+                      min="0"
+                      step="100"
+                      className="w-full bg-[#0f172a] border border-[#334155] rounded-lg px-4 py-2 text-[#f8fafc]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[#94a3b8] text-sm mb-2">Min Personal Sales ($)</label>
+                    <input
+                      type="number"
+                      value={rankForm.min_personal_sales}
+                      onChange={(e) => setRankForm({ ...rankForm, min_personal_sales: Number(e.target.value) })}
+                      min="0"
+                      step="100"
+                      className="w-full bg-[#0f172a] border border-[#334155] rounded-lg px-4 py-2 text-[#f8fafc]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[#94a3b8] text-sm mb-2">Reward Type</label>
+                    <select
+                      value={rankForm.reward_type}
+                      onChange={(e) => setRankForm({ ...rankForm, reward_type: e.target.value as 'one_time' | 'monthly' | 'quarterly' })}
+                      className="w-full bg-[#0f172a] border border-[#334155] rounded-lg px-4 py-2 text-[#f8fafc]"
+                    >
+                      <option value="one_time">One Time</option>
+                      <option value="monthly">Monthly</option>
+                      <option value="quarterly">Quarterly</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center pt-6">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={rankForm.is_active}
+                        onChange={(e) => setRankForm({ ...rankForm, is_active: e.target.checked })}
+                        className="w-5 h-5 rounded border-[#334155] bg-[#0f172a] text-[#00C7D1]"
+                      />
+                      <span className="text-[#f8fafc]">Active</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[#94a3b8] text-sm mb-2">Terms & Conditions</label>
+                  <textarea
+                    value={rankForm.terms_conditions}
+                    onChange={(e) => setRankForm({ ...rankForm, terms_conditions: e.target.value })}
+                    rows={6}
+                    placeholder="Enter requirements and conditions for this rank..."
+                    className="w-full bg-[#0f172a] border border-[#334155] rounded-lg px-4 py-2 text-[#f8fafc] resize-none"
+                  />
+                  <p className="text-[#64748b] text-xs mt-1">Use bullet points (•) for better formatting</p>
+                </div>
+              </div>
+
+              <div className="flex gap-4 mt-6">
+                <button
+                  onClick={() => setShowRankModal(false)}
+                  className="flex-1 bg-[#334155] hover:bg-[#475569] text-[#f8fafc] px-6 py-3 rounded-lg transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveRank}
+                  className="flex-1 bg-[#00C7D1] hover:bg-[#00b3bd] text-white px-6 py-3 rounded-lg transition-colors font-medium"
+                >
+                  {editingRank ? 'Update Rank' : 'Create Rank'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -66,7 +66,21 @@ const AdminDashboard: React.FC = () => {
       setRevenueData(revenue);
     } catch (error: any) {
       console.error('Error loading dashboard data:', error);
-      toast.error('Failed to load dashboard data');
+      console.error('Full error details:', JSON.stringify(error, null, 2));
+
+      // Show detailed error messages
+      if (error.message?.includes('not authenticated') || error.message?.includes('Authentication required')) {
+        toast.error('Please log in to access the admin dashboard');
+        setTimeout(() => {
+          navigate('/auth/login');
+        }, 2000);
+      } else if (error.message?.includes('Admin access required') || error.message?.includes('permission')) {
+        toast.error('Admin access required. Your account does not have admin privileges.');
+      } else if (error.message?.includes('relation') || error.message?.includes('does not exist')) {
+        toast.error('Database not set up. Please deploy database files first.');
+      } else {
+        toast.error(`Failed to load dashboard data: ${error.message || 'Unknown error'}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -209,6 +223,82 @@ const AdminDashboard: React.FC = () => {
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show setup prompt if no data loaded (database not deployed)
+  if (!loading && !stats) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+            <p className="text-gray-600 mt-1">Platform overview and key metrics</p>
+          </div>
+
+          {/* Setup Card */}
+          <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200">
+            <div className="p-8 text-center">
+              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <span className="text-4xl">🚀</span>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">Database Setup Required</h2>
+              <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+                Welcome to your Finaster MLM Platform! To start using the admin dashboard, you need to deploy the database files to Supabase first.
+              </p>
+
+              <div className="bg-white rounded-lg p-6 mb-6 text-left max-w-2xl mx-auto">
+                <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <span>📋</span> Quick Setup Steps:
+                </h3>
+                <ol className="space-y-3 text-gray-700">
+                  <li className="flex gap-3">
+                    <span className="font-semibold text-blue-600">1.</span>
+                    <span>Open the <code className="bg-gray-100 px-2 py-1 rounded text-sm">SUPABASE_DEPLOYMENT_GUIDE.md</code> file in your project</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="font-semibold text-blue-600">2.</span>
+                    <span>Go to your Supabase Dashboard → SQL Editor</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="font-semibold text-blue-600">3.</span>
+                    <span>Copy and run the <code className="bg-gray-100 px-2 py-1 rounded text-sm">database/DEPLOY_ALL_IN_ONE.sql</code> file</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="font-semibold text-blue-600">4.</span>
+                    <span>Refresh this page</span>
+                  </li>
+                </ol>
+              </div>
+
+              <div className="flex gap-4 justify-center">
+                <Button
+                  onClick={loadDashboardData}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  🔄 Try Again
+                </Button>
+                <a
+                  href="https://app.supabase.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+                >
+                  🚀 Open Supabase Dashboard
+                </a>
+              </div>
+
+              <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800">
+                  <strong>💡 Tip:</strong> For detailed instructions, check the{' '}
+                  <code className="bg-yellow-100 px-2 py-1 rounded">DEPLOYMENT_COMPLETE_SUMMARY.md</code> file
+                </p>
+              </div>
+            </div>
+          </Card>
         </div>
       </div>
     );

@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import * as adminUserService from '../../services/admin-user.service';
 import * as kycService from '../../services/kyc.service';
 import * as packageService from '../../services/package.service';
+import * as impersonateService from '../../services/admin-impersonate.service';
 import { KYCSubmission } from '../../types/kyc.types';
 import CustomModal from '../../components/ui/CustomModal';
 
@@ -21,6 +22,7 @@ interface User {
   rank: string;
   sponsor: string;
   hasActivePackages: boolean;
+  directReferrals: number;
   avatar?: string;
 }
 
@@ -76,6 +78,8 @@ const UserManagement: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [showBulkMenu, setShowBulkMenu] = useState(false);
+  const [sortField, setSortField] = useState<keyof User | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   // Real users from database
   const [realUsers, setRealUsers] = useState<User[]>([]);
@@ -149,6 +153,7 @@ const UserManagement: React.FC = () => {
           rank: user.rank || 'Starter',
           sponsor: user.referred_by || 'N/A',
           hasActivePackages: (user.active_packages || 0) > 0,
+          directReferrals: user.direct_count || 0,
         }));
 
         setRealUsers(formattedUsers);
@@ -308,12 +313,47 @@ const UserManagement: React.FC = () => {
     });
   }, [realUsers, searchTerm, filters]);
 
+  // Sort users
+  const sortedUsers = useMemo(() => {
+    if (!sortField) return filteredUsers;
+
+    return [...filteredUsers].sort((a, b) => {
+      const aValue = a[sortField];
+      const bValue = b[sortField];
+
+      // Handle different types
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+      }
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortDirection === 'asc'
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      return 0;
+    });
+  }, [filteredUsers, sortField, sortDirection]);
+
   // Pagination
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
-  const paginatedUsers = filteredUsers.slice(
+  const totalPages = Math.ceil(sortedUsers.length / itemsPerPage);
+  const paginatedUsers = sortedUsers.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  // Handle sorting
+  const handleSort = (field: keyof User) => {
+    if (sortField === field) {
+      // Toggle direction if same field
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Set new field with ascending direction
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
 
   // Toggle user selection
   const toggleUserSelection = (userId: string) => {
@@ -418,6 +458,34 @@ const UserManagement: React.FC = () => {
       toast.success(`KYC rejected for ${selectedUsers.length} users!`);
       setSelectedUsers([]);
       setShowBulkMenu(false);
+    }
+  };
+
+  // Impersonate user
+  const handleImpersonateUser = async (userId: string, userEmail: string) => {
+    if (!confirm(`Are you sure you want to impersonate this user? You will be redirected to their dashboard.\n\nUser: ${userEmail}`)) {
+      return;
+    }
+
+    const toastId = toast.loading('Impersonating user...');
+
+    try {
+      const result = await impersonateService.impersonateUser(userId);
+
+      if (result.success) {
+        toast.success('Successfully impersonating user! Redirecting...', { id: toastId });
+
+        // Redirect to user dashboard after a short delay
+        setTimeout(() => {
+          navigate('/dashboard');
+          // Reload to apply impersonation context
+          window.location.reload();
+        }, 1000);
+      } else {
+        toast.error(result.error || 'Failed to impersonate user', { id: toastId });
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to impersonate user', { id: toastId });
     }
   };
 
@@ -1539,9 +1607,7 @@ const UserManagement: React.FC = () => {
                 </button>
 
                 <button
-                  onClick={() => {
-                    toast.info('Impersonate user feature coming soon');
-                  }}
+                  onClick={() => handleImpersonateUser(selectedUser!.id, selectedUser!.email)}
                   className="p-4 border-2 border-gray-200 rounded-lg hover:border-cyan-500 hover:bg-cyan-50 transition-all text-left"
                 >
                   <div className="text-2xl mb-2">👤</div>
@@ -1903,7 +1969,7 @@ const UserManagement: React.FC = () => {
 
         {/* Results Count */}
         <div className="mb-4 text-sm text-gray-600">
-          Showing {paginatedUsers.length} of {filteredUsers.length} users
+          Showing {paginatedUsers.length} of {sortedUsers.length} users
         </div>
 
         {/* Users Table */}
@@ -1920,15 +1986,116 @@ const UserManagement: React.FC = () => {
                       className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                     />
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User ID</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Join Date</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KYC</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Investment</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
+                  <th
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('id')}
+                  >
+                    <div className="flex items-center gap-1">
+                      User ID
+                      {sortField === 'id' && (
+                        <span className="text-blue-600">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('name')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Name
+                      {sortField === 'name' && (
+                        <span className="text-blue-600">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('email')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Email
+                      {sortField === 'email' && (
+                        <span className="text-blue-600">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('phone')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Phone
+                      {sortField === 'phone' && (
+                        <span className="text-blue-600">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('joinDate')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Join Date
+                      {sortField === 'joinDate' && (
+                        <span className="text-blue-600">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('status')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Status
+                      {sortField === 'status' && (
+                        <span className="text-blue-600">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('kycStatus')}
+                  >
+                    <div className="flex items-center gap-1">
+                      KYC
+                      {sortField === 'kycStatus' && (
+                        <span className="text-blue-600">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('totalInvestment')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Investment
+                      {sortField === 'totalInvestment' && (
+                        <span className="text-blue-600">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('walletBalance')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Balance
+                      {sortField === 'walletBalance' && (
+                        <span className="text-blue-600">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('directReferrals')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Direct Referrals
+                      {sortField === 'directReferrals' && (
+                        <span className="text-blue-600">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
+                  </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -1965,6 +2132,11 @@ const UserManagement: React.FC = () => {
                     </td>
                     <td className="px-4 py-3 text-sm font-semibold text-gray-900">${user.totalInvestment.toLocaleString()}</td>
                     <td className="px-4 py-3 text-sm font-semibold text-gray-900">${user.walletBalance.toLocaleString()}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {user.directReferrals}
+                      </span>
+                    </td>
                     <td className="px-4 py-3 text-sm">
                       <button
                         onClick={() => {

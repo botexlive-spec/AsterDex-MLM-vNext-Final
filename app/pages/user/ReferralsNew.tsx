@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, Button, Badge } from '../../components/ui/DesignSystem';
 import { Modal } from '../../components/ui/Modal';
 import toast from 'react-hot-toast';
 import { QRCodeSVG } from 'qrcode.react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useAuth } from '../../context/AuthContext';
+import { getReferrals } from '../../services/mlm.service';
 
 // Mock data for referrals
 const mockReferrals = [
@@ -72,11 +73,44 @@ const performanceData = [
 
 const ReferralsNew: React.FC = () => {
   const { user } = useAuth();
-  const [referrals] = useState(mockReferrals);
+  const [referrals, setReferrals] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'date' | 'earnings'>('date');
   const [showQRModal, setShowQRModal] = useState(false);
+
+  // Fetch referrals on mount and when user changes
+  useEffect(() => {
+    const fetchReferrals = async () => {
+      if (!user?.id) return;
+
+      setLoading(true);
+      try {
+        const refs = await getReferrals(user.id);
+        // Transform data to match existing interface
+        const transformedRefs = refs.map((ref: any) => ({
+          id: ref.id,
+          name: ref.refereeName,
+          email: ref.refereeEmail,
+          joinDate: ref.joinDate,
+          status: ref.isActive ? 'active' : 'inactive',
+          investment: ref.totalInvestment,
+          earnings: ref.commissionEarned,
+          level: 1, // Direct referrals are level 1
+        }));
+        setReferrals(transformedRefs);
+      } catch (error: any) {
+        console.error('Error fetching referrals:', error);
+        toast.error(error.message || 'Failed to load referrals');
+        setReferrals([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReferrals();
+  }, [user?.id]);
 
   // Generate dynamic referral data based on logged-in user
   const referralCode = user?.id || 'USER_ID';
@@ -178,6 +212,22 @@ const ReferralsNew: React.FC = () => {
         return 'info';
     }
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0f172a] p-4 md:p-8">
+        <div className="max-w-7xl mx-auto space-y-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[#00C7D1] mx-auto mb-4"></div>
+              <p className="text-[#cbd5e1] text-lg font-medium">Loading referrals...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0f172a] p-4 md:p-8">

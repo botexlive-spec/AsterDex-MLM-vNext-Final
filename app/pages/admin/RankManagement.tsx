@@ -278,34 +278,66 @@ const RankManagement: React.FC = () => {
         ]);
 
         // Format ranks for UI
-        const formattedRanks: Rank[] = ranksData.map((rank: any, index: number) => ({
-          id: `r${index + 1}`,
-          name: rank.name,
-          order: rank.level,
-          badge: rank.icon,
-          personalInvestment: rank.min_personal_volume,
-          teamVolume: rank.min_team_volume,
-          directReferrals: rank.min_directs,
-          activeTeamMembers: rank.min_directs * 2, // Estimate
-          rewardAmount: rank.reward_amount,
-          benefits: rank.benefits.join(', '),
-          color: rank.color,
-          status: 'active' as const,
-        }));
+        const formattedRanks: Rank[] = ranksData.map((rank: any, index: number) => {
+          // Map rank names to colors and badges
+          const rankColors: Record<string, string> = {
+            'Bronze': '#CD7F32',
+            'Silver': '#C0C0C0',
+            'Gold': '#FFD700',
+            'Platinum': '#E5E4E2',
+            'Diamond': '#B9F2FF',
+            'Ruby': '#E0115F',
+            'Emerald': '#50C878',
+            'Sapphire': '#0F52BA',
+          };
+
+          const rankBadges: Record<string, string> = {
+            'Bronze': '🥉',
+            'Silver': '🥈',
+            'Gold': '🥇',
+            'Platinum': '💎',
+            'Diamond': '💠',
+            'Ruby': '💍',
+            'Emerald': '🟢',
+            'Sapphire': '🔷',
+          };
+
+          return {
+            id: rank.id || `r${index + 1}`,
+            name: rank.rank_name,
+            order: rank.rank_order,
+            badge: rankBadges[rank.rank_name] || '⭐',
+            personalInvestment: rank.min_personal_sales,
+            teamVolume: rank.min_team_volume,
+            directReferrals: rank.min_direct_referrals,
+            activeTeamMembers: rank.min_active_directs,
+            rewardAmount: rank.reward_amount,
+            benefits: rank.terms_conditions?.split('\n').slice(0, 2).join(', ') || 'Rank benefits',
+            color: rankColors[rank.rank_name] || '#FFD700',
+            status: rank.is_active ? 'active' as const : 'inactive' as const,
+          };
+        });
 
         // Format achievements for UI
-        const formattedAchievements: RankAchievement[] = achievementsData.map((ach: any, index: number) => ({
-          id: `ach${index + 1}`,
-          userId: ach.user_id,
-          userName: ach.user_name,
-          email: ach.user_email,
-          rankId: `r${ranksData.findIndex(r => r.name === ach.current_rank) + 1}`,
-          rankName: ach.current_rank,
-          achievedDate: new Date(ach.achieved_at).toISOString().split('T')[0],
-          rewardAmount: ranksData.find((r: any) => r.name === ach.current_rank)?.reward_amount || 0,
-          rewardStatus: 'paid' as const,
-          paidDate: new Date(ach.achieved_at).toISOString().split('T')[0],
-        }));
+        const formattedAchievements: RankAchievement[] = achievementsData.map((ach: any, index: number) => {
+          const userEmail = ach.user?.email || 'N/A';
+          const userName = ach.user?.raw_user_meta_data?.full_name ||
+                           ach.user?.raw_user_meta_data?.name ||
+                           userEmail.split('@')[0];
+
+          return {
+            id: ach.id || `ach${index + 1}`,
+            userId: ach.user_id,
+            userName: userName,
+            email: userEmail,
+            rankId: ranksData.find((r: any) => r.rank_name === ach.rank_name)?.id || '',
+            rankName: ach.rank_name,
+            achievedDate: new Date(ach.created_at).toISOString().split('T')[0],
+            rewardAmount: ach.reward_amount,
+            rewardStatus: 'paid' as const,
+            paidDate: new Date(ach.created_at).toISOString().split('T')[0],
+          };
+        });
 
         setRanks(formattedRanks);
         setAchievements(formattedAchievements);

@@ -1,6 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, Button, Badge } from '../../components/ui/DesignSystem';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
+import { getTeamMembers } from '../../services/mlm.service';
 
 // Mock data for team members
 const mockTeamMembers = [
@@ -132,7 +134,9 @@ interface TreeNode {
 }
 
 const TeamNew: React.FC = () => {
-  const [teamMembers] = useState(mockTeamMembers);
+  const { user } = useAuth();
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [levelFilter, setLevelFilter] = useState<string>('all');
@@ -140,6 +144,32 @@ const TeamNew: React.FC = () => {
   const [expandedLevels, setExpandedLevels] = useState<number[]>([]);
   const [viewMode, setViewMode] = useState<'table' | 'tree'>('table');
   const [expandedNodes, setExpandedNodes] = useState<number[]>([]);
+
+  // Fetch team members on mount and when user changes
+  useEffect(() => {
+    const fetchTeamMembers = async () => {
+      if (!user?.id) {
+        console.log('⚠️ No user ID available');
+        return;
+      }
+
+      console.log('👤 Current user:', user.email, 'ID:', user.id);
+      setLoading(true);
+      try {
+        const members = await getTeamMembers(user.id);
+        console.log('📊 Team members received:', members);
+        setTeamMembers(members);
+      } catch (error: any) {
+        console.error('Error fetching team members:', error);
+        toast.error(error.message || 'Failed to load team members');
+        setTeamMembers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTeamMembers();
+  }, [user?.id]);
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -337,6 +367,22 @@ const TeamNew: React.FC = () => {
     );
   };
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0f172a] p-4 md:p-8">
+        <div className="max-w-7xl mx-auto space-y-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[#00C7D1] mx-auto mb-4"></div>
+              <p className="text-[#cbd5e1] text-lg font-medium">Loading team members...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#0f172a] p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -344,6 +390,33 @@ const TeamNew: React.FC = () => {
         <div>
           <h1 className="text-3xl md:text-4xl font-bold text-[#f8fafc] mb-2">My Team</h1>
           <p className="text-[#94a3b8]">View and manage your team members across all levels</p>
+        </div>
+
+        {/* DEBUG BANNER - Shows current user being viewed */}
+        <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500/50 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🔍</span>
+            <div className="flex-1">
+              <h3 className="text-yellow-400 font-bold text-lg mb-1">DEBUG: Currently Viewing</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                <div>
+                  <span className="text-gray-400">User:</span>
+                  <span className="ml-2 text-white font-mono">{user?.full_name || user?.email || 'Unknown'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-400">Email:</span>
+                  <span className="ml-2 text-cyan-400 font-mono">{user?.email}</span>
+                </div>
+                <div>
+                  <span className="text-gray-400">User ID:</span>
+                  <span className="ml-2 text-green-400 font-mono text-xs">{user?.id}</span>
+                </div>
+              </div>
+              <div className="mt-2 text-xs text-yellow-300">
+                💡 If this user info doesn't change when impersonating different users, there's a bug!
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Statistics Cards */}

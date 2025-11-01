@@ -1544,3 +1544,140 @@ export const distributeDailyROI = async (): Promise<{ processed: number; total_a
     throw new Error(error.message || 'Failed to distribute daily ROI');
   }
 };
+
+// ============================================
+// TEAM MANAGEMENT
+// ============================================
+
+/**
+ * Get team members for a user
+ * Returns all downline members across all levels
+ */
+export const getTeamMembers = async (userId?: string) => {
+  try {
+    const targetUserId = userId || (await supabase.auth.getUser()).data.user?.id;
+    if (!targetUserId) throw new Error('User not authenticated');
+
+    console.log('🔍 Fetching team members for user:', targetUserId);
+
+    // Get all users in the team hierarchy (where sponsor path includes this user)
+    const { data: teamMembers, error } = await supabase
+      .from('users')
+      .select(`
+        id,
+        full_name,
+        email,
+        total_investment,
+        created_at,
+        level,
+        sponsor_id,
+        position,
+        is_active,
+        left_volume,
+        right_volume
+      `)
+      .eq('sponsor_id', targetUserId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('❌ Error fetching team members:', error);
+      throw error;
+    }
+
+    console.log(`✅ Found ${teamMembers?.length || 0} team members`);
+
+    // For each team member, get their stats
+    const enrichedMembers = await Promise.all(
+      (teamMembers || []).map(async (member) => {
+        // Get their direct referrals count
+        const { count: directCount } = await supabase
+          .from('users')
+          .select('id', { count: 'exact', head: true })
+          .eq('sponsor_id', member.id);
+
+        // Get their team size (all downline)
+        // This is a simplified version - you might want to add a recursive query
+        const { count: teamSize } = await supabase
+          .from('users')
+          .select('id', { count: 'exact', head: true })
+          .eq('sponsor_id', member.id);
+
+        // Get their active packages
+        const { data: packages } = await supabase
+          .from('user_packages')
+          .select('amount')
+          .eq('user_id', member.id)
+          .eq('is_active', true);
+
+        const investment = packages?.reduce((sum, pkg) => sum + pkg.amount, 0) || 0;
+
+        return {
+          id: member.id,
+          name: member.full_name,
+          email: member.email,
+          joinDate: member.created_at,
+          level: member.level || 1,
+          status: member.is_active ? 'active' : 'inactive',
+          investment: investment,
+          totalInvestment: member.total_investment || 0,
+          directReferrals: directCount || 0,
+          teamSize: teamSize || 0,
+          leftLeg: 0, // You can calculate this from binary_tree if needed
+          rightLeg: 0,
+          volume: (member.left_volume || 0) + (member.right_volume || 0),
+          parentId: member.sponsor_id,
+          position: member.position,
+        };
+      })
+    );
+
+    return enrichedMembers;
+  } catch (error: any) {
+    console.error('Get team members error:', error);
+    throw new Error(error.message || 'Failed to fetch team members');
+  }
+};
+
+/**
+ * Get referrals for a user
+ */
+export const getReferrals = async (userId?: string) => {
+  try {
+    const targetUserId = userId || (await supabase.auth.getUser()).data.user?.id;
+    if (!targetUserId) throw new Error('User not authenticated');
+
+    const { data: referrals, error } = await supabase
+      .from('referrals')
+      .select(`
+        *,
+        referee:users!referee_id (
+          id,
+          full_name,
+          email,
+          total_investment,
+          created_at,
+          is_active
+        )
+      `)
+      .eq('referrer_id', targetUserId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (referrals || []).map((ref: any) => ({
+      id: ref.id,
+      refereeId: ref.referee_id,
+      refereeName: ref.referee?.full_name || 'Unknown',
+      refereeEmail: ref.referee?.email || '',
+      referralCode: ref.referral_code,
+      status: ref.status,
+      commissionEarned: ref.commission_earned || 0,
+      totalInvestment: ref.referee?.total_investment || 0,
+      joinDate: ref.created_at,
+      isActive: ref.referee?.is_active || false,
+    }));
+  } catch (error: any) {
+    console.error('Get referrals error:', error);
+    throw new Error(error.message || 'Failed to fetch referrals');
+  }
+};

@@ -20,7 +20,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   allowedRoles,
   requireAuth = true,
 }) => {
-  const { isAuthenticated, user, isLoading } = useAuth();
+  const { isAuthenticated, user, isLoading, isImpersonating, actualUser } = useAuth();
   const location = useLocation();
 
   // Show loading state while checking authentication
@@ -44,7 +44,14 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // Check role authorization
   if (allowedRoles && user) {
     const userRole = user.role;
-    const hasAccess = allowedRoles.some(
+
+    // When impersonating, admin can access user routes
+    const isAdminImpersonatingUser = isImpersonating &&
+      actualUser &&
+      (actualUser.role === UserRole.ADMIN || actualUser.role === 'admin') &&
+      allowedRoles.some(role => role === UserRole.USER || role.toLowerCase() === 'user');
+
+    const hasAccess = isAdminImpersonatingUser || allowedRoles.some(
       role => role === userRole || role.toLowerCase() === userRole.toLowerCase()
     );
 
