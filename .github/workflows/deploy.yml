@@ -122,7 +122,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.check-changes.outputs.needs_build == 'true' || steps.force-build.outputs.needs_build == 'true'
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: Build with repository base path
         if: ${{ steps.check-custom-domain.outputs.has_custom_domain == 'false' && (steps.check-changes.outputs.needs_build == 'true' || steps.force-build.outputs.needs_build == 'true') }}
