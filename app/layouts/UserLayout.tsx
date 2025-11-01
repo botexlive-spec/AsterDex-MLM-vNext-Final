@@ -1,0 +1,23 @@
+import React from 'react';
+import { Outlet } from 'react-router-dom';
+import { UserSidebar } from '../components/layout/UserSidebar';
+import { Breadcrumbs } from '../components/layout/Breadcrumbs';
+
+export const UserLayout: React.FC = () => {
+  return (
+    <div className="min-h-screen bg-[#0f172a] flex">
+      {/* User Sidebar */}
+      <UserSidebar isAdmin={false} />
+
+      {/* Main Content Area */}
+      <main className="flex-1 lg:ml-0">
+        <div className="p-6 lg:p-8">
+          <Breadcrumbs />
+          <Outlet />
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default UserLayout;

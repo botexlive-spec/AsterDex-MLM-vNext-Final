@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Config Test</title>
+    <script src="/config.js"></script>
+</head>
+<body>
+    <h1>Runtime Config Test</h1>
+    <div id="results"></div>
+
+    <script>
+        const results = document.getElementById('results');
+
+        if (window.__RUNTIME_CONFIG__) {
+            results.innerHTML = '<h2>✅ Config Loaded</h2>';
+            results.innerHTML += '<pre>' + JSON.stringify(window.__RUNTIME_CONFIG__, null, 2) + '</pre>';
+
+            const url = window.__RUNTIME_CONFIG__.VITE_SUPABASE_URL;
+            const key = window.__RUNTIME_CONFIG__.VITE_SUPABASE_ANON_KEY;
+
+            results.innerHTML += '<hr>';
+            results.innerHTML += '<h2>Supabase Config:</h2>';
+            results.innerHTML += '<p>URL: ' + url + '</p>';
+            results.innerHTML += '<p>Key: ' + (key ? key.substring(0, 30) + '...' : 'NOT SET') + '</p>';
+        } else {
+            results.innerHTML = '<h2>❌ Config Not Loaded</h2>';
+        }
+    </script>
+</body>
+</html>

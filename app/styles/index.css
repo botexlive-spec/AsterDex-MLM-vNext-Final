@@ -1,0 +1,118 @@
+@import "@orderly.network/ui/dist/styles.css";
+@import "../styles/theme.css";
+@import "../styles/fonts.css";
+@import "../styles/designSystem.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global Design System Overrides */
+body {
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+
+/* Global Form Input Styles - Fix white text on white background */
+.form-control,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="url"],
+input[type="search"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+textarea,
+select {
+  background-color: #f9fafb !important;
+  color: #1f2937 !important;
+  border: 1px solid #d1d5db !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9ca3af !important;
+  opacity: 1 !important;
+}
+
+/* Dark Mode Modal Inputs */
+.modal input[type="text"],
+.modal input[type="email"],
+.modal input[type="password"],
+.modal input[type="number"],
+.modal input[type="tel"],
+.modal input[type="url"],
+.modal input[type="search"],
+.modal input[type="date"],
+.modal input[type="time"],
+.modal input[type="datetime-local"],
+.modal textarea,
+.modal select,
+[role="dialog"] input[type="text"],
+[role="dialog"] input[type="email"],
+[role="dialog"] input[type="password"],
+[role="dialog"] input[type="number"],
+[role="dialog"] input[type="tel"],
+[role="dialog"] input[type="url"],
+[role="dialog"] input[type="search"],
+[role="dialog"] input[type="date"],
+[role="dialog"] input[type="time"],
+[role="dialog"] input[type="datetime-local"],
+[role="dialog"] textarea,
+[role="dialog"] select {
+  background-color: #374151 !important;
+  color: #f9fafb !important;
+  border: 1px solid #4b5563 !important;
+}
+
+.modal input::placeholder,
+.modal textarea::placeholder,
+[role="dialog"] input::placeholder,
+[role="dialog"] textarea::placeholder {
+  color: #9ca3af !important;
+  opacity: 1 !important;
+}
+
+/* Admin Forms */
+.admin-panel input,
+.admin-panel textarea,
+.admin-panel select,
+.user-panel input,
+.user-panel textarea,
+.user-panel select {
+  background-color: #ffffff !important;
+  color: #1f2937 !important;
+  border: 1px solid #d1d5db !important;
+}
+
+.admin-panel input::placeholder,
+.admin-panel textarea::placeholder,
+.user-panel input::placeholder,
+.user-panel textarea::placeholder {
+  color: #9ca3af !important;
+  opacity: 1 !important;
+}
+
+/* Focus States */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid #3b82f6 !important;
+  outline-offset: 2px !important;
+}
+
+/* Disabled States */
+input:disabled,
+textarea:disabled,
+select:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}
+
+/* hide trading rewards on mobile */
+.oui-portfolio-page .oui-box.oui-flex.oui-flex-nowrap > div:nth-child(2).oui-box.oui-flex.oui-justify-start.oui-flex-nowrap.oui-relative {
+  display: none;
+}

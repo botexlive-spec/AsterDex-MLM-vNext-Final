@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Supabase Connection Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Supabase Connection Test</h1>
+    <div id="results"></div>
+
+    <script>
+        const SUPABASE_URL = 'https://dsgtyrtwtlpnckvcozfbc.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRzZ3R5cnd0bHBuY2t2Y296ZmJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE4NDE0MDcsImV4cCI6MjA3NzQxNzQwN30.slPbjLRjENkrFAcQvpQM5US11CWcqc7eTW-JRoT-Feg';
+
+        const { createClient } = supabase;
+        const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function testConnection() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>Testing connection...</p>';
+
+            try {
+                // Test 1: Basic connection
+                results.innerHTML += '<p>✅ Supabase client created</p>';
+                results.innerHTML += `<p>URL: ${SUPABASE_URL}</p>`;
+                results.innerHTML += `<p>Key: ${SUPABASE_ANON_KEY.substring(0, 20)}...</p>`;
+
+                // Test 2: Check auth
+                const { data: authData, error: authError } = await client.auth.getSession();
+                if (authError) {
+                    results.innerHTML += `<p>❌ Auth error: ${authError.message}</p>`;
+                } else {
+                    results.innerHTML += '<p>✅ Auth system accessible</p>';
+                }
+
+                // Test 3: Try to query users table
+                const { data: userData, error: userError } = await client
+                    .from('users')
+                    .select('email')
+                    .limit(5);
+
+                if (userError) {
+                    results.innerHTML += `<p>❌ Users table error: ${userError.message}</p>`;
+                } else {
+                    results.innerHTML += `<p>✅ Users table accessible. Found ${userData?.length || 0} users</p>`;
+                    if (userData && userData.length > 0) {
+                        results.innerHTML += '<p>Users:</p><ul>';
+                        userData.forEach(u => {
+                            results.innerHTML += `<li>${u.email}</li>`;
+                        });
+                        results.innerHTML += '</ul>';
+                    }
+                }
+
+                // Test 4: Try to login
+                results.innerHTML += '<h2>Testing Login</h2>';
+                const { data: loginData, error: loginError } = await client.auth.signInWithPassword({
+                    email: 'admin@asterdex.com',
+                    password: 'admin123'
+                });
+
+                if (loginError) {
+                    results.innerHTML += `<p>❌ Login failed: ${loginError.message}</p>`;
+                } else {
+                    results.innerHTML += '<p>✅ Login successful!</p>';
+                    results.innerHTML += `<p>User: ${loginData.user?.email}</p>`;
+                }
+
+            } catch (err) {
+                results.innerHTML += `<p>❌ Error: ${err.message}</p>`;
+                console.error('Test error:', err);
+            }
+        }
+
+        testConnection();
+    </script>
+</body>
+</html>

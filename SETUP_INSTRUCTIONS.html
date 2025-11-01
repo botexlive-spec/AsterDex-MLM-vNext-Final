@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finaster MLM - Database Setup</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+
+        .step {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .step h2 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+
+        .step p {
+            line-height: 1.6;
+            color: #555;
+            margin: 10px 0;
+        }
+
+        .code-box {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .credentials {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .credentials h3 {
+            color: #1976d2;
+            margin-bottom: 15px;
+        }
+
+        .cred-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border: 2px solid #1976d2;
+        }
+
+        .cred-item strong {
+            color: #1976d2;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            margin: 10px 10px 10px 0;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+        }
+
+        .btn-secondary {
+            background: #28a745;
+        }
+
+        .success-box {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            color: #155724;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            color: #856404;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        ul {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+
+        li {
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+
+        .file-path {
+            background: #fff;
+            border: 2px solid #667eea;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            color: #667eea;
+            display: inline-block;
+            margin: 10px 0;
+        }
+
+        .copy-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+
+        .copy-btn:hover {
+            background: #5568d3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Finaster MLM Setup Guide</h1>
+        <p class="subtitle">Complete database setup in 3 easy steps</p>
+
+        <div class="warning-box">
+            <strong>⚠️ IMPORTANT:</strong> You must complete this setup before the login page will work!
+        </div>
+
+        <div class="step">
+            <h2>Step 1: Open Supabase SQL Editor</h2>
+            <p>Click the button below to open your Supabase SQL Editor in a new tab:</p>
+            <a href="https://app.supabase.com/project/dsgtyrtlpnckvcozfbc/sql/new" target="_blank" class="btn">
+                📝 Open SQL Editor
+            </a>
+            <p style="margin-top: 10px;"><em>This will open in a new tab. Log in to Supabase if prompted.</em></p>
+        </div>
+
+        <div class="step">
+            <h2>Step 2: Copy the SQL Script</h2>
+            <p>Open this file in your text editor (Notepad, VS Code, etc.):</p>
+            <div class="file-path">
+                C:\Projects\asterdex-8621-main\DATABASE_SETUP_WITH_ADMIN.sql
+            </div>
+            <p><strong>OR</strong> click below to view the file location:</p>
+            <button class="btn btn-secondary" onclick="openFile()">📁 Open Folder</button>
+            <p style="margin-top: 15px;"><strong>Instructions:</strong></p>
+            <ul>
+                <li>Open the file <code>DATABASE_SETUP_WITH_ADMIN.sql</code></li>
+                <li>Select all content (Ctrl+A)</li>
+                <li>Copy to clipboard (Ctrl+C)</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h2>Step 3: Run the Script in Supabase</h2>
+            <p>In the Supabase SQL Editor (from Step 1):</p>
+            <ul>
+                <li>Paste the entire SQL content (Ctrl+V)</li>
+                <li>Click the <strong>"RUN"</strong> button (or press Ctrl+Enter)</li>
+                <li>Wait 5-10 seconds for completion</li>
+                <li>Look for success message: <em>"Success. No rows returned"</em></li>
+            </ul>
+        </div>
+
+        <div class="success-box">
+            <h3>✅ Setup Complete!</h3>
+            <p>After running the script, your database will have:</p>
+            <ul>
+                <li>✓ All 18 MLM database tables</li>
+                <li>✓ Admin and user accounts created</li>
+                <li>✓ $1,000 starting balance for both accounts</li>
+                <li>✓ 3 investment packages configured</li>
+                <li>✓ System settings initialized</li>
+                <li>✓ Welcome notifications</li>
+            </ul>
+        </div>
+
+        <div class="credentials">
+            <h3>🔐 Login Credentials</h3>
+
+            <div class="cred-item">
+                <strong>👨‍💼 Admin Account:</strong>
+                Email: admin@asterdex.com<br>
+                Password: admin123<br>
+                <em>Redirects to: /admin/dashboard</em>
+            </div>
+
+            <div class="cred-item">
+                <strong>👤 User Account:</strong>
+                Email: user@asterdex.com<br>
+                Password: user123<br>
+                <em>Redirects to: /dashboard</em>
+            </div>
+        </div>
+
+        <div class="step">
+            <h2>Step 4: Test Your Login</h2>
+            <p>After completing the database setup, test your login:</p>
+            <a href="http://localhost:5175/login" target="_blank" class="btn">
+                🔐 Go to Login Page
+            </a>
+            <p style="margin-top: 10px;"><em>Use the credentials above to log in</em></p>
+        </div>
+
+        <div class="warning-box">
+            <strong>💡 Troubleshooting:</strong>
+            <ul>
+                <li>If you see "Failed to fetch" - ensure you ran the SQL script correctly</li>
+                <li>If login fails - check that the script executed without errors</li>
+                <li>If tables already exist - the script will update them safely</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function openFile() {
+            // Try to open the folder in file explorer
+            alert('Opening folder location...\n\nNavigate to:\nC:\\Projects\\asterdex-8621-main\\\n\nThen open: DATABASE_SETUP_WITH_ADMIN.sql');
+        }
+    </script>
+</body>
+</html>

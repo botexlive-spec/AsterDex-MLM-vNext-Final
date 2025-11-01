@@ -1,0 +1,969 @@
+/**
+ * ENHANCED Package Cards - Separate Individual Card Design
+ * Features: Unique design for each package, Real-time admin sync, Beautiful animations
+ */
+
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import toast from 'react-hot-toast';
+import {
+  Check,
+  TrendingUp,
+  Clock,
+  Award,
+  Star,
+  Shield,
+  Zap,
+  Users,
+  DollarSign,
+  ArrowRight,
+  Sparkles,
+  X,
+  Gift,
+  Crown,
+  Gem,
+  Rocket,
+  Target,
+  Search,
+  Filter,
+  SlidersHorizontal,
+  LayoutGrid,
+  LayoutList,
+  ArrowUpDown,
+  RefreshCw,
+  BarChart3,
+} from 'lucide-react';
+import { Button } from '../../components/ui/DesignSystem';
+import { Modal } from '../../components/ui/Modal';
+import { supabase } from '../../services/supabase.client';
+import { getWalletBalance, type WalletBalance } from '../../services/wallet.service';
+import { purchasePackage } from '../../services/package.service';
+
+// Package interface
+interface Package {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  min_investment: number;
+  max_investment: number;
+  daily_return_percentage: number;
+  max_return_percentage: number;
+  duration_days: number;
+  level_depth: number;
+  binary_bonus_percentage: number;
+  features: string[];
+  status: 'active' | 'inactive';
+  is_popular: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// Purchase form schema
+const purchaseSchema = z.object({
+  amount: z.number().min(100, 'Minimum amount is $100'),
+  paymentPassword: z.string().min(6, 'Payment password is required'),
+  termsAccepted: z.boolean().refine((val) => val === true, {
+    message: 'You must accept the terms and conditions',
+  }),
+});
+
+type PurchaseFormData = z.infer<typeof purchaseSchema>;
+
+// Enhanced unique card designs for each package type
+const getCardDesign = (index: number, isPopular: boolean) => {
+  const designs = [
+    {
+      // Starter - Green Minimal
+      containerClass: 'bg-gradient-to-br from-emerald-50 to-emerald-100 border-2 border-emerald-200',
+      headerClass: 'bg-gradient-to-r from-emerald-500 to-emerald-600',
+      badgeClass: 'bg-emerald-500',
+      priceClass: 'text-emerald-600',
+      buttonClass: 'bg-emerald-500 hover:bg-emerald-600',
+      icon: '🌱',
+      iconBg: 'bg-emerald-100',
+      accentColor: 'emerald',
+    },
+    {
+      // Growth - Blue Modern
+      containerClass: 'bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200',
+      headerClass: 'bg-gradient-to-r from-blue-500 to-blue-600',
+      badgeClass: 'bg-blue-500',
+      priceClass: 'text-blue-600',
+      buttonClass: 'bg-blue-500 hover:bg-blue-600',
+      icon: '📈',
+      iconBg: 'bg-blue-100',
+      accentColor: 'blue',
+    },
+    {
+      // Premium - Purple Luxury
+      containerClass: 'bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-200',
+      headerClass: 'bg-gradient-to-r from-purple-500 to-purple-600',
+      badgeClass: 'bg-purple-500',
+      priceClass: 'text-purple-600',
+      buttonClass: 'bg-purple-500 hover:bg-purple-600',
+      icon: '💎',
+      iconBg: 'bg-purple-100',
+      accentColor: 'purple',
+    },
+    {
+      // VIP - Orange Premium
+      containerClass: 'bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-200',
+      headerClass: 'bg-gradient-to-r from-orange-500 to-orange-600',
+      badgeClass: 'bg-orange-500',
+      priceClass: 'text-orange-600',
+      buttonClass: 'bg-orange-500 hover:bg-orange-600',
+      icon: '🔥',
+      iconBg: 'bg-orange-100',
+      accentColor: 'orange',
+    },
+  ];
+
+  return designs[index % designs.length];
+};
+
+export const PackagesEnhanced: React.FC = () => {
+  const navigate = useNavigate();
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [walletBalance, setWalletBalance] = useState<WalletBalance | null>(null);
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
+  const [purchaseAmount, setPurchaseAmount] = useState(100);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // New feature states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'price-asc' | 'price-desc' | 'roi-asc' | 'roi-desc' | 'duration'>('price-asc');
+  const [filterMinPrice, setFilterMinPrice] = useState<number>(0);
+  const [filterMaxPrice, setFilterMaxPrice] = useState<number>(100000);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [showFilters, setShowFilters] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    reset,
+  } = useForm<PurchaseFormData>({
+    resolver: zodResolver(purchaseSchema),
+    defaultValues: {
+      termsAccepted: false,
+    },
+  });
+
+  // Load packages and wallet balance
+  useEffect(() => {
+    loadPackages();
+    loadWalletBalance();
+  }, []);
+
+  // Real-time subscription to package changes from admin
+  useEffect(() => {
+    console.log('🔄 Setting up real-time subscription for packages...');
+
+    const subscription = supabase
+      .channel('packages-realtime-channel')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to ALL events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'packages',
+        },
+        (payload) => {
+          console.log('✨ Package change detected from admin:', payload);
+          setIsSyncing(true);
+
+          // Show event-specific toast messages
+          if (payload.eventType === 'INSERT') {
+            toast.success('New package added by admin! 🆕', { icon: '✨' });
+          } else if (payload.eventType === 'UPDATE') {
+            toast.success('Package updated by admin! 🔄', { icon: '✏️' });
+          } else if (payload.eventType === 'DELETE') {
+            toast.success('Package removed by admin! 🗑️', { icon: '➖' });
+          }
+
+          loadPackages(); // Reload packages instantly
+
+          setTimeout(() => setIsSyncing(false), 1500);
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Real-time subscription status:', status);
+      });
+
+    return () => {
+      console.log('🔌 Cleaning up real-time subscription');
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const loadPackages = async () => {
+    try {
+      setLoading(true);
+      console.log('📦 Loading packages from database...');
+
+      const { data, error } = await supabase
+        .from('packages')
+        .select('*')
+        .eq('status', 'active')
+        .order('sort_order', { ascending: true });
+
+      if (error) {
+        console.error('❌ Error loading packages:', error);
+        throw error;
+      }
+
+      console.log('✅ Packages loaded:', data?.length || 0);
+      setPackages(data || []);
+    } catch (error: any) {
+      console.error('Failed to load packages:', error);
+      toast.error('Failed to load packages');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadWalletBalance = async () => {
+    try {
+      const balance = await getWalletBalance();
+      setWalletBalance(balance);
+    } catch (error) {
+      console.error('Failed to load wallet balance:', error);
+    }
+  };
+
+  const handlePurchaseClick = (pkg: Package) => {
+    const minAmount = pkg.min_investment || pkg.price;
+
+    // Check wallet balance
+    if (walletBalance && walletBalance.available < minAmount) {
+      toast.error(
+        `Insufficient balance. You need at least $${minAmount.toLocaleString()} to purchase this package.`
+      );
+      return;
+    }
+
+    setSelectedPackage(pkg);
+    setPurchaseAmount(minAmount);
+    setValue('amount', minAmount);
+    setShowPurchaseModal(true);
+  };
+
+  const handleAmountChange = (value: number) => {
+    setPurchaseAmount(value);
+    setValue('amount', value);
+  };
+
+  const onPurchaseSubmit = async (data: PurchaseFormData) => {
+    if (!selectedPackage) return;
+
+    setIsSubmitting(true);
+
+    try {
+      await purchasePackage({
+        package_id: selectedPackage.id,
+        amount: purchaseAmount,
+        payment_password: data.paymentPassword,
+      });
+
+      toast.success('Package purchased successfully! 🎉');
+      setShowPurchaseModal(false);
+      reset();
+
+      // Refresh wallet balance
+      await loadWalletBalance();
+
+      // Navigate to active packages
+      setTimeout(() => {
+        navigate('/packages');
+      }, 1500);
+    } catch (error: any) {
+      console.error('Purchase error:', error);
+      toast.error(error.message || 'Purchase failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Calculate ROI estimates
+  const roiCalculations = useMemo(() => {
+    if (!selectedPackage) return null;
+
+    const dailyReturn = (purchaseAmount * selectedPackage.daily_return_percentage) / 100;
+    const totalDays = selectedPackage.duration_days;
+    const totalReturn = dailyReturn * totalDays;
+
+    return {
+      daily: dailyReturn,
+      monthly: dailyReturn * 30,
+      total: totalReturn,
+      profit: totalReturn,
+      roi: (totalReturn / purchaseAmount) * 100,
+    };
+  }, [purchaseAmount, selectedPackage]);
+
+  // Filter and sort packages
+  const filteredAndSortedPackages = useMemo(() => {
+    let filtered = [...packages];
+
+    // Search filter
+    if (searchQuery.trim()) {
+      filtered = filtered.filter((pkg) =>
+        pkg.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        pkg.description.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Price range filter
+    filtered = filtered.filter((pkg) => {
+      const price = pkg.min_investment || pkg.price;
+      return price >= filterMinPrice && price <= filterMaxPrice;
+    });
+
+    // Sort
+    filtered.sort((a, b) => {
+      const priceA = a.min_investment || a.price;
+      const priceB = b.min_investment || b.price;
+
+      switch (sortBy) {
+        case 'price-asc':
+          return priceA - priceB;
+        case 'price-desc':
+          return priceB - priceA;
+        case 'roi-asc':
+          return a.daily_return_percentage - b.daily_return_percentage;
+        case 'roi-desc':
+          return b.daily_return_percentage - a.daily_return_percentage;
+        case 'duration':
+          return a.duration_days - b.duration_days;
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  }, [packages, searchQuery, filterMinPrice, filterMaxPrice, sortBy]);
+
+  // Package statistics
+  const packageStats = useMemo(() => {
+    if (packages.length === 0) return null;
+
+    const totalPackages = packages.length;
+    const avgROI = packages.reduce((sum, pkg) => sum + pkg.daily_return_percentage, 0) / totalPackages;
+    const minInvestment = Math.min(...packages.map((pkg) => pkg.min_investment || pkg.price));
+    const maxInvestment = Math.max(...packages.map((pkg) => pkg.max_investment || pkg.min_investment || pkg.price));
+
+    return {
+      total: totalPackages,
+      avgROI: avgROI.toFixed(2),
+      minInvestment,
+      maxInvestment,
+    };
+  }, [packages]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-20 h-20 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-700 text-xl font-semibold">Loading amazing packages...</p>
+          <p className="text-gray-500 text-sm mt-2">Syncing with admin panel ⚡</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 px-6 py-2 bg-blue-100 border-2 border-blue-300 rounded-full mb-6 animate-pulse">
+            <Sparkles className="w-5 h-5 text-blue-600" />
+            <span className="text-blue-700 text-sm font-bold">Live Synced from Admin Panel</span>
+          </div>
+          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-4">
+            Choose Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">Investment Package</span>
+          </h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Select a package that matches your investment goals. All packages sync in real-time from admin panel!
+          </p>
+        </div>
+
+        {/* Wallet Balance Card */}
+        {walletBalance && (
+          <div className="mb-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-2xl p-6 text-white">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <p className="text-blue-100 text-sm mb-1 flex items-center gap-2">
+                  <DollarSign className="w-4 h-4" />
+                  Available Balance
+                </p>
+                <p className="text-4xl font-bold">
+                  ${walletBalance.available?.toFixed(2) || '0.00'}
+                </p>
+              </div>
+              <Button
+                onClick={() => navigate('/wallet')}
+                className="bg-white text-blue-600 hover:bg-gray-100 flex items-center gap-2 font-semibold"
+              >
+                <DollarSign className="w-5 h-5" />
+                Add Funds
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Package Statistics Dashboard */}
+        {packageStats && (
+          <div className="mb-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white rounded-xl shadow-lg p-5 border-2 border-blue-200 hover:shadow-xl transition-shadow">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <BarChart3 className="w-5 h-5 text-blue-600" />
+                </div>
+                <p className="text-gray-600 text-sm font-medium">Total Packages</p>
+              </div>
+              <p className="text-3xl font-bold text-gray-900">{packageStats.total}</p>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-5 border-2 border-green-200 hover:shadow-xl transition-shadow">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <TrendingUp className="w-5 h-5 text-green-600" />
+                </div>
+                <p className="text-gray-600 text-sm font-medium">Avg ROI</p>
+              </div>
+              <p className="text-3xl font-bold text-green-600">{packageStats.avgROI}%</p>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-5 border-2 border-purple-200 hover:shadow-xl transition-shadow">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <DollarSign className="w-5 h-5 text-purple-600" />
+                </div>
+                <p className="text-gray-600 text-sm font-medium">Min Entry</p>
+              </div>
+              <p className="text-3xl font-bold text-purple-600">${packageStats.minInvestment}</p>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-5 border-2 border-orange-200 hover:shadow-xl transition-shadow">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <Crown className="w-5 h-5 text-orange-600" />
+                </div>
+                <p className="text-gray-600 text-sm font-medium">Max Entry</p>
+              </div>
+              <p className="text-3xl font-bold text-orange-600">${packageStats.maxInvestment.toLocaleString()}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Search & Filter Controls */}
+        <div className="mb-8 space-y-4">
+          {/* Search Bar */}
+          <div className="flex flex-wrap gap-4 items-center">
+            <div className="flex-1 min-w-[300px]">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search packages by name or description..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 bg-white border-2 border-gray-300 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:border-blue-500 shadow-md"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* View Toggle */}
+            <div className="flex gap-2 bg-white rounded-xl shadow-md p-1 border-2 border-gray-200">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded-lg transition-colors ${
+                  viewMode === 'grid' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <LayoutGrid className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded-lg transition-colors ${
+                  viewMode === 'list' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <LayoutList className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Filter Toggle */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="px-4 py-3 bg-white border-2 border-gray-300 rounded-xl shadow-md hover:bg-gray-50 flex items-center gap-2 font-semibold text-gray-700"
+            >
+              <SlidersHorizontal className="w-5 h-5" />
+              Filters
+              {showFilters ? ' -' : ' +'}
+            </button>
+
+            {/* Sync Status */}
+            <div className={`px-4 py-3 rounded-xl shadow-md flex items-center gap-2 ${
+              isSyncing ? 'bg-yellow-100 border-2 border-yellow-300' : 'bg-green-100 border-2 border-green-300'
+            }`}>
+              <RefreshCw className={`w-4 h-4 ${isSyncing ? 'text-yellow-600 animate-spin' : 'text-green-600'}`} />
+              <span className={`text-sm font-medium ${isSyncing ? 'text-yellow-700' : 'text-green-700'}`}>
+                {isSyncing ? 'Syncing...' : 'Live'}
+              </span>
+            </div>
+          </div>
+
+          {/* Filter Panel */}
+          {showFilters && (
+            <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-gray-200 animate-fadeIn">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Sort By */}
+                <div>
+                  <label className="block text-gray-700 font-bold mb-2 flex items-center gap-2">
+                    <ArrowUpDown className="w-4 h-4" />
+                    Sort By
+                  </label>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="price-asc">Price: Low to High</option>
+                    <option value="price-desc">Price: High to Low</option>
+                    <option value="roi-desc">ROI: High to Low</option>
+                    <option value="roi-asc">ROI: Low to High</option>
+                    <option value="duration">Duration</option>
+                  </select>
+                </div>
+
+                {/* Price Range */}
+                <div>
+                  <label className="block text-gray-700 font-bold mb-2 flex items-center gap-2">
+                    <Filter className="w-4 h-4" />
+                    Price Range
+                  </label>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="number"
+                      placeholder="Min"
+                      value={filterMinPrice}
+                      onChange={(e) => setFilterMinPrice(Number(e.target.value))}
+                      className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    />
+                    <span className="text-gray-500">-</span>
+                    <input
+                      type="number"
+                      placeholder="Max"
+                      value={filterMaxPrice}
+                      onChange={(e) => setFilterMaxPrice(Number(e.target.value))}
+                      className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Reset Button */}
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setSortBy('price-asc');
+                  setFilterMinPrice(0);
+                  setFilterMaxPrice(100000);
+                }}
+                className="mt-4 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold text-gray-700 transition-colors"
+              >
+                Reset All Filters
+              </button>
+            </div>
+          )}
+
+          {/* Results Count */}
+          <div className="text-center">
+            <p className="text-gray-600 text-sm">
+              Showing <span className="font-bold text-blue-600">{filteredAndSortedPackages.length}</span> of{' '}
+              <span className="font-bold text-gray-800">{packages.length}</span> packages
+            </p>
+          </div>
+        </div>
+
+        {/* Package Cards Grid */}
+        {filteredAndSortedPackages.length === 0 ? (
+          <div className="bg-white rounded-3xl shadow-xl p-16 text-center">
+            <div className="text-8xl mb-6">
+              {packages.length === 0 ? '📦' : '🔍'}
+            </div>
+            <h3 className="text-3xl font-bold text-gray-800 mb-4">
+              {packages.length === 0 ? 'No Packages Available' : 'No Packages Found'}
+            </h3>
+            <p className="text-gray-600 text-lg mb-6">
+              {packages.length === 0
+                ? "Admin hasn't created any packages yet"
+                : 'Try adjusting your search or filters'}
+            </p>
+            {packages.length === 0 ? (
+              <p className="text-sm text-gray-500">Packages will appear here automatically when admin adds them</p>
+            ) : (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setSortBy('price-asc');
+                  setFilterMinPrice(0);
+                  setFilterMaxPrice(100000);
+                }}
+                className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold transition-colors"
+              >
+                Clear All Filters
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8' : 'space-y-6'}>
+            {filteredAndSortedPackages.map((pkg, index) => {
+              const design = getCardDesign(index, pkg.is_popular);
+              const hasBalance = walletBalance && walletBalance.available >= (pkg.min_investment || pkg.price);
+
+              return (
+                <div
+                  key={pkg.id}
+                  className={`
+                    relative rounded-3xl shadow-2xl overflow-hidden
+                    transform transition-all duration-300 hover:-translate-y-3 hover:shadow-3xl
+                    ${design.containerClass}
+                  `}
+                >
+                  {/* Popular Badge */}
+                  {pkg.is_popular && (
+                    <div className="absolute -top-4 -right-4 z-10">
+                      <div className="bg-yellow-400 text-gray-900 px-8 py-3 rounded-full font-bold text-sm shadow-2xl flex items-center gap-2 rotate-12 transform hover:rotate-0 transition-transform">
+                        <Crown className="w-5 h-5 fill-current animate-bounce" />
+                        MOST POPULAR
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Card Content */}
+                  <div className="p-8">
+                    {/* Icon & Title */}
+                    <div className="text-center mb-6">
+                      <div className={`inline-flex items-center justify-center w-24 h-24 ${design.iconBg} rounded-full mb-4 transform transition-transform hover:scale-110 hover:rotate-12`}>
+                        <span className="text-5xl">{design.icon}</span>
+                      </div>
+                      <h3 className="text-3xl font-bold text-gray-800 mb-2">{pkg.name}</h3>
+                      <p className="text-gray-600 text-sm leading-relaxed">{pkg.description}</p>
+                    </div>
+
+                    {/* Pricing */}
+                    <div className={`text-center mb-6 py-6 bg-white rounded-2xl shadow-inner border-2 border-${design.accentColor}-200`}>
+                      <div className={`text-5xl font-black ${design.priceClass} mb-2`}>
+                        ${(pkg.min_investment || pkg.price).toLocaleString()}
+                      </div>
+                      {pkg.max_investment && pkg.max_investment > pkg.min_investment && (
+                        <p className="text-gray-500 text-sm font-medium">
+                          Up to ${pkg.max_investment.toLocaleString()}
+                        </p>
+                      )}
+                      <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-green-100 rounded-full">
+                        <TrendingUp className="w-4 h-4 text-green-600" />
+                        <span className="text-green-700 font-bold text-sm">
+                          {pkg.daily_return_percentage}% Daily ROI
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Key Stats Grid */}
+                    <div className="grid grid-cols-2 gap-3 mb-6">
+                      <div className="bg-white rounded-xl p-4 text-center shadow-md border border-gray-200">
+                        <Clock className="w-5 h-5 text-gray-600 mx-auto mb-2" />
+                        <p className="text-2xl font-bold text-gray-800">{pkg.duration_days}</p>
+                        <p className="text-xs text-gray-500 font-medium">Days</p>
+                      </div>
+                      <div className="bg-white rounded-xl p-4 text-center shadow-md border border-gray-200">
+                        <Award className="w-5 h-5 text-gray-600 mx-auto mb-2" />
+                        <p className="text-2xl font-bold text-gray-800">{pkg.level_depth}</p>
+                        <p className="text-xs text-gray-500 font-medium">Levels</p>
+                      </div>
+                      <div className="bg-white rounded-xl p-4 text-center shadow-md border border-gray-200">
+                        <Users className="w-5 h-5 text-gray-600 mx-auto mb-2" />
+                        <p className="text-2xl font-bold text-gray-800">{pkg.binary_bonus_percentage}%</p>
+                        <p className="text-xs text-gray-500 font-medium">Binary</p>
+                      </div>
+                      <div className="bg-white rounded-xl p-4 text-center shadow-md border border-gray-200">
+                        <Target className="w-5 h-5 text-gray-600 mx-auto mb-2" />
+                        <p className="text-2xl font-bold text-gray-800">{pkg.max_return_percentage}%</p>
+                        <p className="text-xs text-gray-500 font-medium">Max ROI</p>
+                      </div>
+                    </div>
+
+                    {/* Features */}
+                    <div className="space-y-3 mb-8">
+                      <p className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+                        <Sparkles className="w-4 h-4" />
+                        Package Features
+                      </p>
+                      {pkg.features && pkg.features.length > 0 ? (
+                        pkg.features.slice(0, 5).map((feature, idx) => (
+                          <div key={idx} className="flex items-start gap-3 bg-white rounded-lg p-3 shadow-sm">
+                            <div className={`flex-shrink-0 w-5 h-5 ${design.badgeClass} rounded-full flex items-center justify-center mt-0.5`}>
+                              <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                            </div>
+                            <span className="text-sm text-gray-700 leading-relaxed">{feature}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <>
+                          <div className="flex items-start gap-3 bg-white rounded-lg p-3 shadow-sm">
+                            <div className={`flex-shrink-0 w-5 h-5 ${design.badgeClass} rounded-full flex items-center justify-center mt-0.5`}>
+                              <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                            </div>
+                            <span className="text-sm text-gray-700">Daily ROI payments</span>
+                          </div>
+                          <div className="flex items-start gap-3 bg-white rounded-lg p-3 shadow-sm">
+                            <div className={`flex-shrink-0 w-5 h-5 ${design.badgeClass} rounded-full flex items-center justify-center mt-0.5`}>
+                              <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                            </div>
+                            <span className="text-sm text-gray-700">Level income up to {pkg.level_depth} levels</span>
+                          </div>
+                          <div className="flex items-start gap-3 bg-white rounded-lg p-3 shadow-sm">
+                            <div className={`flex-shrink-0 w-5 h-5 ${design.badgeClass} rounded-full flex items-center justify-center mt-0.5`}>
+                              <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                            </div>
+                            <span className="text-sm text-gray-700">Binary matching bonus {pkg.binary_bonus_percentage}%</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Purchase Button */}
+                    <button
+                      onClick={() => handlePurchaseClick(pkg)}
+                      disabled={!hasBalance}
+                      className={`
+                        w-full py-4 rounded-xl font-bold text-lg text-white
+                        transition-all duration-300 flex items-center justify-center gap-3
+                        shadow-lg hover:shadow-2xl transform hover:scale-105
+                        ${hasBalance ? design.buttonClass : 'bg-gray-400 cursor-not-allowed'}
+                      `}
+                    >
+                      {hasBalance ? (
+                        <>
+                          <Rocket className="w-5 h-5" />
+                          Purchase Now
+                          <ArrowRight className="w-5 h-5" />
+                        </>
+                      ) : (
+                        <>
+                          <Shield className="w-5 h-5" />
+                          Insufficient Balance
+                        </>
+                      )}
+                    </button>
+
+                    {!hasBalance && (
+                      <p className="text-center text-xs text-gray-500 mt-3">
+                        Add funds to your wallet to purchase this package
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Real-time indicator */}
+        <div className="mt-12 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 border border-green-300 rounded-full">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-green-700 text-sm font-medium">
+              Live synced with admin panel
+            </span>
+          </div>
+        </div>
+
+        {/* Purchase Modal */}
+        {selectedPackage && (
+          <Modal
+            isOpen={showPurchaseModal}
+            onClose={() => setShowPurchaseModal(false)}
+            title={`Purchase ${selectedPackage.name}`}
+            maxWidth="2xl"
+          >
+            <form onSubmit={handleSubmit(onPurchaseSubmit)} className="space-y-6">
+              {/* Package Summary */}
+              <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 rounded-xl text-white">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-2xl font-bold">{selectedPackage.name}</h3>
+                  <div className="bg-white/20 px-4 py-2 rounded-full">
+                    <span className="text-sm font-bold">{selectedPackage.daily_return_percentage}% Daily</span>
+                  </div>
+                </div>
+                <p className="text-white/90">{selectedPackage.description}</p>
+              </div>
+
+              {/* Amount Selector */}
+              {selectedPackage.max_investment && selectedPackage.max_investment > selectedPackage.min_investment ? (
+                <div>
+                  <label className="block text-gray-800 mb-3 text-lg font-bold">
+                    Investment Amount: <span className="text-blue-600">${purchaseAmount.toLocaleString()}</span>
+                  </label>
+                  <input
+                    type="range"
+                    min={selectedPackage.min_investment}
+                    max={selectedPackage.max_investment}
+                    step={100}
+                    value={purchaseAmount}
+                    onChange={(e) => handleAmountChange(Number(e.target.value))}
+                    className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  />
+                  <div className="flex justify-between text-gray-600 text-sm mt-2">
+                    <span>Min: ${selectedPackage.min_investment.toLocaleString()}</span>
+                    <span>Max: ${selectedPackage.max_investment.toLocaleString()}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center p-6 bg-gray-100 rounded-xl">
+                  <p className="text-gray-600 mb-2">Fixed Investment Amount</p>
+                  <p className="text-4xl font-bold text-blue-600">
+                    ${(selectedPackage.min_investment || selectedPackage.price).toLocaleString()}
+                  </p>
+                </div>
+              )}
+
+              {/* ROI Calculator */}
+              {roiCalculations && (
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-xl space-y-4 border-2 border-green-200">
+                  <h4 className="text-gray-800 font-bold text-lg flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-green-600" />
+                    Earnings Projection
+                  </h4>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center p-4 bg-white rounded-lg shadow">
+                      <p className="text-gray-500 text-xs mb-1">Daily</p>
+                      <p className="text-green-600 font-bold text-xl">${roiCalculations.daily.toFixed(2)}</p>
+                    </div>
+                    <div className="text-center p-4 bg-white rounded-lg shadow">
+                      <p className="text-gray-500 text-xs mb-1">Monthly</p>
+                      <p className="text-green-600 font-bold text-xl">${roiCalculations.monthly.toFixed(2)}</p>
+                    </div>
+                    <div className="text-center p-4 bg-white rounded-lg shadow border-2 border-green-400">
+                      <p className="text-gray-500 text-xs mb-1">Total</p>
+                      <p className="text-green-600 font-bold text-xl">${roiCalculations.total.toFixed(2)}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center pt-4 border-t border-green-300">
+                    <div>
+                      <p className="text-gray-600 text-sm">Total Return</p>
+                      <p className="text-green-600 font-bold text-2xl">
+                        ${(purchaseAmount + roiCalculations.total).toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-gray-600 text-sm">ROI</p>
+                      <p className="text-blue-600 font-bold text-2xl">{roiCalculations.roi.toFixed(1)}%</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Wallet Info */}
+              {walletBalance && (
+                <div className="bg-blue-50 p-4 rounded-lg border-2 border-blue-200">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-gray-600 text-sm mb-1">Your Balance</p>
+                      <p className="text-2xl font-bold text-blue-600">
+                        ${walletBalance.available.toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-gray-600 text-sm mb-1">After Purchase</p>
+                      <p className="text-xl font-bold text-gray-800">
+                        ${(walletBalance.available - purchaseAmount).toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Password */}
+              <div>
+                <label className="block text-gray-800 mb-2 font-bold">
+                  Payment Password <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  {...register('paymentPassword')}
+                  className="w-full px-4 py-3 bg-white border-2 border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:border-blue-500"
+                  placeholder="Enter your account password"
+                />
+                {errors.paymentPassword && (
+                  <p className="text-red-500 text-sm mt-1">{errors.paymentPassword.message}</p>
+                )}
+              </div>
+
+              {/* Terms */}
+              <div>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    {...register('termsAccepted')}
+                    className="mt-1 w-5 h-5 text-blue-600 border-2 border-gray-300 rounded"
+                  />
+                  <span className="text-gray-700 text-sm">
+                    I agree to the terms and conditions, and understand that this investment is subject to the package duration and ROI policies.
+                  </span>
+                </label>
+                {errors.termsAccepted && (
+                  <p className="text-red-500 text-sm mt-1">{errors.termsAccepted.message}</p>
+                )}
+              </div>
+
+              {/* Buttons */}
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  onClick={() => setShowPurchaseModal(false)}
+                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800"
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Processing...' : `Confirm - $${purchaseAmount.toLocaleString()}`}
+                </Button>
+              </div>
+            </form>
+          </Modal>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default PackagesEnhanced;
