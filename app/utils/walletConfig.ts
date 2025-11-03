@@ -1,5 +1,5 @@
 import { CreateConnectorFn } from "wagmi";
-import { injected, walletConnect } from "wagmi/connectors";
+import { injected, walletConnect } from "@wagmi/connectors";
 import {
   Adapter,
   WalletError,

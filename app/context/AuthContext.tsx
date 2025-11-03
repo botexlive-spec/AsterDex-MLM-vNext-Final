@@ -47,8 +47,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setActualUser(user); // Store the actual admin user
           setIsImpersonating(true);
 
-          // Load the impersonated user's data
-          const impersonatedUser = await getImpersonatedUserData();
+          // Load the impersonated user's data with timeout
+          const impersonatedUser = await Promise.race([
+            getImpersonatedUserData(),
+            new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000)) // 5 second timeout
+          ]);
 
           if (impersonatedUser) {
             // Override the user with impersonated user data, but keep admin token
@@ -110,7 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const isAdmin = email.includes('admin');
       const mockUser: User = {
-        id: '1',
+        id: (email === 'admin@asterdex.com' ? 'e1973e19-ec82-4149-bd6e-1cb19336d502' : email === 'user@asterdex.com' ? '1a78f252-4059-4e10-afcf-238254359eb8' : crypto.randomUUID()),
         email,
         fullName: isAdmin ? 'Admin User' : 'John Doe',
         full_name: isAdmin ? 'Admin User' : 'John Doe',

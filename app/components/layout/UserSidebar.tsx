@@ -268,33 +268,39 @@ export const UserSidebar: React.FC<UserSidebarProps> = ({ className = '', isAdmi
                 <span className="text-xl">{item.icon}</span>
                 <span className="font-medium">{item.label}</span>
               </div>
-              <span
-                className={`transform transition-transform duration-300 ease-in-out ${
-                  isSubMenuOpen ? 'rotate-90' : 'rotate-0'
+              <svg
+                className={`w-4 h-4 transition-transform duration-300 ease-out ${
+                  isSubMenuOpen ? 'rotate-180' : 'rotate-0'
                 }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                ▶
-              </span>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+              </svg>
             </button>
             {/* Sub-menu items with smooth animation */}
             <div
               className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                isSubMenuOpen ? 'max-h-96 opacity-100 mt-1' : 'max-h-0 opacity-0'
+                isSubMenuOpen ? 'max-h-96 opacity-100 mt-2' : 'max-h-0 opacity-0'
               }`}
             >
-              <ul className="ml-4 space-y-1">
+              <ul className="ml-6 space-y-1 border-l-2 border-[#334155] pl-3">
                 {item.subItems?.map((subItem) => (
                   <li key={subItem.id}>
                     <Link
                       to={subItem.path || '#'}
                       onClick={closeMobileMenu}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all hover:bg-[#334155] min-h-[44px] ${
+                      className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-all hover:bg-[#334155] min-h-[44px] relative ${
                         isActive(subItem.path)
                           ? 'bg-[#334155] text-[#00C7D1]'
                           : 'text-[#cbd5e1]'
                       }`}
                     >
-                      <span className="text-lg">{subItem.icon}</span>
+                      {isActive(subItem.path) && (
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#00C7D1] rounded-r-full -ml-3" />
+                      )}
+                      <span className="text-base">{subItem.icon}</span>
                       <span className="font-medium text-sm">{subItem.label}</span>
                     </Link>
                   </li>
@@ -321,19 +327,27 @@ export const UserSidebar: React.FC<UserSidebarProps> = ({ className = '', isAdmi
 
   return (
     <>
-      {/* Mobile Menu Toggle Button - Increased touch target */}
+      {/* Mobile Menu Toggle Button - Improved Design */}
       <button
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="fixed top-4 left-4 z-50 lg:hidden bg-[#334155] p-4 rounded-lg shadow-lg hover:bg-[#475569] transition-colors min-w-[48px] min-h-[48px] flex items-center justify-center"
+        className={`fixed top-4 left-4 z-50 lg:hidden p-3 rounded-xl shadow-xl transition-all duration-300 min-w-[48px] min-h-[48px] flex items-center justify-center ${
+          isMobileMenuOpen
+            ? 'bg-[#00C7D1] rotate-90 scale-110'
+            : 'bg-gradient-to-br from-[#334155] to-[#475569] hover:scale-105'
+        }`}
+        style={{
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+        }}
         aria-label="Toggle menu"
       >
         {isMobileMenuOpen ? (
-          <svg className="w-7 h-7 text-[#f8fafc]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
           </svg>
         ) : (
-          <svg className="w-7 h-7 text-[#f8fafc]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         )}
       </button>
@@ -341,31 +355,50 @@ export const UserSidebar: React.FC<UserSidebarProps> = ({ className = '', isAdmi
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden animate-fadeIn"
+          className="fixed inset-0 z-40 lg:hidden transition-all duration-300"
           onClick={closeMobileMenu}
           style={{
-            animation: 'fadeIn 0.3s ease-in-out',
+            background: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
           }}
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-screen w-[280px] sm:w-64 bg-[#1e293b] shadow-xl z-40 transform transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-y-auto ${
-          isMobileMenuOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0 lg:opacity-100'
-        } lg:translate-x-0 ${className}`}
+        className={`fixed top-0 left-0 h-screen w-[280px] sm:w-64 shadow-2xl z-50 transform transition-all duration-300 ease-out overflow-y-auto ${
+          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        } ${className}`}
+        style={{
+          background: 'rgba(30, 41, 59, 0.98)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+        }}
       >
         <div className="flex flex-col h-full">
-          {/* Logo/Brand */}
+          {/* Logo/Brand with Close Button */}
           <div className="p-6 border-b border-[#334155]">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00C7D1] to-[#00e5f0] flex items-center justify-center">
-                <span className="text-white font-bold text-xl">F</span>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00C7D1] to-[#00e5f0] flex items-center justify-center shadow-lg">
+                  <span className="text-white font-bold text-xl">F</span>
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-[#f8fafc]">Finaster</h1>
+                  <p className="text-xs text-[#94a3b8]">MLM Platform</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-[#f8fafc]">Finaster</h1>
-                <p className="text-xs text-[#94a3b8]">MLM Platform</p>
-              </div>
+              {/* Close button for mobile */}
+              <button
+                onClick={closeMobileMenu}
+                className="lg:hidden p-2 rounded-lg hover:bg-[#334155] transition-colors"
+                aria-label="Close menu"
+              >
+                <svg className="w-6 h-6 text-[#94a3b8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
           </div>
 

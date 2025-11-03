@@ -10,8 +10,8 @@ export const UserLayout: React.FC = () => {
       <UserSidebar isAdmin={false} />
 
       {/* Main Content Area */}
-      <main className="flex-1 lg:ml-0">
-        <div className="p-6 lg:p-8">
+      <main className="flex-1 lg:ml-0 pb-16 md:pb-0">
+        <div className="container-padding py-4 sm:py-6 lg:py-8">
           <Breadcrumbs />
           <Outlet />
         </div>

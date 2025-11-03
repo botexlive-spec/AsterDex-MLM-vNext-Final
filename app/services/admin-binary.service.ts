@@ -56,7 +56,7 @@ export const getBinaryTree = async (userId: string): Promise<BinaryNode | null> 
     await requireAdmin();
 
 const { data, error } = await supabase
-      .from('binary_tree')
+      .from('binary_nodes')
       .select(`
         id,
         user_id,
@@ -97,7 +97,7 @@ const { data, error } = await supabase
 
     // Load children
     const { data: children } = await supabase
-      .from('binary_tree')
+      .from('binary_nodes')
       .select(`
         id,
         user_id,
@@ -143,7 +143,7 @@ export const getAllBinaryNodes = async (): Promise<BinaryNode[]> => {
     await requireAdmin();
 
 const { data, error } = await supabase
-      .from('binary_tree')
+      .from('binary_nodes')
       .select(`
         id,
         user_id,
@@ -275,7 +275,7 @@ export const manualBinaryPlacement = async (
 
 // Check if position is available
     const { data: existing } = await supabase
-      .from('binary_tree')
+      .from('binary_nodes')
       .select('id')
       .eq('parent_id', parentId)
       .eq('position', position)
@@ -287,7 +287,7 @@ export const manualBinaryPlacement = async (
 
     // Update user's binary tree entry
     const { error } = await supabase
-      .from('binary_tree')
+      .from('binary_nodes')
       .update({
         parent_id: parentId,
         position: position,
@@ -324,7 +324,7 @@ export const getBinaryReports = async (): Promise<BinaryReport[]> => {
     await requireAdmin();
 
 const { data, error } = await supabase
-      .from('binary_tree')
+      .from('binary_nodes')
       .select(`
         user_id,
         left_volume,

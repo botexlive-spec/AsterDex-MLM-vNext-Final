@@ -1,0 +1,122 @@
+{
+  "timestamp": "2025-11-03T05:43:45.659Z",
+  "passed": 9,
+  "failed": 2,
+  "warnings": 0,
+  "tests": [
+    {
+      "name": "User Count",
+      "passed": true,
+      "message": "21 users in database",
+      "data": {
+        "count": 21
+      }
+    },
+    {
+      "name": "Level Distribution",
+      "passed": true,
+      "message": "Found 7 levels",
+      "data": {
+        "levelCounts": {
+          "1": 1,
+          "2": 2,
+          "3": 3,
+          "4": 7,
+          "5": 5,
+          "6": 2,
+          "7": 1
+        },
+        "orphans": 0,
+        "totalUsers": 21
+      }
+    },
+    {
+      "name": "Binary Tree Structure",
+      "passed": true,
+      "message": "1 nodes validated",
+      "data": {
+        "totalNodes": 1,
+        "orphanNodes": 0,
+        "invalidPlacements": 0
+      }
+    },
+    {
+      "name": "Referral Codes",
+      "passed": true,
+      "message": "22 codes for 21 users",
+      "data": {
+        "userCount": 21,
+        "codeCount": 22,
+        "coverage": "104.76%"
+      }
+    },
+    {
+      "name": "Package Purchases",
+      "passed": false,
+      "message": "0 packages purchased",
+      "data": {
+        "userCount": 21,
+        "packageCount": 0,
+        "coverage": "0.00%"
+      }
+    },
+    {
+      "name": "Investment Data",
+      "passed": true,
+      "message": "21 users with investments",
+      "data": null
+    },
+    {
+      "name": "Robot Subscriptions",
+      "passed": false,
+      "message": "0 active subscriptions",
+      "data": {
+        "userCount": 21,
+        "robotCount": 0,
+        "coverage": "0.00%"
+      }
+    },
+    {
+      "name": "Team Counts",
+      "passed": true,
+      "message": "Verified 21 users",
+      "data": {
+        "totalUsers": 21,
+        "incorrectCounts": 0
+      }
+    },
+    {
+      "name": "KYC Status Distribution",
+      "passed": true,
+      "message": "Verified KYC statuses",
+      "data": {
+        "approved": 9,
+        "pending": 12
+      }
+    },
+    {
+      "name": "Email Uniqueness",
+      "passed": true,
+      "message": "0 duplicate emails found",
+      "data": {
+        "duplicates": 0
+      }
+    },
+    {
+      "name": "Referral Integrity",
+      "passed": true,
+      "message": "0 orphan referrals",
+      "data": {
+        "orphanReferrals": 0
+      }
+    }
+  ],
+  "summary": {
+    "totalUsers": 21,
+    "totalPackages": 0,
+    "totalReferrals": 20,
+    "totalBinaryNodes": 1,
+    "totalInvestment": 402740,
+    "successRate": 81.82
+  }
+}

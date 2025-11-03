@@ -3,6 +3,7 @@ import { Card, Button, Badge } from '../../components/ui/DesignSystem';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import { getTeamMembers } from '../../services/mlm.service';
+import { ResponsiveTable } from '../../components/ResponsiveTable';
 
 // Mock data for team members
 const mockTeamMembers = [
@@ -150,17 +151,25 @@ const TeamNew: React.FC = () => {
     const fetchTeamMembers = async () => {
       if (!user?.id) {
         console.log('⚠️ No user ID available');
+        setLoading(false);
         return;
       }
 
       console.log('👤 Current user:', user.email, 'ID:', user.id);
       setLoading(true);
       try {
+        // Call the service to get team members
         const members = await getTeamMembers(user.id);
-        console.log('📊 Team members received:', members);
-        setTeamMembers(members);
+        console.log('📊 Team members received:', members?.length || 0, 'members');
+
+        // Set team members or empty array
+        setTeamMembers(members || []);
+
+        if (!members || members.length === 0) {
+          console.log('ℹ️ No team members found for user');
+        }
       } catch (error: any) {
-        console.error('Error fetching team members:', error);
+        console.error('❌ Error fetching team members:', error);
         toast.error(error.message || 'Failed to load team members');
         setTeamMembers([]);
       } finally {
@@ -370,7 +379,7 @@ const TeamNew: React.FC = () => {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0f172a] p-4 md:p-8">
+      <div className="min-h-screen bg-[#0f172a] container-padding py-4 sm:py-6 lg:py-8">
         <div className="max-w-7xl mx-auto space-y-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
@@ -384,39 +393,12 @@ const TeamNew: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f172a] p-4 md:p-8">
+    <div className="min-h-screen bg-[#0f172a] container-padding py-4 sm:py-6 lg:py-8">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Page Header */}
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold text-[#f8fafc] mb-2">My Team</h1>
+          <h1 className="heading-1 mb-2">My Team</h1>
           <p className="text-[#94a3b8]">View and manage your team members across all levels</p>
-        </div>
-
-        {/* DEBUG BANNER - Shows current user being viewed */}
-        <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500/50 rounded-lg p-4">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🔍</span>
-            <div className="flex-1">
-              <h3 className="text-yellow-400 font-bold text-lg mb-1">DEBUG: Currently Viewing</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-                <div>
-                  <span className="text-gray-400">User:</span>
-                  <span className="ml-2 text-white font-mono">{user?.full_name || user?.email || 'Unknown'}</span>
-                </div>
-                <div>
-                  <span className="text-gray-400">Email:</span>
-                  <span className="ml-2 text-cyan-400 font-mono">{user?.email}</span>
-                </div>
-                <div>
-                  <span className="text-gray-400">User ID:</span>
-                  <span className="ml-2 text-green-400 font-mono text-xs">{user?.id}</span>
-                </div>
-              </div>
-              <div className="mt-2 text-xs text-yellow-300">
-                💡 If this user info doesn't change when impersonating different users, there's a bug!
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Statistics Cards */}
@@ -473,7 +455,7 @@ const TeamNew: React.FC = () => {
         {/* Level-wise Breakdown */}
         <Card>
           <div className="p-6">
-            <h2 className="text-2xl font-bold text-[#f8fafc] mb-6">Level-wise Breakdown</h2>
+            <h2 className="heading-2 mb-4 sm:mb-6">Level-wise Breakdown</h2>
             <div className="space-y-2">
               {levelData.map(level => {
                 const isExpanded = expandedLevels.includes(level.level);
@@ -563,11 +545,11 @@ const TeamNew: React.FC = () => {
         </Card>
 
         {/* View Mode Toggle */}
-        <div className="flex justify-end">
+        <div className="flex justify-center sm:justify-end">
           <div className="inline-flex rounded-lg border border-[#334155] overflow-hidden">
             <button
               onClick={() => setViewMode('table')}
-              className={`px-6 py-2 font-medium transition-colors ${
+              className={`px-4 sm:px-6 py-2.5 sm:py-2 text-sm sm:text-base font-medium transition-colors touch-target ${
                 viewMode === 'table'
                   ? 'bg-[#00C7D1] text-white'
                   : 'bg-[#1e293b] text-[#94a3b8] hover:bg-[#334155]'
@@ -577,7 +559,7 @@ const TeamNew: React.FC = () => {
             </button>
             <button
               onClick={() => setViewMode('tree')}
-              className={`px-6 py-2 font-medium transition-colors ${
+              className={`px-4 sm:px-6 py-2.5 sm:py-2 text-sm sm:text-base font-medium transition-colors touch-target ${
                 viewMode === 'tree'
                   ? 'bg-[#00C7D1] text-white'
                   : 'bg-[#1e293b] text-[#94a3b8] hover:bg-[#334155]'
@@ -592,18 +574,18 @@ const TeamNew: React.FC = () => {
           /* Team Members Table */
           <Card>
             <div className="p-6">
-              <h2 className="text-2xl font-bold text-[#f8fafc] mb-6">Team Members</h2>
+              <h2 className="heading-2 mb-4 sm:mb-6">Team Members</h2>
 
               {/* Filters and Search */}
               <div className="space-y-4 mb-6">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                   <div className="relative">
                     <input
                       type="text"
                       placeholder="Search by name or email..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full px-4 py-2 pr-10 bg-[#1e293b] border border-[#334155] rounded-lg text-[#f8fafc] focus:outline-none focus:border-[#00C7D1]"
+                      className="w-full px-4 py-3 sm:py-2 text-base sm:text-sm pr-10 bg-[#1e293b] border border-[#334155] rounded-lg text-[#f8fafc] focus:outline-none focus:border-[#00C7D1]"
                     />
                     {searchTerm && (
                       <button
@@ -699,74 +681,71 @@ const TeamNew: React.FC = () => {
                 )}
               </div>
 
-              {/* Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-[#334155]">
-                      <th className="text-left py-3 px-4 text-[#cbd5e1] font-semibold">Member</th>
-                      <th className="text-center py-3 px-4 text-[#cbd5e1] font-semibold">Level</th>
-                      <th className="text-left py-3 px-4 text-[#cbd5e1] font-semibold">Join Date</th>
-                      <th className="text-center py-3 px-4 text-[#cbd5e1] font-semibold">Status</th>
-                      <th className="text-right py-3 px-4 text-[#cbd5e1] font-semibold">Investment</th>
-                      <th className="text-right py-3 px-4 text-[#cbd5e1] font-semibold">Team Size</th>
-                      <th className="text-right py-3 px-4 text-[#cbd5e1] font-semibold">Volume</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredMembers.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className="text-center py-8 text-[#94a3b8]">
-                          No team members found
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredMembers.map((member) => (
-                        <tr
-                          key={member.id}
-                          className="border-b border-[#334155] hover:bg-[#1e293b] transition-colors"
-                        >
-                          <td className="py-4 px-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00C7D1] to-[#00e5f0] flex items-center justify-center text-white font-semibold shrink-0">
-                                {member.name.charAt(0)}
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-[#f8fafc] font-medium truncate">{member.name}</p>
-                                <p className="text-sm text-[#94a3b8] truncate">{member.email}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-4 px-4 text-center">
-                            <Badge variant="info">L{member.level}</Badge>
-                          </td>
-                          <td className="py-4 px-4 text-[#94a3b8]">
-                            {new Date(member.joinDate).toLocaleDateString('en-US', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                            })}
-                          </td>
-                          <td className="py-4 px-4 text-center">
-                            <Badge variant={getStatusBadgeVariant(member.status)}>
-                              {member.status.charAt(0).toUpperCase() + member.status.slice(1)}
-                            </Badge>
-                          </td>
-                          <td className="py-4 px-4 text-right text-[#f8fafc] font-semibold">
-                            ${member.totalInvestment.toLocaleString()}
-                          </td>
-                          <td className="py-4 px-4 text-right text-[#f8fafc] font-semibold">
-                            {member.teamSize}
-                          </td>
-                          <td className="py-4 px-4 text-right text-[#10b981] font-bold">
-                            ${member.volume.toLocaleString()}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              {/* Table - Responsive */}
+              <ResponsiveTable
+                columns={[
+                  {
+                    key: 'name',
+                    label: 'Member',
+                    mobileLabel: 'Name',
+                    render: (value, row) => (
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00C7D1] to-[#00e5f0] flex items-center justify-center text-white font-semibold shrink-0">
+                          {row.name.charAt(0)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[#f8fafc] font-medium truncate">{row.name}</p>
+                          <p className="text-sm text-[#94a3b8] truncate">{row.email}</p>
+                        </div>
+                      </div>
+                    )
+                  },
+                  {
+                    key: 'level',
+                    label: 'Level',
+                    render: (value) => (
+                      <Badge variant="info">L{value}</Badge>
+                    )
+                  },
+                  {
+                    key: 'joinDate',
+                    label: 'Join Date',
+                    mobileLabel: 'Joined',
+                    render: (value) => new Date(value).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    })
+                  },
+                  {
+                    key: 'status',
+                    label: 'Status',
+                    render: (value) => (
+                      <Badge variant={value === 'active' ? 'success' : value === 'pending' ? 'warning' : 'error'}>
+                        {value.charAt(0).toUpperCase() + value.slice(1)}
+                      </Badge>
+                    )
+                  },
+                  {
+                    key: 'totalInvestment',
+                    label: 'Investment',
+                    render: (value) => `$${value.toLocaleString()}`
+                  },
+                  {
+                    key: 'teamSize',
+                    label: 'Team Size',
+                    mobileLabel: 'Team',
+                  },
+                  {
+                    key: 'volume',
+                    label: 'Volume',
+                    render: (value) => `$${value.toLocaleString()}`
+                  }
+                ]}
+                data={filteredMembers}
+                keyField="id"
+                emptyMessage="No team members found"
+              />
 
               {/* Table Summary */}
               {filteredMembers.length > 0 && (
@@ -777,6 +756,7 @@ const TeamNew: React.FC = () => {
                   </div>
                 </div>
               )}
+
             </div>
           </Card>
         ) : (

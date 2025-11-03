@@ -488,7 +488,7 @@ const updateBinaryTreeVolumes = async (userId: string, amount: number): Promise<
   try {
     // Get user's position in tree
     const { data: treeData } = await supabase
-      .from('binary_tree')
+      .from('binary_nodes')
       .select('parent_id, position')
       .eq('user_id', userId)
       .single();
@@ -501,7 +501,7 @@ const updateBinaryTreeVolumes = async (userId: string, amount: number): Promise<
     // Update volumes up the tree
     while (currentParentId) {
       const { data: parentTree } = await supabase
-        .from('binary_tree')
+        .from('binary_nodes')
         .select('left_volume, right_volume, parent_id, position')
         .eq('user_id', currentParentId)
         .single();
@@ -514,7 +514,7 @@ const updateBinaryTreeVolumes = async (userId: string, amount: number): Promise<
         : { right_volume: parentTree.right_volume + amount };
 
       await supabase
-        .from('binary_tree')
+        .from('binary_nodes')
         .update(updateData)
         .eq('user_id', currentParentId);
 
@@ -551,7 +551,7 @@ const checkMatchingBonuses = async (userId: string): Promise<void> => {
 
     // Get user's binary tree data
     const { data: treeData } = await supabase
-      .from('binary_tree')
+      .from('binary_nodes')
       .select('left_volume, right_volume')
       .eq('user_id', userId)
       .single();
@@ -773,7 +773,7 @@ export const getBinaryTree = async (userId?: string, depth: number = 3) => {
       if (!userData) return null;
 
       const { data: treeData } = await supabase
-        .from('binary_tree')
+        .from('binary_nodes')
         .select('left_child_id, right_child_id, position, level')
         .eq('user_id', nodeUserId)
         .single();
@@ -949,7 +949,7 @@ export const findBinaryTreePlacement = async (sponsorId: string): Promise<{ pare
   try {
     // Get sponsor's binary tree node
     const { data: sponsorNode } = await supabase
-      .from('binary_tree')
+      .from('binary_nodes')
       .select('*')
       .eq('user_id', sponsorId)
       .maybeSingle();
@@ -989,7 +989,7 @@ export const findBinaryTreePlacement = async (sponsorId: string): Promise<{ pare
       if (!currentUserId) continue;
 
       const { data: currentNode } = await supabase
-        .from('binary_tree')
+        .from('binary_nodes')
         .select('*')
         .eq('user_id', currentUserId)
         .maybeSingle();
@@ -1039,7 +1039,7 @@ export const placeBinaryTree = async (userId: string, placement: { parentId: str
   try {
     // Create binary tree node
     await supabase
-      .from('binary_tree')
+      .from('binary_nodes')
       .insert({
         user_id: userId,
         parent_id: placement.position === 'root' ? null : placement.parentId,
@@ -1054,7 +1054,7 @@ export const placeBinaryTree = async (userId: string, placement: { parentId: str
       const updateField = placement.position === 'left' ? 'left_child_id' : 'right_child_id';
 
       await supabase
-        .from('binary_tree')
+        .from('binary_nodes')
         .update({ [updateField]: userId })
         .eq('user_id', placement.parentId);
 
@@ -1560,29 +1560,41 @@ export const getTeamMembers = async (userId?: string) => {
 
     console.log('🔍 Fetching team members for user:', targetUserId);
 
-    // Get all users in the team hierarchy (where sponsor path includes this user)
-    const { data: teamMembers, error } = await supabase
-      .from('users')
-      .select(`
-        id,
-        full_name,
-        email,
-        total_investment,
-        created_at,
-        level,
-        sponsor_id,
-        position,
-        is_active,
-        left_volume,
-        right_volume
-      `)
-      .eq('sponsor_id', targetUserId)
-      .order('created_at', { ascending: false });
+    // Recursively get all downline members
+    const getAllDownline = async (sponsorId: string): Promise<any[]> => {
+      // Get direct referrals
+      const { data: directs, error } = await supabase
+        .from('users')
+        .select(`
+          id,
+          full_name,
+          email,
+          total_investment,
+          created_at,
+          level,
+          sponsor_id,
+          position,
+          is_active,
+          left_volume,
+          right_volume
+        `)
+        .eq('sponsor_id', sponsorId);
 
-    if (error) {
-      console.error('❌ Error fetching team members:', error);
-      throw error;
-    }
+      if (error || !directs || directs.length === 0) {
+        return [];
+      }
+
+      // Recursively get downline for each direct
+      const allMembers = [...directs];
+      for (const direct of directs) {
+        const downline = await getAllDownline(direct.id);
+        allMembers.push(...downline);
+      }
+
+      return allMembers;
+    };
+
+    const teamMembers = await getAllDownline(targetUserId);
 
     console.log(`✅ Found ${teamMembers?.length || 0} team members`);
 

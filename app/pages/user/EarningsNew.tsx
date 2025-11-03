@@ -506,15 +506,17 @@ const EarningsNew: React.FC = () => {
               <div className="text-3xl font-bold text-white">
                 ${earningsOverview.availableWithdrawal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </div>
-              <Button
-                size="sm"
-                variant="secondary"
-                className="w-full mt-2"
+              <button
+                className={`px-6 py-3 rounded-lg font-medium w-auto mt-2 transition-colors ${
+                  earningsOverview.availableWithdrawal <= 0
+                    ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                    : 'bg-white text-green-600 hover:bg-gray-50'
+                }`}
                 onClick={handleWithdraw}
                 disabled={earningsOverview.availableWithdrawal <= 0}
               >
                 {earningsOverview.availableWithdrawal > 0 ? 'Withdraw Now' : 'No Funds Available'}
-              </Button>
+              </button>
             </div>
           </Card>
         </div>
