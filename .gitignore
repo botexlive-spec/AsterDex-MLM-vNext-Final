@@ -102,3 +102,21 @@ ecosystem.config.json
 # Other
 .vercel
 .netlify
+
+# Production environment files (IMPORTANT: Never commit these)
+.env.production
+.env.staging
+
+# Runtime config with actual values
+/public/config.js
+/public/config.local.js
+
+# Secrets and keys
+*.secret
+*.private
+*.pem
+*.p12
+*.pfx
+secrets/
+.secrets/
+keys/
