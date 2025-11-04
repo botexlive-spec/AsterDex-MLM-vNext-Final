@@ -39,7 +39,6 @@ const VaultsIndex = lazy(() => import('./pages/vaults/Index'));
 const SwapLayout = lazy(() => import('./pages/swap/Layout'));
 const SwapIndex = lazy(() => import('./pages/swap/Index'));
 const Login = lazy(() => import('./pages/auth/Login'));
-const SimpleLogin = lazy(() => import('./pages/auth/SimpleLogin'));
 const Register = lazy(() => import('./pages/auth/Register'));
 const UserDashboard = lazy(() => import('./pages/user/DashboardNew'));
 
@@ -164,7 +163,7 @@ const router = createBrowserRouter([
       },
       {
         path: 'login',
-        element: <SimpleLogin />,
+        element: <Navigate to="/auth/login" replace />,
       },
       {
         path: 'auth/login',

@@ -51,9 +51,9 @@
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.544.0",
     "qrcode.react": "^4.2.0",
-    "react": "^18.2.0",
+    "react": "18.3.1",
     "react-datepicker": "^8.8.0",
-    "react-dom": "^18.2.0",
+    "react-dom": "18.3.1",
     "react-helmet-async": "^2.0.5",
     "react-hook-form": "^7.65.0",
     "react-hot-toast": "^2.6.0",
@@ -85,15 +85,19 @@
     "pg": "^8.16.3",
     "postcss": "^8.5.1",
     "tailwindcss": "^3.4.4",
-    "tsx": "^4.19.4",
+    "tsx": "^4.20.6",
     "typescript": "5.8.3",
     "vite": "^7.1.9",
     "vite-plugin-cjs-interop": "^2.3.0",
     "vite-plugin-node-polyfills": "0.24.0",
     "vite-tsconfig-paths": "^5.1.4"
   },
+  "overrides": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
   "resolutions": {
-    "**/*/@amplitude/analytics-browser": "2.11.13",
-    "**/*/@reown/appkit": "1.7.8"
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
   }
 }

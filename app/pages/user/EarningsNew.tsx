@@ -1,8 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, Button, Badge } from '../../components/ui/DesignSystem';
 import { Helmet } from 'react-helmet-async';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import { getUserDashboard, getTransactionHistory } from '../../services/mlm.service';
+import { useAuth } from "../../context/AuthContext";
 
 interface EarningRecord {
   id: string;
@@ -24,6 +26,7 @@ interface LevelIncome {
 
 const EarningsNew: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   // State for filters and search
   const [searchTerm, setSearchTerm] = useState('');
@@ -37,228 +40,245 @@ const EarningsNew: React.FC = () => {
   const [expandedLevels, setExpandedLevels] = useState<Set<number>>(new Set());
   const itemsPerPage = 10;
 
-  // Mock data - Replace with actual API calls
-  const earningsOverview = {
-    totalAllTime: 128450.50,
-    thisMonth: 12850.00,
-    thisWeek: 3420.00,
-    today: 485.00,
-    availableWithdrawal: 8500.00
-  };
-
-  const earningsByType = [
+  // State for real data
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [earningsOverview, setEarningsOverview] = useState({
+    totalAllTime: 0,
+    thisMonth: 0,
+    thisWeek: 0,
+    today: 0,
+    availableWithdrawal: 0
+  });
+  const [allEarnings, setAllEarnings] = useState<EarningRecord[]>([]);
+  const [earningsByType, setEarningsByType] = useState([
     {
       type: 'direct',
       name: 'Direct Referral Income',
       color: 'bg-green-500',
-      totalEarned: 35000.00,
-      thisMonth: 4200.00,
-      count: 142
+      totalEarned: 0,
+      thisMonth: 0,
+      count: 0
     },
     {
       type: 'level',
       name: 'Level Income (Levels 1-30)',
       color: 'bg-blue-500',
-      totalEarned: 48500.00,
-      thisMonth: 5800.00,
-      count: 856
+      totalEarned: 0,
+      thisMonth: 0,
+      count: 0
     },
     {
       type: 'binary',
       name: 'Binary Matching Bonuses',
       color: 'bg-purple-500',
-      totalEarned: 28500.00,
-      thisMonth: 1850.00,
-      count: 64
+      totalEarned: 0,
+      thisMonth: 0,
+      count: 0
     },
     {
       type: 'roi',
       name: 'ROI Earnings',
       color: 'bg-yellow-500',
-      totalEarned: 8450.50,
-      thisMonth: 750.00,
-      count: 30
+      totalEarned: 0,
+      thisMonth: 0,
+      count: 0
     },
     {
       type: 'rank',
       name: 'Rank Rewards',
       color: 'bg-red-500',
-      totalEarned: 5000.00,
-      thisMonth: 0.00,
-      count: 2
+      totalEarned: 0,
+      thisMonth: 0,
+      count: 0
     },
     {
       type: 'booster',
       name: 'Booster Income',
       color: 'bg-indigo-500',
-      totalEarned: 3000.00,
-      thisMonth: 250.00,
-      count: 15
+      totalEarned: 0,
+      thisMonth: 0,
+      count: 0
     }
-  ];
+  ]);
+  const [levelIncomeData, setLevelIncomeData] = useState<LevelIncome[]>([]);
+  const [dailyEarnings, setDailyEarnings] = useState<{ date: string; amount: number }[]>([]);
+  const [monthlyEarnings, setMonthlyEarnings] = useState<{ month: string; amount: number }[]>([]);
 
-  // Mock earnings records
-  const allEarnings: EarningRecord[] = [
-    {
-      id: '1',
-      date: '2024-10-31',
-      type: 'direct',
-      description: 'Direct referral commission from new member',
-      amount: 100.00,
-      fromUser: 'John Doe (ID: 12345)',
-      status: 'completed'
-    },
-    {
-      id: '2',
-      date: '2024-10-31',
-      type: 'level',
-      description: 'Level 3 commission',
-      amount: 45.00,
-      fromUser: 'Jane Smith (ID: 12346)',
-      status: 'completed',
-      level: 3
-    },
-    {
-      id: '3',
-      date: '2024-10-30',
-      type: 'binary',
-      description: 'Binary matching bonus',
-      amount: 250.00,
-      status: 'completed'
-    },
-    {
-      id: '4',
-      date: '2024-10-30',
-      type: 'roi',
-      description: 'Daily ROI payout',
-      amount: 28.50,
-      status: 'completed'
-    },
-    {
-      id: '5',
-      date: '2024-10-29',
-      type: 'level',
-      description: 'Level 1 commission',
-      amount: 85.00,
-      fromUser: 'Bob Wilson (ID: 12347)',
-      status: 'completed',
-      level: 1
-    },
-    {
-      id: '6',
-      date: '2024-10-29',
-      type: 'direct',
-      description: 'Direct referral commission from new member',
-      amount: 100.00,
-      fromUser: 'Alice Brown (ID: 12348)',
-      status: 'processing'
-    },
-    {
-      id: '7',
-      date: '2024-10-28',
-      type: 'booster',
-      description: 'Booster package bonus',
-      amount: 50.00,
-      status: 'completed'
-    },
-    {
-      id: '8',
-      date: '2024-10-28',
-      type: 'level',
-      description: 'Level 5 commission',
-      amount: 15.00,
-      fromUser: 'Charlie Davis (ID: 12349)',
-      status: 'completed',
-      level: 5
-    },
-    {
-      id: '9',
-      date: '2024-10-27',
-      type: 'binary',
-      description: 'Binary matching bonus',
-      amount: 180.00,
-      status: 'completed'
-    },
-    {
-      id: '10',
-      date: '2024-10-27',
-      type: 'roi',
-      description: 'Daily ROI payout',
-      amount: 28.50,
-      status: 'completed'
-    },
-    {
-      id: '11',
-      date: '2024-10-26',
-      type: 'level',
-      description: 'Level 2 commission',
-      amount: 65.00,
-      fromUser: 'David Miller (ID: 12350)',
-      status: 'completed',
-      level: 2
-    },
-    {
-      id: '12',
-      date: '2024-10-25',
-      type: 'rank',
-      description: 'Silver Rank Achievement Bonus',
-      amount: 500.00,
-      status: 'completed'
-    }
-  ];
+  // Fetch real earnings data
+  useEffect(() => {
+    const fetchEarningsData = async () => {
+      if (!user?.id) {
+        console.log('⚠️ No user ID available');
+        return;
+      }
 
-  // Mock level income data (30 levels)
-  const levelIncomeData: LevelIncome[] = Array.from({ length: 30 }, (_, i) => {
-    const level = i + 1;
-    let commissionPercent = 0;
-    let count = 0;
-    let totalEarned = 0;
+      console.log('💰 Fetching earnings data for user:', user.email);
+      setLoading(true);
+      setError(null);
 
-    // Generate realistic data based on level
-    if (level <= 5) {
-      commissionPercent = 10 - (level - 1);
-      count = Math.floor(Math.random() * 20) + 10;
-      totalEarned = Math.random() * 5000 + 1000;
-    } else if (level <= 10) {
-      commissionPercent = 5;
-      count = Math.floor(Math.random() * 15) + 5;
-      totalEarned = Math.random() * 2000 + 500;
-    } else if (level <= 20) {
-      commissionPercent = 3;
-      count = Math.floor(Math.random() * 10) + 2;
-      totalEarned = Math.random() * 1000 + 200;
-    } else {
-      commissionPercent = 1;
-      count = Math.floor(Math.random() * 5);
-      totalEarned = Math.random() * 500;
-    }
+      try {
+        // Add 10-second timeout to prevent infinite loading
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Request timed out after 10 seconds')), 10000)
+        );
 
-    return {
-      level,
-      commissionPercent,
-      count,
-      totalEarned
+        // Fetch dashboard data and transaction history in parallel
+        const [dashboardData, transactions] = await Promise.race([
+          Promise.all([
+            getUserDashboard(user.id),
+            getTransactionHistory(1000, 0) // Get last 1000 transactions
+          ]),
+          timeoutPromise
+        ]) as any[];
+
+        console.log('✅ Dashboard data:', dashboardData);
+        console.log('✅ Transactions:', transactions?.length || 0);
+
+        // Map transaction types to our display types
+        const mapTransactionType = (txType: string): 'direct' | 'level' | 'binary' | 'roi' | 'rank' | 'booster' => {
+          if (txType === 'direct_commission') return 'direct';
+          if (txType === 'level_income') return 'level';
+          if (txType === 'matching_bonus' || txType === 'binary_bonus') return 'binary';
+          if (txType === 'roi_income') return 'roi';
+          if (txType === 'rank_reward') return 'rank';
+          if (txType === 'booster_income') return 'booster';
+          return 'roi'; // default
+        };
+
+        // Transform transactions to earnings records
+        const earningsRecords: EarningRecord[] = (transactions || []).map((tx: any) => ({
+          id: tx.id,
+          date: tx.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+          type: mapTransactionType(tx.transaction_type),
+          description: tx.description || tx.transaction_type.replace('_', ' '),
+          amount: parseFloat(tx.amount) || 0,
+          fromUser: tx.from_user_email || undefined,
+          status: tx.status || 'completed',
+          level: tx.level || undefined
+        }));
+
+        setAllEarnings(earningsRecords);
+
+        // Calculate earnings overview
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const startOfWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+        const todayEarnings = earningsRecords
+          .filter(e => new Date(e.date) >= startOfToday && e.status === 'completed')
+          .reduce((sum, e) => sum + e.amount, 0);
+
+        const weekEarnings = earningsRecords
+          .filter(e => new Date(e.date) >= startOfWeek && e.status === 'completed')
+          .reduce((sum, e) => sum + e.amount, 0);
+
+        const monthEarnings = earningsRecords
+          .filter(e => new Date(e.date) >= startOfMonth && e.status === 'completed')
+          .reduce((sum, e) => sum + e.amount, 0);
+
+        const totalEarnings = earningsRecords
+          .filter(e => e.status === 'completed')
+          .reduce((sum, e) => sum + e.amount, 0);
+
+        setEarningsOverview({
+          totalAllTime: totalEarnings,
+          thisMonth: monthEarnings,
+          thisWeek: weekEarnings,
+          today: todayEarnings,
+          availableWithdrawal: dashboardData.wallet_balance || 0
+        });
+
+        // Calculate earnings by type
+        const updatedEarningsByType = earningsByType.map(et => {
+          const typeTransactions = earningsRecords.filter(e => e.type === et.type && e.status === 'completed');
+          const monthTransactions = typeTransactions.filter(e => new Date(e.date) >= startOfMonth);
+
+          return {
+            ...et,
+            totalEarned: typeTransactions.reduce((sum, e) => sum + e.amount, 0),
+            thisMonth: monthTransactions.reduce((sum, e) => sum + e.amount, 0),
+            count: typeTransactions.length
+          };
+        });
+
+        setEarningsByType(updatedEarningsByType);
+
+        // Calculate level income data
+        const levelData: LevelIncome[] = Array.from({ length: 30 }, (_, i) => {
+          const level = i + 1;
+          const levelTransactions = earningsRecords.filter(
+            e => e.type === 'level' && e.level === level && e.status === 'completed'
+          );
+
+          return {
+            level,
+            commissionPercent: level <= 5 ? (10 - level + 1) : level <= 10 ? 5 : level <= 20 ? 3 : 1,
+            count: levelTransactions.length,
+            totalEarned: levelTransactions.reduce((sum, e) => sum + e.amount, 0)
+          };
+        });
+
+        setLevelIncomeData(levelData);
+
+        // Calculate daily earnings for last 30 days
+        const dailyData = Array.from({ length: 30 }, (_, i) => {
+          const date = new Date();
+          date.setDate(date.getDate() - (29 - i));
+          const dateStr = date.toISOString().split('T')[0];
+
+          const dayEarnings = earningsRecords
+            .filter(e => e.date === dateStr && e.status === 'completed')
+            .reduce((sum, e) => sum + e.amount, 0);
+
+          return {
+            date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            amount: dayEarnings
+          };
+        });
+
+        setDailyEarnings(dailyData);
+
+        // Calculate monthly earnings for last 12 months
+        const monthlyData = Array.from({ length: 12 }, (_, i) => {
+          const date = new Date();
+          date.setMonth(date.getMonth() - (11 - i));
+          const year = date.getFullYear();
+          const month = date.getMonth();
+
+          const monthStart = new Date(year, month, 1);
+          const monthEnd = new Date(year, month + 1, 0);
+
+          const monthEarningsTotal = earningsRecords
+            .filter(e => {
+              const eDate = new Date(e.date);
+              return eDate >= monthStart && eDate <= monthEnd && e.status === 'completed';
+            })
+            .reduce((sum, e) => sum + e.amount, 0);
+
+          return {
+            month: date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
+            amount: monthEarningsTotal
+          };
+        });
+
+        setMonthlyEarnings(monthlyData);
+
+        console.log('✅ Earnings data loaded successfully');
+
+      } catch (err: any) {
+        const errorMessage = err.message || 'Failed to load earnings data';
+        setError(errorMessage);
+        console.error('❌ Error loading earnings:', errorMessage);
+        toast.error(errorMessage);
+      } finally {
+        setLoading(false);
+      }
     };
-  });
 
-  // Generate mock chart data
-  const dailyEarnings = Array.from({ length: 30 }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() - (29 - i));
-    return {
-      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      amount: Math.random() * 500 + 100
-    };
-  });
-
-  const monthlyEarnings = Array.from({ length: 12 }, (_, i) => {
-    const date = new Date();
-    date.setMonth(date.getMonth() - (11 - i));
-    return {
-      month: date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
-      amount: Math.random() * 15000 + 5000
-    };
-  });
+    fetchEarningsData();
+  }, [user?.id]);
 
   const earningsDistribution = earningsByType.map(et => ({
     name: et.name,
@@ -454,6 +474,22 @@ const EarningsNew: React.FC = () => {
         <title>Earnings - Asterdex</title>
       </Helmet>
 
+      {loading ? (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+            <p className="text-gray-400">Loading earnings data...</p>
+          </div>
+        </div>
+      ) : error ? (
+        <div className="flex items-center justify-center min-h-screen">
+          <Card className="bg-red-900/20 border-red-500 p-8 max-w-md">
+            <h2 className="text-xl font-bold text-red-400 mb-2">Failed to Load Earnings</h2>
+            <p className="text-gray-300 mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()}>Retry</Button>
+          </Card>
+        </div>
+      ) : (
       <div className="space-y-6">
         {/* Celebratory Total Earnings Display */}
         <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 rounded-xl p-8 text-center shadow-2xl">
@@ -984,6 +1020,7 @@ const EarningsNew: React.FC = () => {
           </div>
         </Card>
       </div>
+      )}
     </>
   );
 };

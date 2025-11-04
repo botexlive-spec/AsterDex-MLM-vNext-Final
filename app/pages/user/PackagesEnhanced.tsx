@@ -208,24 +208,34 @@ export const PackagesEnhanced: React.FC = () => {
   const loadPackages = async () => {
     try {
       setLoading(true);
-      console.log('📦 Loading packages from database...');
+      console.log('📦 Loading packages from database with 10s timeout...');
 
-      const { data, error } = await supabase
+      // Add timeout to prevent infinite loading
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timed out after 10 seconds')), 10000)
+      );
+
+      const queryPromise = supabase
         .from('packages')
         .select('*')
         .eq('status', 'active')
         .order('sort_order', { ascending: true });
 
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
+
       if (error) {
         console.error('❌ Error loading packages:', error);
-        throw error;
+        toast.error(`Failed to load packages: ${error.message}`);
+        setPackages([]); // Show empty state instead of hanging
+        return;
       }
 
       console.log('✅ Packages loaded:', data?.length || 0);
       setPackages(data || []);
     } catch (error: any) {
       console.error('Failed to load packages:', error);
-      toast.error('Failed to load packages');
+      toast.error(error.message || 'Failed to load packages');
+      setPackages([]); // Show empty state instead of hanging
     } finally {
       setLoading(false);
     }

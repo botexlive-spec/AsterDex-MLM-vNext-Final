@@ -20,85 +20,6 @@ interface BinaryNode {
   position: 'left' | 'right' | 'root';
 }
 
-// Mock binary tree data
-const mockBinaryTree: BinaryNode = {
-  id: 'user001',
-  name: 'You',
-  email: 'you@example.com',
-  investment: 10000,
-  packageStatus: 'active',
-  leftVolume: 45000,
-  rightVolume: 38000,
-  joinDate: '2024-01-01',
-  position: 'root',
-  leftChild: {
-    id: 'user002',
-    name: 'John Doe',
-    email: 'john@example.com',
-    investment: 5000,
-    packageStatus: 'active',
-    leftVolume: 12000,
-    rightVolume: 8000,
-    joinDate: '2024-02-01',
-    position: 'left',
-    leftChild: {
-      id: 'user004',
-      name: 'Alice Smith',
-      email: 'alice@example.com',
-      investment: 3000,
-      packageStatus: 'active',
-      leftVolume: 3000,
-      rightVolume: 2000,
-      joinDate: '2024-03-15',
-      position: 'left',
-    },
-    rightChild: {
-      id: 'user005',
-      name: 'Bob Wilson',
-      email: 'bob@example.com',
-      investment: 2000,
-      packageStatus: 'inactive',
-      leftVolume: 0,
-      rightVolume: 0,
-      joinDate: '2024-03-20',
-      position: 'right',
-    },
-  },
-  rightChild: {
-    id: 'user003',
-    name: 'Jane Williams',
-    email: 'jane@example.com',
-    investment: 8000,
-    packageStatus: 'active',
-    leftVolume: 15000,
-    rightVolume: 10000,
-    joinDate: '2024-02-10',
-    position: 'right',
-    leftChild: {
-      id: 'user006',
-      name: 'Charlie Brown',
-      email: 'charlie@example.com',
-      investment: 4000,
-      packageStatus: 'new',
-      leftVolume: 0,
-      rightVolume: 0,
-      joinDate: '2024-10-28',
-      position: 'left',
-    },
-    rightChild: {
-      id: 'user007',
-      name: 'Diana Prince',
-      email: 'diana@example.com',
-      investment: 3000,
-      packageStatus: 'active',
-      leftVolume: 2000,
-      rightVolume: 1500,
-      joinDate: '2024-04-01',
-      position: 'right',
-    },
-  },
-};
-
 const GenealogyNew: React.FC = () => {
   const { user } = useAuth();
   const [binaryTree, setBinaryTree] = useState<BinaryNode | null>(null);
@@ -128,7 +49,14 @@ const GenealogyNew: React.FC = () => {
       console.log('🌳 Fetching binary tree for user:', user.email, 'ID:', user.id);
       setLoading(true);
       try {
-        const treeData = await getBinaryTree(user.id, maxLevel);
+        // Add 10-second timeout to prevent infinite loading
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Request timed out after 10 seconds')), 10000)
+        );
+
+        const treePromise = getBinaryTree(user.id, maxLevel);
+
+        const treeData = await Promise.race([treePromise, timeoutPromise]);
         console.log('✅ Binary tree data received:', treeData);
 
         // Transform the data to match the BinaryNode interface

@@ -1,6 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, Button, Badge } from '../../components/ui/DesignSystem';
 import { Helmet } from 'react-helmet-async';
+import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
+import { getTransactionHistory } from '../../services/mlm.service';
 
 interface Transaction {
   id: string;
@@ -37,156 +40,95 @@ const TransactionsNew: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
 
-  // Mock transaction data
-  const allTransactions: Transaction[] = [
-    {
-      id: 'TXN001234567',
-      date: '2024-10-31',
-      time: '14:30:45',
-      type: 'deposit',
-      description: 'Deposit via Bank Transfer',
-      amount: 500.00,
-      status: 'completed',
-      balanceBefore: 1000,
-      balanceAfter: 1500,
-      referenceId: 'BNK20241031143045',
-      paymentMethod: 'Bank Transfer',
-      notes: 'Processed successfully'
-    },
-    {
-      id: 'TXN001234566',
-      date: '2024-10-31',
-      time: '10:15:20',
-      type: 'commission',
-      description: 'Direct referral commission from John Doe',
-      amount: 100.00,
-      status: 'completed',
-      balanceBefore: 900,
-      balanceAfter: 1000
-    },
-    {
-      id: 'TXN001234565',
-      date: '2024-10-30',
-      time: '16:45:30',
-      type: 'withdraw',
-      description: 'Withdrawal to Bank Account',
-      amount: -250.00,
-      status: 'processing',
-      balanceBefore: 1150,
-      balanceAfter: 900,
-      referenceId: 'WD20241030164530',
-      paymentMethod: 'Bank Transfer',
-      notes: 'Processing withdrawal request'
-    },
-    {
-      id: 'TXN001234564',
-      date: '2024-10-30',
-      time: '09:20:15',
-      type: 'roi',
-      description: 'Daily ROI earnings',
-      amount: 28.50,
-      status: 'completed',
-      balanceBefore: 1121.50,
-      balanceAfter: 1150
-    },
-    {
-      id: 'TXN001234563',
-      date: '2024-10-29',
-      time: '18:30:00',
-      type: 'package',
-      description: 'Gold Package Purchase',
-      amount: -2500.00,
-      status: 'completed',
-      balanceBefore: 3621.50,
-      balanceAfter: 1121.50,
-      referenceId: 'PKG20241029183000'
-    },
-    {
-      id: 'TXN001234562',
-      date: '2024-10-29',
-      time: '14:15:45',
-      type: 'bonus',
-      description: 'Binary matching bonus',
-      amount: 250.00,
-      status: 'completed',
-      balanceBefore: 3371.50,
-      balanceAfter: 3621.50
-    },
-    {
-      id: 'TXN001234561',
-      date: '2024-10-28',
-      time: '11:30:20',
-      type: 'commission',
-      description: 'Level 3 commission',
-      amount: 45.00,
-      status: 'completed',
-      balanceBefore: 3326.50,
-      balanceAfter: 3371.50
-    },
-    {
-      id: 'TXN001234560',
-      date: '2024-10-28',
-      time: '08:45:10',
-      type: 'transfer',
-      description: 'Internal transfer to John Smith',
-      amount: -100.00,
-      status: 'completed',
-      balanceBefore: 3426.50,
-      balanceAfter: 3326.50,
-      referenceId: 'TRF20241028084510'
-    },
-    {
-      id: 'TXN001234559',
-      date: '2024-10-27',
-      time: '15:20:30',
-      type: 'deposit',
-      description: 'Deposit via Cryptocurrency',
-      amount: 1000.00,
-      status: 'completed',
-      balanceBefore: 2426.50,
-      balanceAfter: 3426.50,
-      referenceId: 'CRY20241027152030',
-      paymentMethod: 'USDT TRC20'
-    },
-    {
-      id: 'TXN001234558',
-      date: '2024-10-27',
-      time: '12:10:15',
-      type: 'withdraw',
-      description: 'Withdrawal to Crypto Wallet',
-      amount: -500.00,
-      status: 'failed',
-      balanceBefore: 2426.50,
-      balanceAfter: 2426.50,
-      referenceId: 'WD20241027121015',
-      paymentMethod: 'USDT TRC20',
-      notes: 'Invalid wallet address'
-    },
-    {
-      id: 'TXN001234557',
-      date: '2024-10-26',
-      time: '16:50:40',
-      type: 'roi',
-      description: 'Daily ROI earnings',
-      amount: 28.50,
-      status: 'completed',
-      balanceBefore: 2398,
-      balanceAfter: 2426.50
-    },
-    {
-      id: 'TXN001234556',
-      date: '2024-10-25',
-      time: '13:25:55',
-      type: 'refund',
-      description: 'Package purchase refund',
-      amount: 500.00,
-      status: 'completed',
-      balanceBefore: 1898,
-      balanceAfter: 2398,
-      referenceId: 'REF20241025132555'
-    }
-  ];
+  const { user } = useAuth();
+
+  // Load transaction history from API
+  useEffect(() => {
+    const loadTransactions = async () => {
+      if (!user?.id) {
+        console.log('⚠️ No user ID available');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        console.log('📊 Loading transaction history for user:', user.id);
+
+        // Fetch all transactions (limit 1000)
+        const txData = await getTransactionHistory(1000, 0, user.id);
+        console.log('✅ Loaded', txData.length, 'transactions');
+
+        // Map API response to Transaction interface
+        const mappedTransactions: Transaction[] = txData.map((tx: any) => {
+          const createdAt = new Date(tx.createdAt);
+          const type = mapTransactionType(tx.transactionType);
+
+          return {
+            id: tx.id,
+            date: createdAt.toISOString().split('T')[0],
+            time: createdAt.toTimeString().split(' ')[0],
+            type,
+            description: tx.description || getDefaultDescription(tx.transactionType),
+            amount: tx.amount,
+            status: tx.status || 'completed',
+            referenceId: tx.referenceId,
+          };
+        });
+
+        setAllTransactions(mappedTransactions);
+        toast.success(`Loaded ${mappedTransactions.length} transactions`);
+      } catch (error: any) {
+        console.error('❌ Error loading transactions:', error);
+        setError(error.message || 'Failed to load transactions');
+        toast.error('Failed to load transaction history');
+        setAllTransactions([]); // Set empty array on error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTransactions();
+  }, [user?.id]);
+
+  // Helper function to map transaction types from API to UI types
+  const mapTransactionType = (apiType: string): Transaction['type'] => {
+    const typeMap: Record<string, Transaction['type']> = {
+      'level_income': 'commission',
+      'matching_bonus': 'bonus',
+      'booster_income': 'bonus',
+      'rank_reward': 'bonus',
+      'roi_distribution': 'roi',
+      'package_purchase': 'package',
+      'deposit': 'deposit',
+      'withdrawal': 'withdraw',
+      'transfer': 'transfer',
+      'refund': 'refund',
+    };
+    return typeMap[apiType] || 'transfer';
+  };
+
+  // Helper function to get default description for transaction types
+  const getDefaultDescription = (apiType: string): string => {
+    const descriptions: Record<string, string> = {
+      'level_income': 'Level Commission Earnings',
+      'matching_bonus': 'Binary Matching Bonus',
+      'booster_income': 'Booster Income Bonus',
+      'rank_reward': 'Rank Achievement Reward',
+      'roi_distribution': 'Daily ROI Earnings',
+      'package_purchase': 'Package Purchase',
+      'deposit': 'Account Deposit',
+      'withdrawal': 'Withdrawal Request',
+      'transfer': 'Transfer Transaction',
+      'refund': 'Transaction Refund',
+    };
+    return descriptions[apiType] || 'Transaction';
+  };
 
   // Transaction type configuration
   const typeConfig: Record<string, { label: string; icon: string; color: string }> = {
@@ -416,8 +358,8 @@ const TransactionsNew: React.FC = () => {
             <div class="detail"><span class="label">Description:</span><span class="value">${transaction.description}</span></div>
             <div class="detail"><span class="label">Amount:</span><span class="value amount">${transaction.amount > 0 ? '+' : ''}$${transaction.amount.toFixed(2)}</span></div>
             <div class="detail"><span class="label">Status:</span><span class="value">${statusConfig[transaction.status].label}</span></div>
-            ${transaction.referenceId ? `<div class="detail"><span class="label">Reference ID:</span><span class="value">${transaction.referenceId}</span></div>` : ''}
-            ${transaction.paymentMethod ? `<div class="detail"><span class="label">Payment Method:</span><span class="value">${transaction.paymentMethod}</span></div>` : ''}
+            ${transaction.referenceId ? '<div class="detail"><span class="label">Reference ID:</span><span class="value">' + transaction.referenceId + '</span></div>' : ''}
+            ${transaction.paymentMethod ? '<div class="detail"><span class="label">Payment Method:</span><span class="value">' + transaction.paymentMethod + '</span></div>' : ''}
             <div class="footer">Generated on ${new Date().toLocaleString()} | Asterdex Platform</div>
             <script>window.print(); window.onafterprint = function() { window.close(); }</script>
           </body>
@@ -465,6 +407,27 @@ const TransactionsNew: React.FC = () => {
         <title>Transactions - Asterdex</title>
       </Helmet>
 
+      {loading ? (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[#00C7D1] mx-auto mb-4"></div>
+            <p className="text-gray-400">Loading transaction history...</p>
+          </div>
+        </div>
+      ) : error ? (
+        <div className="flex items-center justify-center min-h-screen">
+          <Card className="bg-red-900/20 border-red-700 max-w-md">
+            <div className="text-center p-6">
+              <div className="text-6xl mb-4">⚠️</div>
+              <h3 className="text-xl font-bold text-white mb-2">Failed to Load Transactions</h3>
+              <p className="text-gray-300 mb-4">{error}</p>
+              <Button onClick={() => window.location.reload()} className="bg-red-600 hover:bg-red-700">
+                Retry
+              </Button>
+            </div>
+          </Card>
+        </div>
+      ) : (
       <div className="space-y-6">
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -1091,6 +1054,7 @@ const TransactionsNew: React.FC = () => {
           </div>
         )}
       </div>
+      )}
     </>
   );
 };

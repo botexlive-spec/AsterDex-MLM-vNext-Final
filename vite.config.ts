@@ -44,6 +44,11 @@ export default defineConfig(() => {
 
   return {
     base: basePath,
+    server: {
+      port: 5173,
+      strictPort: true,
+      host: true,
+    },
     plugins: [
       react(),
       tsconfigPaths(),
@@ -57,6 +62,9 @@ export default defineConfig(() => {
     ],
     build: {
       outDir: "build/client",
+    },
+    resolve: {
+      dedupe: ["react", "react-dom", "react-router-dom"],
     },
     optimizeDeps: {
       include: ["react", "react-dom", "react-router-dom"],

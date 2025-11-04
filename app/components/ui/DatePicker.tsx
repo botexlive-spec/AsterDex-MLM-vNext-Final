@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 import ReactDatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+// import 'react-datepicker/dist/react-datepicker.css'; // Commented out - using custom theme styles
 
 interface DatePickerProps {
   selected: Date | null;

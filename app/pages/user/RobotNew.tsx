@@ -7,17 +7,11 @@ import toast from 'react-hot-toast';
 import { format, addMonths, differenceInDays } from 'date-fns';
 import { Button, Card, Badge } from '../../components/ui/DesignSystem';
 import { Modal } from '../../components/ui/Modal';
+import { useAuth } from '../../context/AuthContext';
+import { getUserRobotSubscription, purchaseRobotSubscription } from '../../services/mlm.service';
 
 // Subscription status type
 type SubscriptionStatus = 'active' | 'inactive' | 'expired';
-
-// Mock subscription data
-const mockSubscription = {
-  status: 'inactive' as SubscriptionStatus,
-  startDate: null as Date | null,
-  endDate: null as Date | null,
-  autoRenew: false,
-};
 
 // Benefits list
 const benefits = [
@@ -95,7 +89,19 @@ type PurchaseFormData = z.infer<typeof purchaseSchema>;
 
 export const RobotNew: React.FC = () => {
   const navigate = useNavigate();
-  const [subscription, setSubscription] = useState(mockSubscription);
+  const { user } = useAuth();
+  const [subscription, setSubscription] = useState<{
+    status: SubscriptionStatus;
+    startDate: Date | null;
+    endDate: Date | null;
+    autoRenew: boolean;
+  }>({
+    status: 'inactive',
+    startDate: null,
+    endDate: null,
+    autoRenew: false,
+  });
+  const [loading, setLoading] = useState(true);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -114,6 +120,68 @@ export const RobotNew: React.FC = () => {
   });
 
   const paymentMethod = watch('paymentMethod');
+
+  // Load user's robot subscription
+  useEffect(() => {
+    const loadSubscription = async () => {
+      if (!user?.id) {
+        console.log('⚠️ No user ID available for robot subscription');
+        return;
+      }
+
+      console.log('🤖 Fetching robot subscription for user:', user.email, 'ID:', user.id);
+      setLoading(true);
+
+      try {
+        // Add 10-second timeout
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Request timed out after 10 seconds')), 10000)
+        );
+
+        const subscriptionPromise = getUserRobotSubscription(user.id);
+
+        const subscriptionData = await Promise.race([subscriptionPromise, timeoutPromise]) as any;
+
+        console.log('✅ Robot subscription data received:', subscriptionData);
+
+        if (subscriptionData) {
+          const now = new Date();
+          const expiresAt = new Date(subscriptionData.expires_at);
+          const status: SubscriptionStatus = expiresAt > now ? 'active' : 'expired';
+
+          setSubscription({
+            status,
+            startDate: new Date(subscriptionData.purchased_at),
+            endDate: expiresAt,
+            autoRenew: subscriptionData.auto_renew,
+          });
+
+          toast.success('Robot subscription loaded');
+        } else {
+          console.log('ℹ️ No active robot subscription found');
+          setSubscription({
+            status: 'inactive',
+            startDate: null,
+            endDate: null,
+            autoRenew: false,
+          });
+        }
+      } catch (error: any) {
+        console.error('❌ Error fetching robot subscription:', error);
+        toast.error(error.message || 'Failed to load robot subscription');
+        setSubscription({
+          status: 'inactive',
+          startDate: null,
+          endDate: null,
+          autoRenew: false,
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSubscription();
+  }, [user?.id]);
 
   // Countdown timer effect - Set target end date (7 days from now)
   useEffect(() => {
@@ -141,20 +209,12 @@ export const RobotNew: React.FC = () => {
   }, []);
 
   const onPurchaseSubmit = async (data: PurchaseFormData) => {
-    const purchasePromise = new Promise((resolve, reject) => {
-      setTimeout(() => {
-        if (Math.random() > 0.1) {
-          resolve({ success: true });
-        } else {
-          reject(new Error('Purchase failed'));
-        }
-      }, 2000);
-    });
+    const purchasePromise = purchaseRobotSubscription();
 
     toast.promise(purchasePromise, {
       loading: 'Processing your purchase...',
       success: 'Robot activated successfully! 🎉',
-      error: 'Purchase failed. Please try again.',
+      error: (error) => error?.message || 'Purchase failed. Please try again.',
     });
 
     try {

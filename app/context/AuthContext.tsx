@@ -112,8 +112,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       const isAdmin = email.includes('admin');
+
+      // Map emails to real database UUIDs
+      let userId: string;
+      if (email === 'admin@asterdex.com' || email === 'admin@finaster.com') {
+        userId = 'e1973e19-ec82-4149-bd6e-1cb19336d502';
+      } else if (email === 'user@asterdex.com') {
+        userId = '1a78f252-4059-4e10-afcf-238254359eb8';
+      } else if (email === 'user@finaster.com') {
+        userId = '4a6ee960-ddf0-4daf-a029-e2e5a13d8f87'; // Real UUID from database
+      } else {
+        userId = crypto.randomUUID();
+      }
+
       const mockUser: User = {
-        id: (email === 'admin@asterdex.com' ? 'e1973e19-ec82-4149-bd6e-1cb19336d502' : email === 'user@asterdex.com' ? '1a78f252-4059-4e10-afcf-238254359eb8' : crypto.randomUUID()),
+        id: userId,
         email,
         fullName: isAdmin ? 'Admin User' : 'John Doe',
         full_name: isAdmin ? 'Admin User' : 'John Doe',

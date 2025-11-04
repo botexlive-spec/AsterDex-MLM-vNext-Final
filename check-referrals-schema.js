@@ -1,23 +1,26 @@
-import pg from 'pg';
-const { Client } = pg;
+import { createClient } from '@supabase/supabase-js';
 
-const connectionString = 'postgresql://postgres.dsgtyrwtlpnckvcozfbc:Dubai%401234%23@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres';
+const supabaseUrl = 'https://dsgtyrwtlpnckvcozfbc.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRzZ3R5cnd0bHBuY2t2Y296ZmJjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MTg0MTQwNywiZXhwIjoyMDc3NDE3NDA3fQ.O6HLc6lQHgFkYpb1scfBGa2iaWwfo3yXIxHlbGEyOxg';
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function checkReferralsSchema() {
-  const client = new Client({ connectionString });
-  await client.connect();
+  console.log('\n📋 Checking users with sponsors:');
+  const { data: users } = await supabase
+    .from('users')
+    .select('id, email, sponsor_id')
+    .not('sponsor_id', 'is', null)
+    .limit(5);
 
-  const res = await client.query(`
-    SELECT column_name, data_type, is_nullable
-    FROM information_schema.columns
-    WHERE table_name = 'referrals' AND table_schema = 'public'
-    ORDER BY ordinal_position
-  `);
-
-  console.log('\n📋 referrals table columns:\n');
-  res.rows.forEach(r => console.log(`  - ${r.column_name} (${r.data_type}) ${r.is_nullable === 'YES' ? 'NULL' : 'NOT NULL'}`));
-
-  await client.end();
+  if (users && users.length > 0) {
+    console.log(`   Found ${users.length} users with sponsors:`);
+    users.forEach(u => {
+      console.log(`   - ${u.email} → Sponsor: ${u.sponsor_id}`);
+    });
+  } else {
+    console.log('   No users with sponsors found');
+  }
 }
 
-checkReferralsSchema();
+checkReferralsSchema().catch(console.error);

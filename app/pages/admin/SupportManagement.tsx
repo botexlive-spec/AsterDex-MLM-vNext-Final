@@ -1,6 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import {
+  getSupportTickets,
+  getTicketMessages,
+  createTicketMessage,
+  updateTicketStatus,
+  updateTicketPriority,
+  assignTicket,
+  getCannedResponses,
+  saveCannedResponse,
+  deleteCannedResponse,
+  getChatSessions,
+  getChatMessages,
+  sendChatMessage,
+  updateChatStatus,
+} from '../../services/admin-support.service';
 
 // Enums
 type TicketStatus = 'open' | 'pending' | 'resolved' | 'closed';
@@ -73,241 +88,11 @@ interface ChatMessage {
   createdAt: Date;
 }
 
-// Mock Data
-const mockTickets: Ticket[] = [
-  {
-    id: 'TKT-001',
-    subject: 'Unable to withdraw funds',
-    category: 'withdrawal',
-    priority: 'high',
-    status: 'open',
-    userId: 'U001',
-    userName: 'John Doe',
-    userEmail: 'john.doe@example.com',
-    assignedTo: 'A001',
-    assignedToName: 'Admin Sarah',
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    updatedAt: new Date(Date.now() - 30 * 60 * 1000),
-    lastReplyAt: new Date(Date.now() - 30 * 60 * 1000),
-    messagesCount: 5,
-    isRead: false,
-  },
-  {
-    id: 'TKT-002',
-    subject: 'KYC verification taking too long',
-    category: 'kyc',
-    priority: 'medium',
-    status: 'pending',
-    userId: 'U002',
-    userName: 'Jane Smith',
-    userEmail: 'jane.smith@example.com',
-    assignedTo: 'A002',
-    assignedToName: 'Admin Mike',
-    createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000),
-    updatedAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
-    lastReplyAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
-    messagesCount: 3,
-    isRead: true,
-  },
-  {
-    id: 'TKT-003',
-    subject: 'Account balance discrepancy',
-    category: 'billing',
-    priority: 'urgent',
-    status: 'open',
-    userId: 'U003',
-    userName: 'Robert Johnson',
-    userEmail: 'robert.j@example.com',
-    createdAt: new Date(Date.now() - 45 * 60 * 1000),
-    updatedAt: new Date(Date.now() - 15 * 60 * 1000),
-    lastReplyAt: new Date(Date.now() - 15 * 60 * 1000),
-    messagesCount: 8,
-    isRead: false,
-  },
-  {
-    id: 'TKT-004',
-    subject: 'How to activate trading robot?',
-    category: 'general',
-    priority: 'low',
-    status: 'resolved',
-    userId: 'U004',
-    userName: 'Emily Davis',
-    userEmail: 'emily.davis@example.com',
-    assignedTo: 'A001',
-    assignedToName: 'Admin Sarah',
-    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
-    updatedAt: new Date(Date.now() - 20 * 60 * 60 * 1000),
-    lastReplyAt: new Date(Date.now() - 20 * 60 * 60 * 1000),
-    messagesCount: 2,
-    isRead: true,
-  },
-];
-
-const mockTicketMessages: TicketMessage[] = [
-  {
-    id: 'MSG-001',
-    ticketId: 'TKT-001',
-    senderId: 'U001',
-    senderName: 'John Doe',
-    senderRole: 'user',
-    message: 'I have been trying to withdraw my funds for the past 3 days but the transaction keeps failing. Please help!',
-    isInternal: false,
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-  },
-  {
-    id: 'MSG-002',
-    ticketId: 'TKT-001',
-    senderId: 'A001',
-    senderName: 'Admin Sarah',
-    senderRole: 'admin',
-    message: 'Hello John, thank you for reaching out. I can see your withdrawal request. Let me check your account details.',
-    isInternal: false,
-    createdAt: new Date(Date.now() - 1.5 * 60 * 60 * 1000),
-  },
-  {
-    id: 'MSG-003',
-    ticketId: 'TKT-001',
-    senderId: 'A001',
-    senderName: 'Admin Sarah',
-    senderRole: 'admin',
-    message: 'User has pending KYC verification. Need to resolve that first before processing withdrawal.',
-    isInternal: true,
-    createdAt: new Date(Date.now() - 1.4 * 60 * 60 * 1000),
-  },
-  {
-    id: 'MSG-004',
-    ticketId: 'TKT-001',
-    senderId: 'A001',
-    senderName: 'Admin Sarah',
-    senderRole: 'admin',
-    message: 'I noticed your KYC verification is still pending. Could you please complete the verification process first? Once that is approved, your withdrawal will be processed automatically.',
-    isInternal: false,
-    createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
-  },
-  {
-    id: 'MSG-005',
-    ticketId: 'TKT-001',
-    senderId: 'U001',
-    senderName: 'John Doe',
-    senderRole: 'user',
-    message: 'I already submitted my KYC documents 2 weeks ago. When will it be approved?',
-    isInternal: false,
-    createdAt: new Date(Date.now() - 30 * 60 * 1000),
-  },
-];
-
-const mockCannedResponses: CannedResponse[] = [
-  {
-    id: 'CR-001',
-    title: 'Welcome Message',
-    content: 'Hello {{USER_NAME}}, thank you for contacting support. How can I help you today?',
-    category: 'General',
-    shortcut: '/welcome',
-    usageCount: 245,
-    createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-  },
-  {
-    id: 'CR-002',
-    title: 'KYC Pending',
-    content: 'Your KYC verification is currently under review. Our team typically processes verification within 24-48 hours. You will receive an email notification once it is approved.',
-    category: 'KYC',
-    shortcut: '/kyc-pending',
-    usageCount: 189,
-    createdAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000),
-  },
-  {
-    id: 'CR-003',
-    title: 'Withdrawal Processing Time',
-    content: 'Withdrawal requests are typically processed within 24-48 hours after approval. Please ensure your KYC verification is complete and all withdrawal requirements are met.',
-    category: 'Withdrawal',
-    shortcut: '/withdrawal-time',
-    usageCount: 156,
-    createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
-  },
-  {
-    id: 'CR-004',
-    title: 'Account Verification Required',
-    content: 'For security reasons, we need to verify your account. Please provide a government-issued ID and a recent utility bill showing your address.',
-    category: 'Account',
-    shortcut: '/verify-account',
-    usageCount: 92,
-    createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
-  },
-];
-
-const mockChatSessions: ChatSession[] = [
-  {
-    id: 'CHAT-001',
-    userId: 'U005',
-    userName: 'Michael Brown',
-    userEmail: 'michael.b@example.com',
-    status: 'active',
-    assignedTo: 'A001',
-    assignedToName: 'Admin Sarah',
-    startedAt: new Date(Date.now() - 15 * 60 * 1000),
-    lastMessageAt: new Date(Date.now() - 2 * 60 * 1000),
-    messagesCount: 12,
-    waitingTime: 0,
-  },
-  {
-    id: 'CHAT-002',
-    userId: 'U006',
-    userName: 'Sarah Wilson',
-    userEmail: 'sarah.w@example.com',
-    status: 'waiting',
-    startedAt: new Date(Date.now() - 8 * 60 * 1000),
-    lastMessageAt: new Date(Date.now() - 8 * 60 * 1000),
-    messagesCount: 1,
-    waitingTime: 8,
-  },
-  {
-    id: 'CHAT-003',
-    userId: 'U007',
-    userName: 'David Martinez',
-    userEmail: 'david.m@example.com',
-    status: 'waiting',
-    startedAt: new Date(Date.now() - 5 * 60 * 1000),
-    lastMessageAt: new Date(Date.now() - 5 * 60 * 1000),
-    messagesCount: 1,
-    waitingTime: 5,
-  },
-];
-
-const mockChatMessages: ChatMessage[] = [
-  {
-    id: 'CMSG-001',
-    chatId: 'CHAT-001',
-    senderId: 'U005',
-    senderName: 'Michael Brown',
-    senderRole: 'user',
-    message: 'Hello, I need help with my account',
-    createdAt: new Date(Date.now() - 15 * 60 * 1000),
-  },
-  {
-    id: 'CMSG-002',
-    chatId: 'CHAT-001',
-    senderId: 'A001',
-    senderName: 'Admin Sarah',
-    senderRole: 'admin',
-    message: 'Hello Michael! I\'d be happy to help you. What seems to be the issue with your account?',
-    createdAt: new Date(Date.now() - 14 * 60 * 1000),
-  },
-  {
-    id: 'CMSG-003',
-    chatId: 'CHAT-001',
-    senderId: 'U005',
-    senderName: 'Michael Brown',
-    senderRole: 'user',
-    message: 'I can\'t seem to access my trading dashboard',
-    createdAt: new Date(Date.now() - 2 * 60 * 1000),
-  },
-];
-
 const SupportManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'tickets' | 'canned' | 'livechat'>('dashboard');
-  const [tickets, setTickets] = useState<Ticket[]>(mockTickets);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
-  const [ticketMessages, setTicketMessages] = useState<TicketMessage[]>(mockTicketMessages);
+  const [ticketMessages, setTicketMessages] = useState<TicketMessage[]>([]);
   const [replyMessage, setReplyMessage] = useState('');
   const [internalNote, setInternalNote] = useState('');
   const [selectedTicketIds, setSelectedTicketIds] = useState<string[]>([]);
@@ -319,19 +104,120 @@ const SupportManagement: React.FC = () => {
   const [assignedFilter, setAssignedFilter] = useState<string>('all');
 
   // Canned Responses
-  const [cannedResponses, setCannedResponses] = useState<CannedResponse[]>(mockCannedResponses);
+  const [cannedResponses, setCannedResponses] = useState<CannedResponse[]>([]);
   const [showCannedModal, setShowCannedModal] = useState(false);
   const [editingCanned, setEditingCanned] = useState<CannedResponse | null>(null);
   const [cannedCategoryFilter, setCannedCategoryFilter] = useState<string>('all');
 
   // Live Chat
-  const [chatSessions, setChatSessions] = useState<ChatSession[]>(mockChatSessions);
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [selectedChat, setSelectedChat] = useState<ChatSession | null>(null);
   const [chatMessage, setChatMessage] = useState('');
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(mockChatMessages);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
   // Split view
   const [isSplitView, setIsSplitView] = useState(true);
+
+  // Loading and error states
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load support data on mount
+  useEffect(() => {
+    const loadSupportData = async () => {
+      console.log('📊 Loading Support Management data...');
+      setLoading(true);
+      setError(null);
+
+      try {
+        // Add 10-second timeout
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Request timed out after 10 seconds')), 10000)
+        );
+
+        // Load all data in parallel
+        const [ticketsData, cannedData, chatSessionsData] = await Promise.race([
+          Promise.all([
+            getSupportTickets(),
+            getCannedResponses(),
+            getChatSessions(),
+          ]),
+          timeoutPromise
+        ]) as any;
+
+        console.log('✅ Support data loaded:', {
+          tickets: ticketsData.length,
+          cannedResponses: cannedData.length,
+          chatSessions: chatSessionsData.length,
+        });
+
+        setTickets(ticketsData || []);
+        setCannedResponses(cannedData || []);
+        setChatSessions(chatSessionsData || []);
+
+        toast.success('Support data loaded successfully');
+      } catch (error: any) {
+        console.error('❌ Error loading support data:', error);
+        setError(error.message || 'Failed to load support data');
+        toast.error(error.message || 'Failed to load support data');
+
+        // Set empty arrays on error
+        setTickets([]);
+        setCannedResponses([]);
+        setChatSessions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSupportData();
+  }, []);
+
+  // Load ticket messages when a ticket is selected
+  useEffect(() => {
+    const loadTicketMessages = async () => {
+      if (!selectedTicket) {
+        setTicketMessages([]);
+        return;
+      }
+
+      console.log('📨 Loading messages for ticket:', selectedTicket.id);
+
+      try {
+        const messages = await getTicketMessages(selectedTicket.id);
+        setTicketMessages(messages || []);
+      } catch (error: any) {
+        console.error('❌ Error loading ticket messages:', error);
+        toast.error('Failed to load ticket messages');
+        setTicketMessages([]);
+      }
+    };
+
+    loadTicketMessages();
+  }, [selectedTicket?.id]);
+
+  // Load chat messages when a chat is selected
+  useEffect(() => {
+    const loadChatMessages = async () => {
+      if (!selectedChat) {
+        setChatMessages([]);
+        return;
+      }
+
+      console.log('💬 Loading messages for chat:', selectedChat.id);
+
+      try {
+        const messages = await getChatMessages(selectedChat.id);
+        setChatMessages(messages || []);
+      } catch (error: any) {
+        console.error('❌ Error loading chat messages:', error);
+        toast.error('Failed to load chat messages');
+        setChatMessages([]);
+      }
+    };
+
+    loadChatMessages();
+  }, [selectedChat?.id]);
 
   // Calculate dashboard metrics
   const openTicketsCount = tickets.filter(t => t.status === 'open').length;
@@ -421,78 +307,83 @@ const SupportManagement: React.FC = () => {
   });
 
   // Handlers
-  const handleSendReply = () => {
+  const handleSendReply = async () => {
     if (!selectedTicket || !replyMessage.trim()) return;
 
-    const newMessage: TicketMessage = {
-      id: `MSG-${Date.now()}`,
-      ticketId: selectedTicket.id,
-      senderId: 'A001',
-      senderName: 'Admin Sarah',
-      senderRole: 'admin',
-      message: replyMessage,
-      isInternal: false,
-      createdAt: new Date(),
-    };
+    try {
+      const newMessage = await createTicketMessage(selectedTicket.id, replyMessage, false);
+      setTicketMessages([...ticketMessages, newMessage]);
+      setReplyMessage('');
+      toast.success('Reply sent successfully');
 
-    setTicketMessages([...ticketMessages, newMessage]);
-    setReplyMessage('');
-    toast.success('Reply sent successfully');
-
-    // Update ticket
-    setTickets(tickets.map(t =>
-      t.id === selectedTicket.id
-        ? { ...t, lastReplyAt: new Date(), messagesCount: t.messagesCount + 1, updatedAt: new Date() }
-        : t
-    ));
+      // Reload ticket data to update counts
+      const updatedTickets = await getSupportTickets();
+      setTickets(updatedTickets);
+    } catch (error: any) {
+      console.error('❌ Error sending reply:', error);
+      toast.error(error.message || 'Failed to send reply');
+    }
   };
 
-  const handleAddInternalNote = () => {
+  const handleAddInternalNote = async () => {
     if (!selectedTicket || !internalNote.trim()) return;
 
-    const newNote: TicketMessage = {
-      id: `NOTE-${Date.now()}`,
-      ticketId: selectedTicket.id,
-      senderId: 'A001',
-      senderName: 'Admin Sarah',
-      senderRole: 'admin',
-      message: internalNote,
-      isInternal: true,
-      createdAt: new Date(),
-    };
-
-    setTicketMessages([...ticketMessages, newNote]);
-    setInternalNote('');
-    toast.success('Internal note added');
-  };
-
-  const handleUpdateTicketStatus = (ticketId: string, status: TicketStatus) => {
-    setTickets(tickets.map(t =>
-      t.id === ticketId ? { ...t, status, updatedAt: new Date() } : t
-    ));
-    toast.success(`Ticket status updated to ${status}`);
-  };
-
-  const handleUpdateTicketPriority = (ticketId: string, priority: TicketPriority) => {
-    setTickets(tickets.map(t =>
-      t.id === ticketId ? { ...t, priority, updatedAt: new Date() } : t
-    ));
-    toast.success(`Ticket priority updated to ${priority}`);
-  };
-
-  const handleAssignTicket = (ticketId: string, adminId: string, adminName: string) => {
-    setTickets(tickets.map(t =>
-      t.id === ticketId ? { ...t, assignedTo: adminId, assignedToName: adminName, updatedAt: new Date() } : t
-    ));
-
-    // Update selected ticket if it's the one being assigned
-    if (selectedTicket && selectedTicket.id === ticketId) {
-      setSelectedTicket({ ...selectedTicket, assignedTo: adminId, assignedToName: adminName, updatedAt: new Date() });
+    try {
+      const newNote = await createTicketMessage(selectedTicket.id, internalNote, true);
+      setTicketMessages([...ticketMessages, newNote]);
+      setInternalNote('');
+      toast.success('Internal note added');
+    } catch (error: any) {
+      console.error('❌ Error adding internal note:', error);
+      toast.error(error.message || 'Failed to add internal note');
     }
+  };
 
-    toast.success(`Ticket ${ticketId} assigned to ${adminName}`, {
-      icon: '👤',
-    });
+  const handleUpdateTicketStatus = async (ticketId: string, status: TicketStatus) => {
+    try {
+      await updateTicketStatus(ticketId, status);
+      setTickets(tickets.map(t =>
+        t.id === ticketId ? { ...t, status, updatedAt: new Date() } : t
+      ));
+      toast.success(`Ticket status updated to ${status}`);
+    } catch (error: any) {
+      console.error('❌ Error updating ticket status:', error);
+      toast.error(error.message || 'Failed to update ticket status');
+    }
+  };
+
+  const handleUpdateTicketPriority = async (ticketId: string, priority: TicketPriority) => {
+    try {
+      await updateTicketPriority(ticketId, priority);
+      setTickets(tickets.map(t =>
+        t.id === ticketId ? { ...t, priority, updatedAt: new Date() } : t
+      ));
+      toast.success(`Ticket priority updated to ${priority}`);
+    } catch (error: any) {
+      console.error('❌ Error updating ticket priority:', error);
+      toast.error(error.message || 'Failed to update ticket priority');
+    }
+  };
+
+  const handleAssignTicket = async (ticketId: string, adminId: string, adminName: string) => {
+    try {
+      await assignTicket(ticketId, adminId);
+      setTickets(tickets.map(t =>
+        t.id === ticketId ? { ...t, assignedTo: adminId, assignedToName: adminName, updatedAt: new Date() } : t
+      ));
+
+      // Update selected ticket if it's the one being assigned
+      if (selectedTicket && selectedTicket.id === ticketId) {
+        setSelectedTicket({ ...selectedTicket, assignedTo: adminId, assignedToName: adminName, updatedAt: new Date() });
+      }
+
+      toast.success(`Ticket ${ticketId} assigned to ${adminName}`, {
+        icon: '👤',
+      });
+    } catch (error: any) {
+      console.error('❌ Error assigning ticket:', error);
+      toast.error(error.message || 'Failed to assign ticket');
+    }
   };
 
   const handleBulkAction = (action: 'close' | 'assign' | 'priority', value?: string) => {

@@ -24,10 +24,20 @@ export const TeamReport: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getTeamReport();
+
+      // Add 10-second timeout to prevent infinite loading
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timed out after 10 seconds')), 10000)
+      );
+
+      const dataPromise = getTeamReport();
+
+      const data = await Promise.race([dataPromise, timeoutPromise]) as TeamReportData;
       setReport(data);
     } catch (err: any) {
-      setError(err.message || 'Failed to load team report');
+      const errorMessage = err.message || 'Failed to load team report';
+      setError(errorMessage);
+      console.error('❌ Error loading team report:', errorMessage);
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Button, Badge } from '../../components/ui/DesignSystem';
 import { Helmet } from 'react-helmet-async';
+import toast from 'react-hot-toast';
+import { getAllRankRewards, getUserRankAchievements, calculateRankEligibility } from '../../services/admin-rank.service';
+import { getUserDashboard } from '../../services/mlm.service';
+import { useAuth } from "../../context/AuthContext";
 
 interface RankRequirement {
   personalInvestment: number;
@@ -30,10 +34,22 @@ interface RankAchievement {
 }
 
 const RanksNew: React.FC = () => {
+  const { user } = useAuth();
   const [selectedRankForDetails, setSelectedRankForDetails] = useState<Rank | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [allRanks, setAllRanks] = useState<Rank[]>([]);
+  const [currentRank, setCurrentRank] = useState<Rank | null>(null);
+  const [currentProgress, setCurrentProgress] = useState({
+    personalInvestment: 0,
+    teamVolume: 0,
+    directReferrals: 0,
+    activeTeamMembers: 0
+  });
+  const [achievementHistory, setAchievementHistory] = useState<RankAchievement[]>([]);
 
-  // Define all 10 ranks
-  const allRanks: Rank[] = [
+  // Static UI configuration for ranks (icons, colors, gradients, benefits text)
+  const rankUIConfig = [
     {
       id: 1,
       name: 'Starter',
@@ -206,45 +222,118 @@ const RanksNew: React.FC = () => {
     }
   ];
 
-  // Current user status (mock data)
-  const currentRank = allRanks[2]; // Silver rank
-  const currentProgress = {
-    personalInvestment: 1800,
-    teamVolume: 8500,
-    directReferrals: 6,
-    activeTeamMembers: 35
-  };
+  // Load real rank data from database
+  useEffect(() => {
+    const loadRankData = async () => {
+      if (!user?.id) {
+        console.log('⚠️ No user ID available for rank data');
+        return;
+      }
 
-  const nextRank = allRanks[3]; // Gold rank
+      console.log('📊 Fetching rank data for user:', user.email, 'ID:', user.id);
+      setLoading(true);
+      setError(null);
 
-  // Achievement history
-  const achievementHistory: RankAchievement[] = [
-    {
-      rankId: 1,
-      rankName: 'Starter',
-      achievedDate: '2024-08-15',
-      rewardClaimed: 0
-    },
-    {
-      rankId: 2,
-      rankName: 'Bronze',
-      achievedDate: '2024-09-20',
-      rewardClaimed: 100
-    },
-    {
-      rankId: 3,
-      rankName: 'Silver',
-      achievedDate: '2024-10-10',
-      rewardClaimed: 500
-    }
-  ];
+      try {
+        // Add 10-second timeout
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Request timed out after 10 seconds')), 10000)
+        );
+
+        // Fetch rank eligibility (includes current rank, progress, all ranks)
+        const eligibilityPromise = calculateRankEligibility(user.id);
+        const achievementsPromise = getUserRankAchievements(user.id);
+        const dashboardPromise = getUserDashboard(user.id);
+
+        const [eligibilityData, achievementsData, dashboardData] = await Promise.race([
+          Promise.all([eligibilityPromise, achievementsPromise, dashboardPromise]),
+          timeoutPromise
+        ]) as any;
+
+        console.log('✅ Rank eligibility data received:', eligibilityData);
+        console.log('✅ Achievements data received:', achievementsData);
+        console.log('✅ Dashboard data received:', dashboardData);
+
+        // Merge database ranks with UI config
+        const mergedRanks = eligibilityData.eligibleRanks.map((rankElig: any, index: number) => {
+          const uiConfig = rankUIConfig[index] || rankUIConfig[0];
+          return {
+            id: rankElig.rank.rank_order,
+            name: rankElig.rank.rank_name,
+            icon: uiConfig.icon,
+            color: uiConfig.color,
+            gradientFrom: uiConfig.gradientFrom,
+            gradientTo: uiConfig.gradientTo,
+            requirements: {
+              personalInvestment: rankElig.rank.min_personal_sales,
+              teamVolume: rankElig.rank.min_team_volume,
+              directReferrals: rankElig.rank.min_direct_referrals,
+              activeTeamMembers: rankElig.rank.min_active_directs
+            },
+            rewardAmount: rankElig.rank.reward_amount,
+            benefits: uiConfig.benefits || [],
+            unlocked: rankElig.qualified
+          };
+        });
+
+        setAllRanks(mergedRanks);
+
+        // Set current rank
+        const currentRankData = mergedRanks.find((r: Rank) =>
+          eligibilityData.currentRank && r.name === eligibilityData.currentRank
+        );
+        setCurrentRank(currentRankData || mergedRanks[0]);
+
+        // Set current progress from dashboard
+        setCurrentProgress({
+          personalInvestment: dashboardData.totalInvestment || 0,
+          teamVolume: dashboardData.teamVolume || 0,
+          directReferrals: dashboardData.directReferrals || 0,
+          activeTeamMembers: dashboardData.activeTeamMembers || 0
+        });
+
+        // Transform achievement history
+        const transformedAchievements = achievementsData.map((achievement: any) => ({
+          rankId: 0, // We don't have rank ID in the response
+          rankName: achievement.rank_name,
+          achievedDate: new Date(achievement.created_at).toISOString().split('T')[0],
+          rewardClaimed: achievement.reward_amount
+        }));
+        setAchievementHistory(transformedAchievements);
+
+        toast.success('Rank data loaded');
+      } catch (error: any) {
+        console.error('❌ Error fetching rank data:', error);
+        setError(error.message || 'Failed to load rank data');
+        toast.error(error.message || 'Failed to load rank data');
+
+        // Fall back to default values
+        setAllRanks(rankUIConfig);
+        setCurrentRank(rankUIConfig[0]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadRankData();
+  }, [user?.id]);
+
+  // Calculate next rank (one level above current rank)
+  const nextRank = currentRank && allRanks.length > 0
+    ? allRanks.find(r => r.id === currentRank.id + 1) || allRanks[allRanks.length - 1]
+    : allRanks[0];
 
   // Calculate progress percentages
-  const progressPercentages = {
+  const progressPercentages = nextRank ? {
     personalInvestment: (currentProgress.personalInvestment / nextRank.requirements.personalInvestment) * 100,
     teamVolume: (currentProgress.teamVolume / nextRank.requirements.teamVolume) * 100,
     directReferrals: (currentProgress.directReferrals / nextRank.requirements.directReferrals) * 100,
     activeTeamMembers: (currentProgress.activeTeamMembers / nextRank.requirements.activeTeamMembers) * 100
+  } : {
+    personalInvestment: 0,
+    teamVolume: 0,
+    directReferrals: 0,
+    activeTeamMembers: 0
   };
 
   const overallProgress = Object.values(progressPercentages).reduce((a, b) => a + b, 0) / 4;

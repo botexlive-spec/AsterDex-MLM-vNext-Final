@@ -162,8 +162,39 @@ const TeamNew: React.FC = () => {
         const members = await getTeamMembers(user.id);
         console.log('📊 Team members received:', members?.length || 0, 'members');
 
-        // Set team members or empty array
-        setTeamMembers(members || []);
+        // Map API data to component format (API returns full_name, component expects name)
+        // Create user ID to index mapping first
+        const idToIndex = new Map();
+        members.forEach((member: any, index: number) => {
+          idToIndex.set(member.id, index + 1);
+        });
+
+        const mappedMembers = (members || []).map((member: any, index: number) => {
+          // Find parent index based on sponsor_id
+          let parentId = null;
+          if (member.sponsor_id && member.sponsor_id !== user?.id) {
+            parentId = idToIndex.get(member.sponsor_id) || null;
+          }
+
+          return {
+            id: index + 1,
+            name: member.full_name || 'Unknown User',
+            email: member.email || '',
+            level: member.level || 1,
+            joinDate: member.created_at || new Date().toISOString(),
+            status: member.is_active ? 'active' : 'inactive',
+            totalInvestment: parseFloat(member.total_investment) || 0,
+            teamSize: member.teamSize || member.team_count || 0,
+            volume: (parseFloat(member.left_volume) || 0) + (parseFloat(member.right_volume) || 0),
+            directReferrals: member.directReferrals || member.direct_count || 0,
+            leftLeg: parseFloat(member.left_volume) || 0,
+            rightLeg: parseFloat(member.right_volume) || 0,
+            parentId: parentId,
+            investment: parseFloat(member.total_investment) || 0
+          };
+        });
+
+        setTeamMembers(mappedMembers);
 
         if (!members || members.length === 0) {
           console.log('ℹ️ No team members found for user');
@@ -184,7 +215,7 @@ const TeamNew: React.FC = () => {
   const stats = useMemo(() => {
     const totalSize = teamMembers.length;
     const activeMembers = teamMembers.filter(m => m.status === 'active').length;
-    const totalVolume = teamMembers.reduce((sum, m) => sum + m.volume, 0);
+    const totalVolume = teamMembers.reduce((sum, m) => sum + m.totalInvestment, 0); // Sum of all team investments
     const totalEarnings = teamMembers.reduce((sum, m) => sum + m.totalInvestment * 0.05, 0); // 5% commission estimate
 
     return {
@@ -215,8 +246,8 @@ const TeamNew: React.FC = () => {
     // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(m =>
-        m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        m.email.toLowerCase().includes(searchTerm.toLowerCase())
+        (m.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (m.email || '').toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -331,7 +362,7 @@ const TeamNew: React.FC = () => {
 
           {/* Avatar */}
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00C7D1] to-[#00e5f0] flex items-center justify-center text-white font-semibold shrink-0">
-            {node.name.charAt(0)}
+            {node.name?.charAt(0) || '?'}
           </div>
 
           {/* Info */}
@@ -691,7 +722,7 @@ const TeamNew: React.FC = () => {
                     render: (value, row) => (
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00C7D1] to-[#00e5f0] flex items-center justify-center text-white font-semibold shrink-0">
-                          {row.name.charAt(0)}
+                          {row.name?.charAt(0) || '?'}
                         </div>
                         <div className="min-w-0">
                           <p className="text-[#f8fafc] font-medium truncate">{row.name}</p>
@@ -722,7 +753,7 @@ const TeamNew: React.FC = () => {
                     label: 'Status',
                     render: (value) => (
                       <Badge variant={value === 'active' ? 'success' : value === 'pending' ? 'warning' : 'error'}>
-                        {value.charAt(0).toUpperCase() + value.slice(1)}
+                        {(value?.charAt(0).toUpperCase() || '') + (value?.slice(1) || '')}
                       </Badge>
                     )
                   },

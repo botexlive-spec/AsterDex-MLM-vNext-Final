@@ -7,74 +7,11 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useAuth } from '../../context/AuthContext';
 import { getReferrals } from '../../services/mlm.service';
 
-// Mock data for referrals
-const mockReferrals = [
-  {
-    id: 1,
-    name: 'John Doe',
-    email: 'john@example.com',
-    joinDate: '2024-01-15',
-    status: 'active',
-    investment: 5000,
-    earnings: 250,
-    level: 1,
-  },
-  {
-    id: 2,
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    joinDate: '2024-02-20',
-    status: 'active',
-    investment: 2000,
-    earnings: 100,
-    level: 1,
-  },
-  {
-    id: 3,
-    name: 'Mike Johnson',
-    email: 'mike@example.com',
-    joinDate: '2024-03-10',
-    status: 'inactive',
-    investment: 1000,
-    earnings: 50,
-    level: 1,
-  },
-  {
-    id: 4,
-    name: 'Sarah Williams',
-    email: 'sarah@example.com',
-    joinDate: '2024-04-05',
-    status: 'active',
-    investment: 10000,
-    earnings: 500,
-    level: 1,
-  },
-  {
-    id: 5,
-    name: 'Tom Brown',
-    email: 'tom@example.com',
-    joinDate: '2024-05-12',
-    status: 'pending',
-    investment: 0,
-    earnings: 0,
-    level: 1,
-  },
-];
-
-// Mock performance data
-const performanceData = [
-  { month: 'Jan', referrals: 2, earnings: 150 },
-  { month: 'Feb', referrals: 4, earnings: 280 },
-  { month: 'Mar', referrals: 3, earnings: 220 },
-  { month: 'Apr', referrals: 5, earnings: 380 },
-  { month: 'May', referrals: 6, earnings: 450 },
-  { month: 'Jun', referrals: 8, earnings: 620 },
-];
-
 const ReferralsNew: React.FC = () => {
   const { user } = useAuth();
   const [referrals, setReferrals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'date' | 'earnings'>('date');
@@ -83,11 +20,25 @@ const ReferralsNew: React.FC = () => {
   // Fetch referrals on mount and when user changes
   useEffect(() => {
     const fetchReferrals = async () => {
-      if (!user?.id) return;
+      if (!user?.id) {
+        console.log('⚠️ No user ID available');
+        return;
+      }
 
+      console.log('👥 Fetching referrals for user:', user.email);
       setLoading(true);
+      setError(null);
+
       try {
-        const refs = await getReferrals(user.id);
+        // Add 10-second timeout
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Request timed out after 10 seconds')), 10000)
+        );
+
+        const refs = await Promise.race([
+          getReferrals(user.id),
+          timeoutPromise
+        ]) as any[];
         // Transform data to match existing interface
         const transformedRefs = refs.map((ref: any) => ({
           id: ref.id,
@@ -100,9 +51,12 @@ const ReferralsNew: React.FC = () => {
           level: 1, // Direct referrals are level 1
         }));
         setReferrals(transformedRefs);
-      } catch (error: any) {
-        console.error('Error fetching referrals:', error);
-        toast.error(error.message || 'Failed to load referrals');
+        console.log('✅ Referrals loaded:', transformedRefs.length);
+      } catch (err: any) {
+        const errorMessage = err.message || 'Failed to load referrals';
+        setError(errorMessage);
+        console.error('❌ Error fetching referrals:', errorMessage);
+        toast.error(errorMessage);
         setReferrals([]);
       } finally {
         setLoading(false);
@@ -167,6 +121,35 @@ const ReferralsNew: React.FC = () => {
 
     return filtered;
   }, [referrals, searchTerm, statusFilter, sortBy]);
+
+  // Calculate monthly performance data from real referrals
+  const performanceData = useMemo(() => {
+    // Get last 6 months
+    const months = [];
+    const now = new Date();
+
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthName = date.toLocaleDateString('en-US', { month: 'short' });
+      const year = date.getFullYear();
+      const month = date.getMonth();
+
+      // Filter referrals for this month
+      const monthReferrals = referrals.filter(r => {
+        const joinDate = new Date(r.joinDate);
+        return joinDate.getFullYear() === year && joinDate.getMonth() === month;
+      });
+
+      months.push({
+        month: monthName,
+        referrals: monthReferrals.length,
+        earnings: monthReferrals.reduce((sum, r) => sum + (r.earnings || 0), 0)
+      });
+    }
+
+    console.log('📊 Performance data calculated:', months);
+    return months;
+  }, [referrals]);
 
   // Copy to clipboard function
   const copyToClipboard = (text: string, label: string) => {

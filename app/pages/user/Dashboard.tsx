@@ -4,13 +4,14 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { getUserDashboard } from '../../services/mlm.service';
+import { getUserDashboard, getTeamStats } from '../../services/mlm.service';
 import { hasActiveRobotSubscription } from '../../services/mlm.service';
 import { UserDashboardData } from '../../types/mlm.types';
 import DEXTerminal from '../../components/dex/DEXTerminal';
 
 export const UserDashboard: React.FC = () => {
   const [dashboardData, setDashboardData] = useState<UserDashboardData | null>(null);
+  const [teamStats, setTeamStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showDEX, setShowDEX] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,8 +23,13 @@ export const UserDashboard: React.FC = () => {
   const loadDashboard = async () => {
     try {
       setLoading(true);
-      const data = await getUserDashboard();
+      // Load dashboard data and real-time team stats in parallel
+      const [data, stats] = await Promise.all([
+        getUserDashboard(),
+        getTeamStats()
+      ]);
       setDashboardData(data);
+      setTeamStats(stats);
       setError(null);
     } catch (err: any) {
       setError(err.message || 'Failed to load dashboard');
@@ -147,27 +153,28 @@ export const UserDashboard: React.FC = () => {
           <div className="stat-icon">👥</div>
           <div className="stat-content">
             <p className="stat-label">Team</p>
-            <h2 className="stat-value">{user.team_count}</h2>
-            <p className="stat-sub">Directs: {user.direct_count} | Levels: {user.levels_unlocked}/30</p>
+            <h2 className="stat-value">{teamStats?.totalTeamSize || 0}</h2>
+            <p className="stat-sub">Directs: {teamStats?.directCount || 0} | Levels: {teamStats?.levelsUnlocked || 0}/30</p>
           </div>
         </div>
 
         <div className="stat-card volume">
           <div className="stat-icon">⚖️</div>
           <div className="stat-content">
-            <p className="stat-label">Binary Volume</p>
+            <p className="stat-label">Team Volume</p>
+            <h2 className="stat-value">${(teamStats?.totalVolume || 0).toFixed(2)}</h2>
             <div className="volume-bars">
               <div className="volume-bar left">
                 <span>Left</span>
                 <div className="bar">
-                  <div className="fill" style={{ width: `${(statistics.left_volume / statistics.total_volume) * 100}%` }}></div>
+                  <div className="fill" style={{ width: `${statistics.total_volume > 0 ? (statistics.left_volume / statistics.total_volume) * 100 : 50}%` }}></div>
                 </div>
                 <span>${statistics.left_volume.toFixed(2)}</span>
               </div>
               <div className="volume-bar right">
                 <span>Right</span>
                 <div className="bar">
-                  <div className="fill" style={{ width: `${(statistics.right_volume / statistics.total_volume) * 100}%` }}></div>
+                  <div className="fill" style={{ width: `${statistics.total_volume > 0 ? (statistics.right_volume / statistics.total_volume) * 100 : 50}%` }}></div>
                 </div>
                 <span>${statistics.right_volume.toFixed(2)}</span>
               </div>

@@ -107,7 +107,16 @@ export const getRankRequirements = async () => {
 
   if (error) {
     console.error('Error loading rank requirements:', error);
-    return [];
+    console.log('⚠️  Using fallback rank requirements');
+
+    // Fallback rank requirements (if table doesn't exist)
+    return [
+      { rank: 'starter', min_volume: 0, reward_amount: 0, levels_unlocked: 1 },
+      { rank: 'bronze', min_volume: 10000, reward_amount: 500, levels_unlocked: 5 },
+      { rank: 'silver', min_volume: 50000, reward_amount: 2500, levels_unlocked: 10 },
+      { rank: 'gold', min_volume: 150000, reward_amount: 10000, levels_unlocked: 15 },
+      { rank: 'platinum', min_volume: 500000, reward_amount: 50000, levels_unlocked: 30 }
+    ];
   }
 
   // Convert to format matching old RANK_REQUIREMENTS
@@ -135,12 +144,12 @@ export const clearConfigCache = () => {
 // ============================================
 
 /**
- * Check if user has active robot subscription
+ * Get user's robot subscription
  */
-export const hasActiveRobotSubscription = async (userId?: string): Promise<boolean> => {
+export const getUserRobotSubscription = async (userId?: string): Promise<RobotSubscription | null> => {
   try {
     const targetUserId = userId || (await supabase.auth.getUser()).data.user?.id;
-    if (!targetUserId) return false;
+    if (!targetUserId) return null;
 
     const { data, error } = await supabase
       .from('robot_subscriptions')
@@ -148,9 +157,24 @@ export const hasActiveRobotSubscription = async (userId?: string): Promise<boole
       .eq('user_id', targetUserId)
       .eq('is_active', true)
       .gte('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1)
       .single();
 
-    return !error && !!data;
+    if (error) return null;
+    return data as RobotSubscription;
+  } catch (error) {
+    return null;
+  }
+};
+
+/**
+ * Check if user has active robot subscription
+ */
+export const hasActiveRobotSubscription = async (userId?: string): Promise<boolean> => {
+  try {
+    const subscription = await getUserRobotSubscription(userId);
+    return !!subscription;
   } catch (error) {
     return false;
   }
@@ -262,14 +286,17 @@ export const getUserPackages = async (userId?: string): Promise<UserPackage[]> =
     const targetUserId = userId || (await supabase.auth.getUser()).data.user?.id;
     if (!targetUserId) throw new Error('User not authenticated');
 
+    // Query user_packages without join (packages table FK may not exist)
     const { data, error } = await supabase
       .from('user_packages')
-      .select('*, package:packages(*)')
+      .select('*')
       .eq('user_id', targetUserId)
       .eq('is_active', true)
       .order('purchased_at', { ascending: false });
 
     if (error) throw error;
+
+    console.log(`✅ Loaded ${data?.length || 0} active packages for user`);
     return data as UserPackage[];
   } catch (error: any) {
     console.error('Get user packages error:', error);
@@ -629,22 +656,112 @@ const checkMatchingBonuses = async (userId: string): Promise<void> => {
 // ============================================
 
 /**
+ * Auto-create user profile in public.users if it doesn't exist
+ * This handles cases where auth.users exists but public.users doesn't
+ */
+const ensureUserProfile = async (authUser: any): Promise<any> => {
+  // Try to get existing user
+  const { data: existing } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', authUser.id)
+    .maybeSingle();
+
+  if (existing) return existing;
+
+  console.log('⚠️  User not found in public.users, creating profile for:', authUser.email);
+
+  // Create new user profile
+  // NOTE: password_hash is set to placeholder since auth is handled by Supabase Auth
+  const { data: newUser, error: createError } = await supabase
+    .from('users')
+    .insert({
+      id: authUser.id,
+      email: authUser.email,
+      full_name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'User',
+      wallet_address: authUser.user_metadata?.wallet_address || null,
+      password_hash: 'AUTH_MANAGED_BY_SUPABASE', // Placeholder - real auth via Supabase Auth
+      wallet_balance: 0,
+      total_investment: 0,
+      total_earnings: 0,
+      direct_count: 0,
+      team_count: 0,
+      left_volume: 0,
+      right_volume: 0,
+      current_rank: 'starter',
+      levels_unlocked: 0,
+      is_active: true,
+      role: 'user',
+      created_at: authUser.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
+    .select()
+    .single();
+
+  if (createError) {
+    console.error('❌ Failed to create user profile:', createError);
+    throw new Error(`Failed to create user profile: ${createError.message}`);
+  }
+
+  console.log('✅ Created new user profile for:', newUser.email);
+
+  // Complete MLM onboarding (referral code, binary tree placement)
+  try {
+    await completeMlmOnboarding(newUser.id);
+  } catch (onboardError) {
+    console.error('⚠️  MLM onboarding failed (non-critical):', onboardError);
+  }
+
+  return newUser;
+};
+
+/**
  * Get complete user dashboard data
  */
-export const getUserDashboard = async (): Promise<UserDashboardData> => {
+export const getUserDashboard = async (userId?: string): Promise<UserDashboardData> => {
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError) throw authError;
-    if (!user) throw new Error('User not authenticated');
+    // Use provided userId or get from auth
+    let targetUserId = userId;
+    let authUser = null;
 
-    // Get user data
-    const { data: userData } = await supabase
+    if (!targetUserId) {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      if (!user) throw new Error('User not authenticated');
+      targetUserId = user.id;
+      authUser = user;
+    }
+
+    console.log('🔍 getUserDashboard - Target User ID:', targetUserId);
+
+    // Get user data from public.users table
+    const { data: userData, error: userError } = await supabase
       .from('users')
       .select('*')
-      .eq('id', user.id)
+      .eq('id', targetUserId)
       .single();
 
-    if (!userData) throw new Error('User not found');
+    if (userError || !userData) {
+      // If user doesn't exist and we have authUser, auto-create
+      if (authUser) {
+        console.log('⚠️  User not found in public.users, auto-creating...');
+        const createdUser = await ensureUserProfile(authUser);
+        console.log('✅ User profile created:', createdUser.email);
+      } else {
+        throw new Error(`User not found: ${targetUserId}`);
+      }
+    } else {
+      console.log('✅ User profile found:', userData.email);
+    }
+
+    // Re-fetch userData after potential creation
+    const { data: finalUserData } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', targetUserId)
+      .single();
+
+    if (!finalUserData) throw new Error('Failed to load user data');
 
     // Get statistics
     const now = new Date();
@@ -656,7 +773,7 @@ export const getUserDashboard = async (): Promise<UserDashboardData> => {
     const { data: todayEarnings } = await supabase
       .from('mlm_transactions')
       .select('amount')
-      .eq('user_id', user.id)
+      .eq('user_id', targetUserId)
       .in('transaction_type', ['level_income', 'matching_bonus', 'booster_income', 'rank_reward'])
       .gte('created_at', todayStart.toISOString());
 
@@ -666,7 +783,7 @@ export const getUserDashboard = async (): Promise<UserDashboardData> => {
     const { data: weekEarnings } = await supabase
       .from('mlm_transactions')
       .select('amount')
-      .eq('user_id', user.id)
+      .eq('user_id', targetUserId)
       .in('transaction_type', ['level_income', 'matching_bonus', 'booster_income', 'rank_reward'])
       .gte('created_at', weekStart.toISOString());
 
@@ -676,21 +793,30 @@ export const getUserDashboard = async (): Promise<UserDashboardData> => {
     const { data: monthEarnings } = await supabase
       .from('mlm_transactions')
       .select('amount')
-      .eq('user_id', user.id)
+      .eq('user_id', targetUserId)
       .in('transaction_type', ['level_income', 'matching_bonus', 'booster_income', 'rank_reward'])
       .gte('created_at', monthStart.toISOString());
 
     const monthTotal = monthEarnings?.reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0) || 0;
 
     // Get ROI earned
-    const packages = await getUserPackages(user.id);
-    const roiEarned = packages.reduce((sum, p) => sum + p.roi_earned, 0);
+    let packages = [];
+    let roiEarned = 0;
+    try {
+      packages = await getUserPackages(targetUserId);
+      roiEarned = packages.reduce((sum, p) => sum + p.roi_earned, 0);
+    } catch (packagesError: any) {
+      console.error('⚠️  Failed to load user packages (non-critical):', packagesError.message);
+      // Continue without packages - not critical for dashboard to load
+      packages = [];
+      roiEarned = 0;
+    }
 
     // Get recent transactions
     const { data: transactions } = await supabase
       .from('mlm_transactions')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', targetUserId)
       .order('created_at', { ascending: false })
       .limit(10);
 
@@ -698,46 +824,51 @@ export const getUserDashboard = async (): Promise<UserDashboardData> => {
     const { data: directs } = await supabase
       .from('users')
       .select('id, email, full_name, total_investment, created_at')
-      .eq('sponsor_id', user.id)
+      .eq('sponsor_id', targetUserId)
       .order('created_at', { ascending: false });
 
     // Get notifications
     const { data: notifications } = await supabase
       .from('notifications')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', targetUserId)
       .eq('is_read', false)
       .order('created_at', { ascending: false })
       .limit(5);
 
     // Find next rank using database config
     const rankRequirements = await getRankRequirements();
-    const currentRankIndex = rankRequirements.findIndex(r => r.rank === userData.current_rank?.toLowerCase());
-    const nextRank = rankRequirements[currentRankIndex + 1] || rankRequirements[rankRequirements.length - 1];
+    const currentRankIndex = rankRequirements.findIndex(r => r.rank === finalUserData.current_rank?.toLowerCase());
+    const nextRank = rankRequirements[currentRankIndex + 1] || rankRequirements[rankRequirements.length - 1] || {
+      rank: 'bronze',
+      min_volume: 10000,
+      reward_amount: 500,
+      levels_unlocked: 5
+    };
 
     return {
       user: {
-        id: userData.id,
-        email: userData.email,
-        full_name: userData.full_name,
-        wallet_balance: userData.wallet_balance,
-        total_investment: userData.total_investment,
-        total_earnings: userData.total_earnings,
-        direct_count: userData.direct_count,
-        team_count: userData.team_count,
-        current_rank: userData.current_rank,
-        robot_subscription_active: userData.robot_subscription_active,
-        robot_subscription_expires_at: userData.robot_subscription_expires_at,
-        kyc_status: userData.kyc_status,
-        levels_unlocked: userData.levels_unlocked,
+        id: finalUserData.id,
+        email: finalUserData.email,
+        full_name: finalUserData.full_name,
+        wallet_balance: finalUserData.wallet_balance,
+        total_investment: finalUserData.total_investment,
+        total_earnings: finalUserData.total_earnings,
+        direct_count: finalUserData.direct_count,
+        team_count: finalUserData.team_count,
+        current_rank: finalUserData.current_rank,
+        robot_subscription_active: finalUserData.robot_subscription_active,
+        robot_subscription_expires_at: finalUserData.robot_subscription_expires_at,
+        kyc_status: finalUserData.kyc_status,
+        levels_unlocked: finalUserData.levels_unlocked,
       },
       statistics: {
         today_earnings: todayTotal,
         week_earnings: weekTotal,
         month_earnings: monthTotal,
-        left_volume: userData.left_volume,
-        right_volume: userData.right_volume,
-        total_volume: userData.left_volume + userData.right_volume,
+        left_volume: finalUserData.left_volume,
+        right_volume: finalUserData.right_volume,
+        total_volume: finalUserData.left_volume + finalUserData.right_volume,
         roi_earned: roiEarned,
       },
       recent_transactions: transactions || [],
@@ -1394,7 +1525,7 @@ export const distributeDailyROI = async (): Promise<{ processed: number; total_a
   try {
     console.log('Starting daily ROI distribution...');
 
-    // Get all active packages
+    // Get all active packages (without packages join - FK may not exist)
     const { data: activePackages, error: packagesError } = await supabase
       .from('user_packages')
       .select(`
@@ -1405,11 +1536,7 @@ export const distributeDailyROI = async (): Promise<{ processed: number; total_a
         roi_percentage,
         roi_earned,
         purchased_at,
-        is_active,
-        packages!inner (
-          duration_days,
-          name
-        )
+        is_active
       `)
       .eq('is_active', true);
 
@@ -1560,93 +1687,131 @@ export const getTeamMembers = async (userId?: string) => {
 
     console.log('🔍 Fetching team members for user:', targetUserId);
 
-    // Recursively get all downline members
-    const getAllDownline = async (sponsorId: string): Promise<any[]> => {
-      // Get direct referrals
-      const { data: directs, error } = await supabase
-        .from('users')
-        .select(`
-          id,
-          full_name,
-          email,
-          total_investment,
-          created_at,
-          level,
-          sponsor_id,
-          position,
-          is_active,
-          left_volume,
-          right_volume
-        `)
-        .eq('sponsor_id', sponsorId);
+    // OPTIMIZATION: Get ALL users in ONE query instead of recursive queries
+    const { data: allUsers, error } = await supabase
+      .from('users')
+      .select(`
+        id,
+        full_name,
+        email,
+        total_investment,
+        created_at,
+        level,
+        sponsor_id,
+        position,
+        is_active,
+        left_volume,
+        right_volume,
+        direct_count,
+        team_count
+      `);
 
-      if (error || !directs || directs.length === 0) {
-        return [];
-      }
+    if (error) {
+      console.error('❌ Error fetching users:', error);
+      console.error('❌ Error details:', JSON.stringify(error, null, 2));
+      throw error;
+    }
 
-      // Recursively get downline for each direct
-      const allMembers = [...directs];
-      for (const direct of directs) {
-        const downline = await getAllDownline(direct.id);
-        allMembers.push(...downline);
-      }
+    console.log(`📊 Total users in database: ${allUsers?.length || 0}`);
 
-      return allMembers;
-    };
+    if (!allUsers || allUsers.length === 0) {
+      console.log('⚠️  No users found in database');
+      return [];
+    }
 
-    const teamMembers = await getAllDownline(targetUserId);
+    console.log(`📊 Loaded ${allUsers.length} total users from database`);
 
-    console.log(`✅ Found ${teamMembers?.length || 0} team members`);
+    // Build team hierarchy in memory using BFS with level tracking
+    const teamMembers: any[] = [];
+    const queue: Array<{ id: string; level: number }> = [{ id: targetUserId, level: 0 }];
+    const visited = new Set<string>();
 
-    // For each team member, get their stats
-    const enrichedMembers = await Promise.all(
-      (teamMembers || []).map(async (member) => {
-        // Get their direct referrals count
-        const { count: directCount } = await supabase
-          .from('users')
-          .select('id', { count: 'exact', head: true })
-          .eq('sponsor_id', member.id);
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      const currentId = current.id;
+      const currentLevel = current.level;
 
-        // Get their team size (all downline)
-        // This is a simplified version - you might want to add a recursive query
-        const { count: teamSize } = await supabase
-          .from('users')
-          .select('id', { count: 'exact', head: true })
-          .eq('sponsor_id', member.id);
+      if (visited.has(currentId)) continue;
+      visited.add(currentId);
 
-        // Get their active packages
-        const { data: packages } = await supabase
-          .from('user_packages')
-          .select('amount')
-          .eq('user_id', member.id)
-          .eq('is_active', true);
+      // Find all direct referrals of current user
+      allUsers.forEach(user => {
+        if (user.sponsor_id === currentId && !visited.has(user.id)) {
+          const memberLevel = currentLevel + 1;
 
-        const investment = packages?.reduce((sum, pkg) => sum + pkg.amount, 0) || 0;
+          teamMembers.push({
+            id: user.id,
+            full_name: user.full_name,
+            email: user.email,
+            total_investment: parseFloat(user.total_investment) || 0,
+            created_at: user.created_at,
+            level: memberLevel, // FIXED: Calculate actual level from sponsor
+            sponsor_id: user.sponsor_id,
+            position: user.position || 'left',
+            is_active: user.is_active !== false,
+            left_volume: parseFloat(user.left_volume) || 0,
+            right_volume: parseFloat(user.right_volume) || 0,
+            directReferrals: user.direct_count || 0,
+            teamSize: user.team_count || 0
+          });
 
-        return {
-          id: member.id,
-          name: member.full_name,
-          email: member.email,
-          joinDate: member.created_at,
-          level: member.level || 1,
-          status: member.is_active ? 'active' : 'inactive',
-          investment: investment,
-          totalInvestment: member.total_investment || 0,
-          directReferrals: directCount || 0,
-          teamSize: teamSize || 0,
-          leftLeg: 0, // You can calculate this from binary_tree if needed
-          rightLeg: 0,
-          volume: (member.left_volume || 0) + (member.right_volume || 0),
-          parentId: member.sponsor_id,
-          position: member.position,
-        };
-      })
-    );
+          queue.push({ id: user.id, level: memberLevel });
+        }
+      });
+    }
 
-    return enrichedMembers;
+    console.log(`✅ Found ${teamMembers.length} team members (Levels 1-30)`);
+
+    return teamMembers;
+
   } catch (error: any) {
-    console.error('Get team members error:', error);
-    throw new Error(error.message || 'Failed to fetch team members');
+    console.error('❌ Get team members error:', error.message);
+    toast.error('Failed to load team members');
+    return [];
+  }
+};
+
+/**
+ * Get comprehensive team statistics
+ * FIXED: Calculate real-time stats from actual team data
+ */
+export const getTeamStats = async (userId?: string) => {
+  try {
+    const teamMembers = await getTeamMembers(userId);
+
+    // Calculate real-time statistics
+    const totalTeamSize = teamMembers.length;
+    const directCount = teamMembers.filter(m => m.level === 1).length;
+    const totalVolume = teamMembers.reduce((sum, m) => sum + (parseFloat(m.total_investment) || 0), 0);
+
+    // Count members by level
+    const levelBreakdown: { [key: number]: number } = {};
+    let maxLevel = 0;
+
+    teamMembers.forEach(member => {
+      const level = member.level || 1;
+      levelBreakdown[level] = (levelBreakdown[level] || 0) + 1;
+      if (level > maxLevel) maxLevel = level;
+    });
+
+    return {
+      totalTeamSize,
+      directCount,
+      totalVolume,
+      levelsUnlocked: maxLevel,
+      levelBreakdown,
+      teamMembers
+    };
+  } catch (error: any) {
+    console.error('❌ Get team stats error:', error.message);
+    return {
+      totalTeamSize: 0,
+      directCount: 0,
+      totalVolume: 0,
+      levelsUnlocked: 0,
+      levelBreakdown: {},
+      teamMembers: []
+    };
   }
 };
 
@@ -1691,5 +1856,43 @@ export const getReferrals = async (userId?: string) => {
   } catch (error: any) {
     console.error('Get referrals error:', error);
     throw new Error(error.message || 'Failed to fetch referrals');
+  }
+};
+
+/**
+ * Get transaction history for a user
+ * @param limit Maximum number of transactions to return (default: 100)
+ * @param offset Number of transactions to skip (default: 0)
+ * @param userId Optional user ID (defaults to current authenticated user)
+ * @returns Array of transactions
+ */
+export const getTransactionHistory = async (limit: number = 100, offset: number = 0, userId?: string) => {
+  try {
+    const targetUserId = userId || (await supabase.auth.getUser()).data.user?.id;
+    if (!targetUserId) throw new Error('User not authenticated');
+
+    const { data: transactions, error } = await supabase
+      .from('mlm_transactions')
+      .select('*')
+      .eq('user_id', targetUserId)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) throw error;
+
+    return (transactions || []).map((tx: any) => ({
+      id: tx.id,
+      userId: tx.user_id,
+      transactionType: tx.transaction_type,
+      amount: parseFloat(tx.amount || 0),
+      description: tx.description || '',
+      referenceId: tx.reference_id,
+      status: tx.status || 'completed',
+      createdAt: tx.created_at,
+      metadata: tx.metadata || {},
+    }));
+  } catch (error: any) {
+    console.error('Get transaction history error:', error);
+    throw new Error(error.message || 'Failed to fetch transaction history');
   }
 };

@@ -1,9 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { format } from 'date-fns';
 import toast, { Toaster } from 'react-hot-toast';
 import { Button, Card } from '../../components/ui/DesignSystem';
+import { getUserDashboard, getTransactionHistory, getTeamMembers } from '../../services/mlm.service';
+import { useAuth } from "../../context/AuthContext";
 
 // Report types
 type ReportType = 'earnings' | 'referrals' | 'team' | 'roi' | 'commissions';
@@ -38,30 +40,126 @@ interface Activity {
 
 export const Reports: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [reportType, setReportType] = useState<ReportType>('earnings');
   const [dateRange, setDateRange] = useState<DateRange>('month');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [earningsData, setEarningsData] = useState<EarningsData[]>([]);
+  const [topPerformers, setTopPerformers] = useState<TeamPerformer[]>([]);
+  const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
 
-  // Mock earnings data (last 30 days)
-  const earningsData: EarningsData[] = [
-    { date: '2025-01-01', total: 120, roi: 60, commission: 30, binary: 20, rankBonus: 10 },
-    { date: '2025-01-03', total: 150, roi: 75, commission: 40, binary: 25, rankBonus: 10 },
-    { date: '2025-01-05', total: 140, roi: 70, commission: 35, binary: 25, rankBonus: 10 },
-    { date: '2025-01-07', total: 180, roi: 90, commission: 45, binary: 30, rankBonus: 15 },
-    { date: '2025-01-09', total: 200, roi: 100, commission: 50, binary: 35, rankBonus: 15 },
-    { date: '2025-01-11', total: 190, roi: 95, commission: 48, binary: 32, rankBonus: 15 },
-    { date: '2025-01-13', total: 220, roi: 110, commission: 55, binary: 40, rankBonus: 15 },
-    { date: '2025-01-15', total: 250, roi: 125, commission: 65, binary: 45, rankBonus: 15 },
-    { date: '2025-01-17', total: 240, roi: 120, commission: 60, binary: 45, rankBonus: 15 },
-    { date: '2025-01-19', total: 280, roi: 140, commission: 70, binary: 50, rankBonus: 20 },
-    { date: '2025-01-21', total: 300, roi: 150, commission: 75, binary: 55, rankBonus: 20 },
-    { date: '2025-01-23', total: 290, roi: 145, commission: 73, binary: 52, rankBonus: 20 },
-    { date: '2025-01-25', total: 320, roi: 160, commission: 80, binary: 60, rankBonus: 20 },
-    { date: '2025-01-27', total: 350, roi: 175, commission: 88, binary: 67, rankBonus: 20 },
-    { date: '2025-01-29', total: 340, roi: 170, commission: 85, binary: 65, rankBonus: 20 },
-    { date: '2025-01-31', total: 380, roi: 190, commission: 95, binary: 75, rankBonus: 20 },
-  ];
+  // Fetch real data
+  useEffect(() => {
+    const fetchReportData = async () => {
+      if (!user?.id) {
+        console.log('⚠️ No user ID available');
+        return;
+      }
+
+      console.log('📊 Fetching report data for user:', user.email);
+      setLoading(true);
+      setError(null);
+
+      try {
+        // Add 10-second timeout
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Request timed out after 10 seconds')), 10000)
+        );
+
+        const [transactions, teamMembers] = await Promise.race([
+          Promise.all([
+            getTransactionHistory(1000, 0),
+            getTeamMembers(user.id)
+          ]),
+          timeoutPromise
+        ]) as any[];
+
+        console.log('✅ Transactions:', transactions?.length || 0);
+        console.log('✅ Team members:', teamMembers?.length || 0);
+
+        // Map transaction types
+        const mapTransactionType = (txType: string): string => {
+          if (txType === 'roi_income') return 'ROI';
+          if (txType === 'direct_commission') return 'Commission';
+          if (txType === 'level_income') return 'Commission';
+          if (txType === 'matching_bonus' || txType === 'binary_bonus') return 'Binary';
+          if (txType === 'rank_reward') return 'Rank Bonus';
+          return 'Other';
+        };
+
+        // Group transactions by date for earnings data
+        const transactionsByDate: Record<string, EarningsData> = {};
+        (transactions || []).forEach((tx: any) => {
+          const date = tx.created_at?.split('T')[0] || new Date().toISOString().split('T')[0];
+          if (!transactionsByDate[date]) {
+            transactionsByDate[date] = {
+              date,
+              total: 0,
+              roi: 0,
+              commission: 0,
+              binary: 0,
+              rankBonus: 0
+            };
+          }
+
+          const amount = parseFloat(tx.amount) || 0;
+          transactionsByDate[date].total += amount;
+
+          const type = mapTransactionType(tx.transaction_type);
+          if (type === 'ROI') transactionsByDate[date].roi += amount;
+          else if (type === 'Commission') transactionsByDate[date].commission += amount;
+          else if (type === 'Binary') transactionsByDate[date].binary += amount;
+          else if (type === 'Rank Bonus') transactionsByDate[date].rankBonus += amount;
+        });
+
+        // Convert to array and sort by date
+        const earningsArray = Object.values(transactionsByDate).sort((a, b) =>
+          new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+
+        setEarningsData(earningsArray);
+
+        // Transform recent activities (last 5 transactions)
+        const activities = (transactions || []).slice(0, 5).map((tx: any) => ({
+          id: tx.id,
+          date: tx.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+          type: mapTransactionType(tx.transaction_type),
+          description: tx.description || tx.transaction_type.replace('_', ' '),
+          amount: parseFloat(tx.amount) || 0
+        }));
+
+        setRecentActivities(activities);
+
+        // Transform top team performers (top 5 by earnings)
+        const performers = (teamMembers || [])
+          .slice(0, 5)
+          .map((member: any, index: number) => ({
+            id: member.id || `${index}`,
+            name: member.name || member.email || 'Unknown',
+            rank: member.rank || 'Member',
+            earnings: member.total_earnings || 0,
+            team: member.team_size || 0
+          }));
+
+        setTopPerformers(performers);
+
+        console.log('✅ Report data loaded successfully');
+
+      } catch (err: any) {
+        const errorMessage = err.message || 'Failed to load report data';
+        setError(errorMessage);
+        console.error('❌ Error loading report data:', errorMessage);
+        toast.error(errorMessage);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReportData();
+  }, [user?.id]);
 
   // Earnings breakdown for pie chart
   const earningsBreakdown = useMemo(() => {
@@ -83,40 +181,31 @@ export const Reports: React.FC = () => {
     ];
   }, []);
 
-  // Top performers
-  const topPerformers: TeamPerformer[] = [
-    { id: '1', name: 'Alice Johnson', rank: 'Platinum', earnings: 15000, team: 50 },
-    { id: '2', name: 'Bob Smith', rank: 'Gold', earnings: 12000, team: 35 },
-    { id: '3', name: 'Carol White', rank: 'Gold', earnings: 10000, team: 30 },
-    { id: '4', name: 'David Brown', rank: 'Silver', earnings: 8000, team: 25 },
-    { id: '5', name: 'Emma Davis', rank: 'Silver', earnings: 7000, team: 20 },
-  ];
-
-  // Recent activities
-  const recentActivities: Activity[] = [
-    { id: '1', date: '2025-01-31', type: 'ROI', description: 'Daily ROI from Gold Package', amount: 50 },
-    { id: '2', date: '2025-01-31', type: 'Commission', description: 'Direct referral bonus', amount: 25 },
-    { id: '3', date: '2025-01-30', type: 'Binary', description: 'Binary bonus payout', amount: 35 },
-    { id: '4', date: '2025-01-30', type: 'Rank Bonus', description: 'Gold rank achievement bonus', amount: 100 },
-    { id: '5', date: '2025-01-29', type: 'Commission', description: 'Level 2 commission', amount: 15 },
-  ];
 
   // Calculate metrics based on date range
   const metrics = useMemo(() => {
-    const filteredData = earningsData; // In real app, filter by dateRange
+    const filteredData = earningsData;
     const totalEarnings = filteredData.reduce((sum, day) => sum + day.total, 0);
     const roiEarnings = filteredData.reduce((sum, day) => sum + day.roi, 0);
     const commissionEarnings = filteredData.reduce((sum, day) => sum + day.commission, 0);
-    const newTeamMembers = 12; // Mock value
+    const newTeamMembers = topPerformers.length;
+
+    // Calculate growth percentage (compare current vs previous period)
+    const halfPoint = Math.floor(filteredData.length / 2);
+    const currentPeriod = filteredData.slice(0, halfPoint);
+    const previousPeriod = filteredData.slice(halfPoint);
+    const currentTotal = currentPeriod.reduce((sum, day) => sum + day.total, 0);
+    const previousTotal = previousPeriod.reduce((sum, day) => sum + day.total, 0);
+    const growth = previousTotal > 0 ? ((currentTotal - previousTotal) / previousTotal) * 100 : 0;
 
     return {
       totalEarnings,
       roiEarnings,
       commissionEarnings,
       newTeamMembers,
-      growth: 24.5, // Mock percentage
+      growth: Math.round(growth * 10) / 10,
     };
-  }, [dateRange]);
+  }, [dateRange, earningsData, topPerformers]);
 
   const handleGenerate = async () => {
     setIsGenerating(true);
@@ -165,6 +254,29 @@ export const Reports: React.FC = () => {
     };
     return icons[type] || '💵';
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading report data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Card className="bg-red-900/20 border-red-500 p-8 max-w-md">
+          <h2 className="text-xl font-bold text-red-400 mb-2">Failed to Load Reports</h2>
+          <p className="text-gray-300 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0f172a] p-5 max-w-7xl mx-auto">

@@ -1,0 +1,42 @@
+--- a/app/pages/user/TeamNew.tsx
++++ b/app/pages/user/TeamNew.tsx
+@@ -162,8 +162,26 @@
+         const members = await getTeamMembers(user.id);
+         console.log('📊 Team members received:', members?.length || 0, 'members');
+ 
+-        // Set team members or empty array
+-        setTeamMembers(members || []);
++        // Map API data to component format
++        const mappedMembers = (members || []).map((member: any, index: number) => ({
++          id: index + 1,
++          name: member.full_name || 'Unknown User',
++          email: member.email || '',
++          level: member.level || 1,
++          joinDate: member.created_at || new Date().toISOString(),
++          status: member.is_active ? 'active' : 'inactive',
++          totalInvestment: parseFloat(member.total_investment) || 0,
++          teamSize: member.teamSize || member.team_count || 0,
++          volume: (parseFloat(member.left_volume) || 0) + (parseFloat(member.right_volume) || 0),
++          directReferrals: member.directReferrals || member.direct_count || 0,
++          leftLeg: parseFloat(member.left_volume) || 0,
++          rightLeg: parseFloat(member.right_volume) || 0,
++          parentId: null,
++          investment: parseFloat(member.total_investment) || 0
++        }));
++        
++        console.log('✅ Mapped team members:', mappedMembers);
++        setTeamMembers(mappedMembers);
+ 
+         if (!members || members.length === 0) {
+           console.log('ℹ️ No team members found for user');
+@@ -214,8 +232,8 @@
+     // Apply search filter
+     if (searchTerm) {
+       filtered = filtered.filter(m =>
+-        m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+-        m.email.toLowerCase().includes(searchTerm.toLowerCase())
++        (m.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
++        (m.email || '').toLowerCase().includes(searchTerm.toLowerCase())
+       );
+     }
+ 
