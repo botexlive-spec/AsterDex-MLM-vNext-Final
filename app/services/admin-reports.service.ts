@@ -74,31 +74,21 @@ export interface ReportDateRange {
 
 export const getUserGrowthReport = async (dateRange: ReportDateRange) => {
   try {
-        // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
-
-    if (error) throw error;
-
-    // Group by date
-    const grouped = users?.reduce((acc: any, user) => {
-      const date = format(new Date(user.created_at), 'yyyy-MM-dd');
-      if (!acc[date]) {
-        acc[date] = { Date: date, NewUsers: 0, ActiveUsers: 0, TotalUsers: 0 };
-      }
-      acc[date].NewUsers++;
-      if (user.is_active) acc[date].ActiveUsers++;
-      return acc;
-    }, {});
-
-    // Calculate cumulative totals
-    const reportData = Object.values(grouped || {});
-    let cumulative = 0;
-    reportData.forEach((row: any) => {
-      cumulative += row.NewUsers;
-      row.TotalUsers = cumulative;
+    const params = new URLSearchParams({
+      startDate: dateRange.dateFrom,
+      endDate: dateRange.dateTo,
+      period: 'day',
     });
 
-    return reportData;
+    const result = await apiRequest(`/api/reports/users?${params.toString()}`);
+
+    // Transform to expected format
+    return (result.registrationsByPeriod || []).map((item: any) => ({
+      Date: item.period,
+      NewUsers: item.count,
+      ActiveUsers: 0,
+      TotalUsers: item.count,
+    }));
   } catch (error: any) {
     console.error('User growth report error:', error);
     return [];
@@ -111,42 +101,21 @@ export const getUserGrowthReport = async (dateRange: ReportDateRange) => {
 
 export const getRevenueReport = async (dateRange: ReportDateRange) => {
   try {
-        // Verify admin access
-    // Admin auth handled by backend// Get package sales
-    // TODO: Implement MySQL backend API endpoint
-
-    if (packagesError) throw packagesError;
-
-    // Get commission payouts
-    // TODO: Implement MySQL backend API endpoint
-
-    if (commissionsError) throw commissionsError;
-
-    // Group by month
-    const monthlyData: any = {};
-
-    packageSales?.forEach((sale) => {
-      const month = format(new Date(sale.purchased_at), 'MMMM yyyy');
-      if (!monthlyData[month]) {
-        monthlyData[month] = { Month: month, PackageSales: 0, Commissions: 0, NetRevenue: 0 };
-      }
-      monthlyData[month].PackageSales += sale.amount;
+    const params = new URLSearchParams({
+      startDate: dateRange.dateFrom,
+      endDate: dateRange.dateTo,
+      period: 'month',
     });
 
-    commissions?.forEach((commission) => {
-      const month = format(new Date(commission.created_at), 'MMMM yyyy');
-      if (!monthlyData[month]) {
-        monthlyData[month] = { Month: month, PackageSales: 0, Commissions: 0, NetRevenue: 0 };
-      }
-      monthlyData[month].Commissions += commission.amount;
-    });
+    const result = await apiRequest(`/api/reports/revenue?${params.toString()}`);
 
-    // Calculate net revenue
-    Object.values(monthlyData).forEach((row: any) => {
-      row.NetRevenue = row.PackageSales - row.Commissions;
-    });
-
-    return Object.values(monthlyData);
+    // Transform to expected format
+    return (result.revenueByPeriod || []).map((item: any) => ({
+      Month: item.period,
+      PackageSales: item.revenue || 0,
+      Commissions: 0, // Would need separate calculation
+      NetRevenue: item.revenue || 0,
+    }));
   } catch (error: any) {
     console.error('Revenue report error:', error);
     return [];
@@ -188,29 +157,20 @@ export const getInvestmentReport = async (dateRange: ReportDateRange) => {
 
 export const getEarningsReport = async (dateRange: ReportDateRange) => {
   try {
-        // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    const params = new URLSearchParams({
+      startDate: dateRange.dateFrom,
+      endDate: dateRange.dateTo,
+    });
 
-    if (error) throw error;
+    const result = await apiRequest(`/api/reports/transactions?${params.toString()}`);
 
-    // Group by type
-    const grouped = transactions?.reduce((acc: any, txn) => {
-      const type = txn.transaction_type;
-      if (!acc[type]) {
-        acc[type] = { Type: type, Count: 0, TotalAmount: 0, UniqueUsers: new Set() };
-      }
-      acc[type].Count++;
-      acc[type].TotalAmount += txn.amount;
-      acc[type].UniqueUsers.add(txn.user_id);
-      return acc;
-    }, {});
-
-    // Convert to array and format
-    return Object.values(grouped || {}).map((row: any) => ({
-      Type: row.Type,
-      Count: row.Count,
-      TotalAmount: row.TotalAmount,
-      UniqueUsers: row.UniqueUsers.size,
+    // Transform to expected format
+    const typeData = result.transactionsByType || {};
+    return Object.keys(typeData).map((type) => ({
+      Type: type,
+      Count: typeData[type].count || 0,
+      TotalAmount: typeData[type].amount || 0,
+      UniqueUsers: typeData[type].count || 0, // Approximate
     }));
   } catch (error: any) {
     console.error('Earnings report error:', error);

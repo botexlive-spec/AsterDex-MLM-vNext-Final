@@ -142,47 +142,39 @@ export const getSupportTickets = async (filters?: {
   assignedTo?: string;
 }): Promise<Ticket[]> => {
   try {
-    // Admin auth handled by backendlet query = supabase
-      .from('support_tickets')
-      .select(`
-        *,
-        user:users!user_id(full_name, email),
-        assigned_admin:users!assigned_to(full_name)
-      `)
-      .order('created_at', { ascending: false });
+    const params = new URLSearchParams();
 
     if (filters?.status) {
-      query = query.eq('status', filters.status);
+      params.append('status', filters.status);
     }
     if (filters?.priority) {
-      query = query.eq('priority', filters.priority);
+      params.append('priority', filters.priority);
     }
     if (filters?.category) {
-      query = query.eq('category', filters.category);
+      params.append('category', filters.category);
     }
     if (filters?.assignedTo) {
-      query = query.eq('assigned_to', filters.assignedTo);
+      params.append('assignedTo', filters.assignedTo);
     }
 
-    const { data, error } = await query;
-
-    if (error) throw error;
+    const queryString = params.toString();
+    const result = await apiRequest(`/api/support/tickets${queryString ? '?' + queryString : ''}`);
 
     // Transform database response to match Ticket interface
-    return (data || []).map(ticket => ({
-      id: ticket.ticket_id || ticket.id,
+    return (result.data || []).map((ticket: any) => ({
+      id: ticket.id,
       subject: ticket.subject,
       category: ticket.category as TicketCategory,
       priority: ticket.priority as TicketPriority,
       status: ticket.status as TicketStatus,
       userId: ticket.user_id,
-      userName: ticket.user?.full_name || 'Unknown User',
-      userEmail: ticket.user?.email || '',
+      userName: ticket.user_meta?.full_name || ticket.user_meta?.name || 'Unknown User',
+      userEmail: ticket.user_email || '',
       assignedTo: ticket.assigned_to,
-      assignedToName: ticket.assigned_admin?.full_name,
+      assignedToName: ticket.assigned_to_email,
       createdAt: new Date(ticket.created_at),
       updatedAt: new Date(ticket.updated_at),
-      lastReplyAt: new Date(ticket.last_reply_at || ticket.updated_at),
+      lastReplyAt: new Date(ticket.last_response_at || ticket.updated_at),
       messagesCount: ticket.messages_count || 0,
       isRead: ticket.is_read || false,
     }));
@@ -197,16 +189,15 @@ export const getSupportTickets = async (filters?: {
  */
 export const getTicketMessages = async (ticketId: string): Promise<TicketMessage[]> => {
   try {
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    const result = await apiRequest(`/api/support/tickets/${ticketId}`);
 
-    if (error) throw error;
-
-    return (data || []).map(msg => ({
+    const replies = result.data?.replies || [];
+    return replies.map((msg: any) => ({
       id: msg.id,
       ticketId: msg.ticket_id,
-      senderId: msg.sender_id,
-      senderName: msg.sender?.full_name || 'Unknown',
-      senderRole: msg.sender?.role === 'admin' ? 'admin' : 'user',
+      senderId: msg.user_id,
+      senderName: msg.user_meta?.full_name || msg.user_meta?.name || 'Unknown',
+      senderRole: msg.is_admin_reply ? 'admin' : 'user',
       message: msg.message,
       isInternal: msg.is_internal || false,
       createdAt: new Date(msg.created_at),
@@ -227,29 +218,18 @@ export const createTicketMessage = async (
   isInternal: boolean = false
 ): Promise<TicketMessage> => {
   try {
-    // Admin auth handled by backendconst { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) throw new Error('User not authenticated');
+    const result = await apiRequest(`/api/support/tickets/${ticketId}/reply`, {
+      method: 'POST',
+      body: JSON.stringify({ message, isInternal }),
+    });
 
-    // TODO: Implement MySQL backend API endpoint
-
-    if (error) throw error;
-
-    // Update ticket's last_reply_at and messages_count
-    await supabase
-      .from('support_tickets')
-      .update({
-        last_reply_at: new Date().toISOString(),
-        messages_count: supabase.raw('messages_count + 1'),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', ticketId);
-
+    const data = result.data;
     return {
       id: data.id,
       ticketId: data.ticket_id,
-      senderId: data.sender_id,
-      senderName: data.sender?.full_name || 'Unknown',
-      senderRole: data.sender?.role === 'admin' ? 'admin' : 'user',
+      senderId: data.user_id,
+      senderName: data.user_email || 'Unknown',
+      senderRole: data.is_admin_reply ? 'admin' : 'user',
       message: data.message,
       isInternal: data.is_internal || false,
       createdAt: new Date(data.created_at),
@@ -269,9 +249,10 @@ export const updateTicketStatus = async (
   status: TicketStatus
 ): Promise<void> => {
   try {
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
-
-    if (error) throw error;
+    await apiRequest(`/api/support/tickets/${ticketId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
   } catch (error: any) {
     console.error('Update ticket status error:', error);
     throw new Error(error.message || 'Failed to update ticket status');
@@ -286,9 +267,10 @@ export const updateTicketPriority = async (
   priority: TicketPriority
 ): Promise<void> => {
   try {
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
-
-    if (error) throw error;
+    await apiRequest(`/api/support/tickets/${ticketId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ priority }),
+    });
   } catch (error: any) {
     console.error('Update ticket priority error:', error);
     throw new Error(error.message || 'Failed to update ticket priority');
@@ -303,9 +285,10 @@ export const assignTicket = async (
   adminId: string
 ): Promise<void> => {
   try {
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
-
-    if (error) throw error;
+    await apiRequest(`/api/support/tickets/${ticketId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ assigned_to: adminId }),
+    });
   } catch (error: any) {
     console.error('Assign ticket error:', error);
     throw new Error(error.message || 'Failed to assign ticket');
@@ -535,27 +518,18 @@ export const updateChatStatus = async (
  */
 export const getSupportDashboardMetrics = async () => {
   try {
-    // Admin auth handled by backend// Get ticket counts by status
-    // TODO: Implement MySQL backend API endpoint
-
-    const openTickets = ticketCounts?.filter(t => t.status === 'open').length || 0;
-
-    // Get active and waiting chat sessions
-    // TODO: Implement MySQL backend API endpoint
-
-    const activeChatCount = chatSessions?.filter(c => c.status === 'active').length || 0;
-    const waitingChatCount = chatSessions?.filter(c => c.status === 'waiting').length || 0;
-
-    // Calculate average response time (mock for now - would need real implementation)
-    const avgResponseTime = '2h 15m';
-    const avgResolutionTime = '8h 30m';
+    const result = await apiRequest('/api/support/stats');
 
     return {
-      openTickets,
-      activeChatCount,
-      waitingChatCount,
-      avgResponseTime,
-      avgResolutionTime,
+      openTickets: result.open || 0,
+      activeChatCount: 0, // Chat feature not implemented yet
+      waitingChatCount: 0, // Chat feature not implemented yet
+      avgResponseTime: `${result.avgResponseTimeHours || 0}h`,
+      avgResolutionTime: 'N/A', // Not tracked yet
+      totalTickets: result.totalTickets || 0,
+      inProgress: result.inProgress || 0,
+      resolved: result.resolved || 0,
+      closed: result.closed || 0,
     };
   } catch (error: any) {
     console.error('Get support dashboard metrics error:', error);

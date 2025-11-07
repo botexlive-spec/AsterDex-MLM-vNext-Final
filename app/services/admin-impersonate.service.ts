@@ -62,58 +62,30 @@ async function apiRequest(endpoint: string, options: RequestInit = {}) {
 // ============================================
 
 
-export const impersonateUser = async (userId: string): Promise<{ success: boolean; error?: string }> => {
+export const impersonateUser = async (userId: string, reason?: string): Promise<{ success: boolean; error?: string; token?: string }> => {
   try {
-    // Check if current user is admin
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
-    if (!currentUser) {
-      return { success: false, error: 'Not authenticated' };
-    }
-
-    // Verify admin role
-    // TODO: Implement MySQL backend API endpoint
-
-    if (userData?.role !== 'admin') {
-      return { success: false, error: 'Unauthorized: Admin access required' };
-    }
-
-    // Get the target user's email
-    // TODO: Implement MySQL backend API endpoint
-
-    if (userError || !targetUser) {
-      return { success: false, error: 'User not found' };
-    }
-
-    // Store impersonation data in localStorage
-    // We store the admin's ID so we can restore their session later
-    const impersonationData = {
-      adminId: currentUser.id,
-      adminEmail: currentUser.email,
-      targetUserId: userId,
-      targetUserEmail: targetUser.email,
-      timestamp: new Date().toISOString()
-    };
-
-    localStorage.setItem('impersonation', JSON.stringify(impersonationData));
-
-    // Log the impersonation action
-    await supabase.from('admin_actions').insert({
-      admin_id: currentUser.id,
-      action_type: 'impersonate_user',
-      target_user_id: userId,
-      details: {
-        target_email: targetUser.email,
-        target_name: targetUser.full_name
-      },
-      ip_address: 'system', // You can get real IP if needed
-      user_agent: navigator.userAgent
+    const result = await apiRequest(`/api/impersonate/${userId}`, {
+      method: 'POST',
+      body: JSON.stringify({ reason: reason || 'Admin support' }),
     });
 
-    // Instead of actually signing in as the user (which requires their credentials),
-    // we'll set a flag that the app can use to fetch and display the target user's data
-    // while maintaining the admin's session
+    if (result.token) {
+      // Store impersonation data in localStorage
+      const impersonationData = {
+        token: result.token,
+        adminId: result.impersonatedBy,
+        targetUserId: result.user.id,
+        targetUserEmail: result.user.email,
+        timestamp: new Date().toISOString(),
+        expiresIn: result.expiresIn,
+      };
 
-    return { success: true };
+      localStorage.setItem('impersonation', JSON.stringify(impersonationData));
+
+      return { success: true, token: result.token };
+    }
+
+    return { success: false, error: 'No token received' };
   } catch (error: any) {
     console.error('Impersonate user error:', error);
     return { success: false, error: error.message || 'Failed to impersonate user' };
@@ -130,16 +102,10 @@ export const stopImpersonation = async (): Promise<{ success: boolean }> => {
     if (impersonationData) {
       const data = JSON.parse(impersonationData);
 
-      // Log the end of impersonation
-      await supabase.from('admin_actions').insert({
-        admin_id: data.adminId,
-        action_type: 'stop_impersonate',
-        target_user_id: data.targetUserId,
-        details: {
-          duration_seconds: Math.floor((new Date().getTime() - new Date(data.timestamp).getTime()) / 1000)
-        },
-        ip_address: 'system',
-        user_agent: navigator.userAgent
+      // Call backend to stop impersonation
+      await apiRequest('/api/impersonate/stop', {
+        method: 'POST',
+        body: JSON.stringify({ userId: data.targetUserId }),
       });
     }
 
@@ -149,6 +115,8 @@ export const stopImpersonation = async (): Promise<{ success: boolean }> => {
     return { success: true };
   } catch (error: any) {
     console.error('Stop impersonation error:', error);
+    // Even if the API call fails, clear local storage
+    localStorage.removeItem('impersonation');
     return { success: false };
   }
 };
@@ -193,14 +161,16 @@ export const getImpersonatedUserData = async () => {
       return null;
     }
 
-    // TODO: Implement MySQL backend API endpoint
+    // Verify impersonation status with backend
+    const result = await apiRequest('/api/impersonate/verify', {
+      method: 'POST',
+    });
 
-    if (error) {
-      console.error('Error fetching impersonated user:', error);
-      return null;
+    if (result.isImpersonating) {
+      return result.user;
     }
 
-    return user;
+    return null;
   } catch (error) {
     console.error('Get impersonated user data error:', error);
     return null;

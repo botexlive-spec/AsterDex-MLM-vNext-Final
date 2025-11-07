@@ -101,37 +101,39 @@ export const getAllKYCSubmissions = async (filters?: {
   priority?: string;
 }): Promise<KYCSubmissionAdmin[]> => {
   try {
-        // Verify admin access
-    // Admin auth handled by backendlet query = supabase
-      .from('kyc_documents')
-      .select(`
-        *,
-        user:user_id(
-          id,
-          email,
-          raw_user_meta_data
-        )
-      `)
-      .order('created_at', { ascending: false });
+    const params = new URLSearchParams();
 
     if (filters?.status && filters.status !== 'all') {
-      query = query.eq('status', filters.status);
+      params.append('status', filters.status);
     }
 
     if (filters?.search) {
-      // Search by user email or name - need to join with users table
+      params.append('search', filters.search);
     }
 
-    const { data, error } = await query;
+    const queryString = params.toString();
+    const result = await apiRequest(`/api/kyc${queryString ? '?' + queryString : ''}`);
 
-    if (error) throw error;
-
-    return (data || []).map((item: any) => ({
-      ...item,
-      user_name: item.user?.raw_user_meta_data?.full_name || item.user?.raw_user_meta_data?.name || 'Unknown',
-      user_email: item.user?.email,
+    return (result.data || []).map((item: any) => ({
+      id: item.id,
+      user_id: item.user_id,
+      user_name: item.user_meta?.full_name || item.user_meta?.name || 'Unknown',
+      user_email: item.user_email,
       user_rank: 'Member',
       user_investment: 0,
+      document_type: item.document_type,
+      document_number: item.document_number,
+      document_front_url: item.document_front_url,
+      document_back_url: item.document_back_url,
+      selfie_url: item.selfie_url,
+      address_proof_url: item.address_proof_url,
+      status: item.status,
+      rejection_reason: item.rejection_reason,
+      reviewed_by: item.reviewed_by,
+      reviewed_at: item.reviewed_at,
+      notes: item.admin_notes,
+      created_at: item.created_at,
+      updated_at: item.updated_at,
     }));
   } catch (error: any) {
     console.error('Error getting KYC submissions:', error);
@@ -144,18 +146,31 @@ export const getAllKYCSubmissions = async (filters?: {
  */
 export const getKYCSubmission = async (submissionId: string): Promise<KYCSubmissionAdmin | null> => {
   try {
-        // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    const result = await apiRequest(`/api/kyc/${submissionId}`);
 
-    if (error) throw error;
-    if (!data) return null;
+    if (!result.data) return null;
 
+    const item = result.data;
     return {
-      ...data,
-      user_name: data.user?.raw_user_meta_data?.full_name || data.user?.raw_user_meta_data?.name || 'Unknown',
-      user_email: data.user?.email,
+      id: item.id,
+      user_id: item.user_id,
+      user_name: item.user_meta?.full_name || item.user_meta?.name || 'Unknown',
+      user_email: item.user_email,
       user_rank: 'Member',
       user_investment: 0,
+      document_type: item.document_type,
+      document_number: item.document_number,
+      document_front_url: item.document_front_url,
+      document_back_url: item.document_back_url,
+      selfie_url: item.selfie_url,
+      address_proof_url: item.address_proof_url,
+      status: item.status,
+      rejection_reason: item.rejection_reason,
+      reviewed_by: item.reviewed_by,
+      reviewed_at: item.reviewed_at,
+      notes: item.admin_notes,
+      created_at: item.created_at,
+      updated_at: item.updated_at,
     };
   } catch (error: any) {
     console.error('Error getting KYC submission:', error);
@@ -171,40 +186,12 @@ export const approveKYC = async (
   notes?: string
 ): Promise<void> => {
   try {
-        // Verify admin access
-    // Admin auth handled by backend// Auth handled by backend - admin ID from JWT token
-    if (authError) throw authError;
-    if (!admin) throw new Error('Admin not authenticated');
-
-    // Get submission details
-    // TODO: Implement MySQL backend API endpoint
-
-    if (submissionError) throw submissionError;
-    if (!submission) throw new Error('KYC submission not found');
-
-    if (submission.status === 'approved') {
-      throw new Error('KYC already approved');
-    }
-
-    // Update KYC document status
-    // TODO: Implement MySQL backend API endpoint
-
-    if (updateDocError) throw updateDocError;
-
-    // Update user KYC status
-    // TODO: Implement MySQL backend API endpoint
-
-    if (updateUserError) throw updateUserError;
-
-    // Log admin action
-    await supabase.from('admin_actions').insert({
-      user_id: submission.user_id,
-      admin_id: admin.id,
-      action: 'approve_kyc',
-      metadata: { submission_id: submissionId, notes },
+    await apiRequest(`/api/kyc/${submissionId}/approve`, {
+      method: 'POST',
+      body: JSON.stringify({ notes }),
     });
 
-    // TODO: Send approval email to user
+    console.log(`KYC submission ${submissionId} approved successfully`);
   } catch (error: any) {
     console.error('Error approving KYC:', error);
     throw new Error(error.message || 'Failed to approve KYC');
@@ -219,36 +206,16 @@ export const rejectKYC = async (
   reason: string
 ): Promise<void> => {
   try {
-        // Verify admin access
-    // Admin auth handled by backend// Auth handled by backend - admin ID from JWT token
-    if (authError) throw authError;
-    if (!admin) throw new Error('Admin not authenticated');
+    if (!reason) {
+      throw new Error('Rejection reason is required');
+    }
 
-    // Get submission details
-    // TODO: Implement MySQL backend API endpoint
-
-    if (submissionError) throw submissionError;
-    if (!submission) throw new Error('KYC submission not found');
-
-    // Update KYC document status
-    // TODO: Implement MySQL backend API endpoint
-
-    if (updateDocError) throw updateDocError;
-
-    // Update user KYC status
-    // TODO: Implement MySQL backend API endpoint
-
-    if (updateUserError) throw updateUserError;
-
-    // Log admin action
-    await supabase.from('admin_actions').insert({
-      user_id: submission.user_id,
-      admin_id: admin.id,
-      action: 'reject_kyc',
-      metadata: { submission_id: submissionId, reason },
+    await apiRequest(`/api/kyc/${submissionId}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
     });
 
-    // TODO: Send rejection email to user with reason
+    console.log(`KYC submission ${submissionId} rejected successfully`);
   } catch (error: any) {
     console.error('Error rejecting KYC:', error);
     throw new Error(error.message || 'Failed to reject KYC');
@@ -263,36 +230,12 @@ export const requestKYCResubmission = async (
   reason: string
 ): Promise<void> => {
   try {
-        // Verify admin access
-    // Admin auth handled by backend// Auth handled by backend - admin ID from JWT token
-    if (authError) throw authError;
-    if (!admin) throw new Error('Admin not authenticated');
-
-    // Get submission details
-    // TODO: Implement MySQL backend API endpoint
-
-    if (submissionError) throw submissionError;
-    if (!submission) throw new Error('KYC submission not found');
-
-    // Update KYC document status
-    // TODO: Implement MySQL backend API endpoint
-
-    if (updateDocError) throw updateDocError;
-
-    // Update user KYC status
-    // TODO: Implement MySQL backend API endpoint
-
-    if (updateUserError) throw updateUserError;
-
-    // Log admin action
-    await supabase.from('admin_actions').insert({
-      user_id: submission.user_id,
-      admin_id: admin.id,
-      action: 'request_kyc_resubmission',
-      metadata: { submission_id: submissionId, reason },
+    await apiRequest(`/api/kyc/${submissionId}/resubmit`, {
+      method: 'POST',
+      body: JSON.stringify({ message: reason }),
     });
 
-    // TODO: Send resubmission request email to user
+    console.log(`KYC resubmission requested for ${submissionId}`);
   } catch (error: any) {
     console.error('Error requesting KYC resubmission:', error);
     throw new Error(error.message || 'Failed to request KYC resubmission');
@@ -304,18 +247,15 @@ export const requestKYCResubmission = async (
  */
 export const getKYCStats = async (): Promise<KYCStats> => {
   try {
-        // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    const result = await apiRequest('/api/kyc/stats');
 
-    const stats: KYCStats = {
-      total_submissions: submissions?.length || 0,
-      pending: submissions?.filter(s => s.status === 'pending').length || 0,
-      approved: submissions?.filter(s => s.status === 'approved').length || 0,
-      rejected: submissions?.filter(s => s.status === 'rejected').length || 0,
-      resubmission_required: submissions?.filter(s => s.status === 'resubmission_required').length || 0,
+    return {
+      total_submissions: result.totalSubmissions || 0,
+      pending: result.pending || 0,
+      approved: result.approved || 0,
+      rejected: result.rejected || 0,
+      resubmission_required: result.resubmitRequired || 0,
     };
-
-    return stats;
   } catch (error: any) {
     console.error('Error getting KYC stats:', error);
     throw new Error(error.message || 'Failed to get KYC stats');

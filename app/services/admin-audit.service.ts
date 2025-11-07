@@ -88,36 +88,38 @@ export const getAdminLogs = async (
   limit: number = 100
 ): Promise<AdminLog[]> => {
   try {
-        // Verify admin access
-    // Admin auth handled by backend.from('admin_actions')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(limit);
+    const params = new URLSearchParams();
+    params.append('limit', limit.toString());
 
     if (filters?.actionType) {
-      query = query.eq('action_type', filters.actionType);
+      params.append('action', filters.actionType);
     }
 
     if (filters?.dateFrom) {
-      query = query.gte('created_at', filters.dateFrom);
+      params.append('startDate', filters.dateFrom);
     }
 
     if (filters?.dateTo) {
-      query = query.lte('created_at', filters.dateTo);
+      params.append('endDate', filters.dateTo);
     }
 
     if (filters?.adminId) {
-      query = query.eq('admin_id', filters.adminId);
+      params.append('userId', filters.adminId);
     }
 
-    const { data, error } = await query;
+    const result = await apiRequest(`/api/audit/logs?${params.toString()}`);
 
-    if (error) {
-      console.error('Error fetching admin logs:', error);
-      return [];
-    }
-
-    return data || [];
+    return (result.data || []).map((log: any) => ({
+      id: log.id,
+      admin_id: log.user_id,
+      admin_name: log.user_meta?.full_name || log.user_email || 'Unknown',
+      action_type: log.action,
+      target_id: log.target_user_id,
+      details: log.details,
+      ip_address: null,
+      user_agent: null,
+      created_at: log.created_at,
+    }));
   } catch (error: any) {
     console.error('Error getting admin logs:', error);
     return [];
@@ -133,15 +135,14 @@ export const logAdminAction = async (
   details: any
 ): Promise<void> => {
   try {
-        // Verify admin access
-    // Admin auth handled by backend.from('admin_actions')
-      .insert([{
-        action_type: actionType,
-        target_id: targetId,
-        details,
-      }]);
-
-    if (error) throw error;
+    await apiRequest('/api/audit/log', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: actionType,
+        targetUserId: targetId,
+        details: typeof details === 'string' ? details : JSON.stringify(details),
+      }),
+    });
   } catch (error: any) {
     console.error('Error logging admin action:', error);
   }
@@ -155,38 +156,13 @@ export const getUserActivityLogs = async (
   limit: number = 100
 ): Promise<any[]> => {
   try {
-        // Verify admin access
-    // Admin auth handled by backend// This would query a user_activity_logs table if it exists
-    // For now, we can get user-related data from mlm_transactions
-      .from('mlm_transactions')
-      .select(`
-        id,
-        user_id,
-        transaction_type,
-        amount,
-        description,
-        created_at,
-        users!mlm_transactions_user_id_fkey (
-          id,
-          full_name,
-          email
-        )
-      `)
-      .order('created_at', { ascending: false })
-      .limit(limit);
-
     if (userId) {
-      query = query.eq('user_id', userId);
+      const result = await apiRequest(`/api/audit/logs/${userId}?limit=${limit}`);
+      return result.data || [];
+    } else {
+      const result = await apiRequest(`/api/audit/logs?limit=${limit}`);
+      return result.data || [];
     }
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error('Error fetching user logs:', error);
-      return [];
-    }
-
-    return data || [];
   } catch (error: any) {
     console.error('Error getting user activity logs:', error);
     return [];
@@ -240,16 +216,15 @@ export const getSystemLogs = async (
  */
 export const getAuditStats = async () => {
   try {
-        // Verify admin access
-    // Admin auth handled by backendconst [adminActions, transactions] = await Promise.all([
-// TODO: Migrate to MySQL backend API -       supabase.from('admin_actions').select('*', { count: 'exact', head: true }),
-// TODO: Migrate to MySQL backend API -       supabase.from('mlm_transactions').select('*', { count: 'exact', head: true }),
-    ]);
+    const result = await apiRequest('/api/audit/stats');
 
     return {
-      total_admin_actions: adminActions.count || 0,
-      total_user_activities: transactions.count || 0,
-      total_system_events: 0, // Would come from system_logs table
+      total_admin_actions: result.totalLogs || 0,
+      total_user_activities: result.totalLogs || 0,
+      total_system_events: 0,
+      action_counts: result.actionCounts || {},
+      top_users: result.topUsers || [],
+      recent_activity_count: result.recentActivityCount || 0,
     };
   } catch (error: any) {
     console.error('Error getting audit stats:', error);

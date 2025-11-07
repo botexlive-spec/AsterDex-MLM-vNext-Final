@@ -16,6 +16,12 @@ import genealogyRoutes from './routes/genealogy';
 import transactionsRoutes from './routes/transactions';
 import ranksRoutes from './routes/ranks';
 import walletRoutes from './routes/wallet';
+import kycRoutes from './routes/kyc';
+import supportRoutes from './routes/support';
+import configRoutes from './routes/config';
+import reportsRoutes from './routes/reports';
+import auditRoutes from './routes/audit';
+import impersonateRoutes from './routes/impersonate';
 import { pool, query } from './db';
 import { distributeROI } from './cron/roi-distribution';
 
@@ -66,6 +72,12 @@ app.use('/api/genealogy', genealogyRoutes);
 app.use('/api/transactions', transactionsRoutes);
 app.use('/api/ranks', ranksRoutes);
 app.use('/api/wallet', walletRoutes);
+app.use('/api/kyc', kycRoutes);
+app.use('/api/support', supportRoutes);
+app.use('/api/config', configRoutes);
+app.use('/api/reports', reportsRoutes);
+app.use('/api/audit', auditRoutes);
+app.use('/api/impersonate', impersonateRoutes);
 
 // Error handler
 app.use((err: Error, req: Request, res: Response, next: any) => {

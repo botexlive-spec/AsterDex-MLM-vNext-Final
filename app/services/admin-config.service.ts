@@ -77,11 +77,8 @@ export interface LevelIncomeConfig {
 
 export const getLevelIncomeConfig = async () => {
   try {
-        // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
-
-    if (error) throw error;
-    return data || [];
+    const result = await apiRequest('/api/config/level_income');
+    return result.value || [];
   } catch (error: any) {
     console.error('Get level income config error:', error);
     return [];
@@ -90,10 +87,18 @@ export const getLevelIncomeConfig = async () => {
 
 export const updateLevelIncomeConfig = async (level: number, config: Partial<LevelIncomeConfig>) => {
   try {
-        // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    // Get current config
+    const current = await getLevelIncomeConfig();
 
-    if (error) throw error;
+    // Update the specific level
+    const updated = current.map((item: any) =>
+      item.level === level ? { ...item, ...config } : item
+    );
+
+    await apiRequest('/api/config/level_income', {
+      method: 'PUT',
+      body: JSON.stringify({ value: updated }),
+    });
 
     return { success: true };
   } catch (error: any) {
@@ -121,11 +126,8 @@ export interface MatchingBonusTier {
 
 export const getMatchingBonusTiers = async () => {
   try {
-        // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
-
-    if (error) throw error;
-    return data || [];
+    const result = await apiRequest('/api/config/matching_bonus_tiers');
+    return result.value || [];
   } catch (error: any) {
     console.error('Get matching bonus tiers error:', error);
     return [];
@@ -134,10 +136,15 @@ export const getMatchingBonusTiers = async () => {
 
 export const updateMatchingBonusTier = async (tierId: string, tier: Partial<MatchingBonusTier>) => {
   try {
-        // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    const current = await getMatchingBonusTiers();
+    const updated = current.map((item: any) =>
+      item.id === tierId ? { ...item, ...tier } : item
+    );
 
-    if (error) throw error;
+    await apiRequest('/api/config/matching_bonus_tiers', {
+      method: 'PUT',
+      body: JSON.stringify({ value: updated }),
+    });
 
     return { success: true };
   } catch (error: any) {
@@ -148,10 +155,18 @@ export const updateMatchingBonusTier = async (tierId: string, tier: Partial<Matc
 
 export const createMatchingBonusTier = async (tier: Omit<MatchingBonusTier, 'id' | 'created_at' | 'updated_at'>) => {
   try {
-        // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    const current = await getMatchingBonusTiers();
+    const newTier = {
+      ...tier,
+      id: `tier_${Date.now()}`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
 
-    if (error) throw error;
+    await apiRequest('/api/config/matching_bonus_tiers', {
+      method: 'PUT',
+      body: JSON.stringify({ value: [...current, newTier] }),
+    });
 
     return { success: true };
   } catch (error: any) {
@@ -162,10 +177,13 @@ export const createMatchingBonusTier = async (tier: Omit<MatchingBonusTier, 'id'
 
 export const deleteMatchingBonusTier = async (tierId: string) => {
   try {
-        // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    const current = await getMatchingBonusTiers();
+    const updated = current.filter((item: any) => item.id !== tierId);
 
-    if (error) throw error;
+    await apiRequest('/api/config/matching_bonus_tiers', {
+      method: 'PUT',
+      body: JSON.stringify({ value: updated }),
+    });
 
     return { success: true };
   } catch (error: any) {
@@ -196,11 +214,8 @@ export interface RankRequirement {
 
 export const getRankRequirements = async () => {
   try {
-        // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
-
-    if (error) throw error;
-    return data || [];
+    const result = await apiRequest('/api/config/rank_requirements');
+    return result.value || [];
   } catch (error: any) {
     console.error('Get rank requirements error:', error);
     return [];
@@ -209,10 +224,15 @@ export const getRankRequirements = async () => {
 
 export const updateRankRequirement = async (rankId: string, rank: Partial<RankRequirement>) => {
   try {
-        // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    const current = await getRankRequirements();
+    const updated = current.map((item: any) =>
+      item.id === rankId ? { ...item, ...rank } : item
+    );
 
-    if (error) throw error;
+    await apiRequest('/api/config/rank_requirements', {
+      method: 'PUT',
+      body: JSON.stringify({ value: updated }),
+    });
 
     return { success: true };
   } catch (error: any) {
@@ -223,10 +243,18 @@ export const updateRankRequirement = async (rankId: string, rank: Partial<RankRe
 
 export const createRankRequirement = async (rank: Omit<RankRequirement, 'id' | 'created_at' | 'updated_at'>) => {
   try {
-        // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    const current = await getRankRequirements();
+    const newRank = {
+      ...rank,
+      id: `rank_${Date.now()}`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
 
-    if (error) throw error;
+    await apiRequest('/api/config/rank_requirements', {
+      method: 'PUT',
+      body: JSON.stringify({ value: [...current, newRank] }),
+    });
 
     return { success: true };
   } catch (error: any) {
@@ -237,10 +265,13 @@ export const createRankRequirement = async (rank: Omit<RankRequirement, 'id' | '
 
 export const deleteRankRequirement = async (rankId: string) => {
   try {
-        // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    const current = await getRankRequirements();
+    const updated = current.filter((item: any) => item.id !== rankId);
 
-    if (error) throw error;
+    await apiRequest('/api/config/rank_requirements', {
+      method: 'PUT',
+      body: JSON.stringify({ value: updated }),
+    });
 
     return { success: true };
   } catch (error: any) {
@@ -262,11 +293,8 @@ export interface BinarySetting {
 
 export const getBinarySettings = async () => {
   try {
-        // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
-
-    if (error) throw error;
-    return data || [];
+    const result = await apiRequest('/api/config/binary_settings');
+    return result.value || [];
   } catch (error: any) {
     console.error('Get binary settings error:', error);
     return [];
@@ -275,10 +303,15 @@ export const getBinarySettings = async () => {
 
 export const updateBinarySetting = async (settingKey: string, settingValue: string) => {
   try {
-        // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    const current = await getBinarySettings();
+    const updated = current.map((item: any) =>
+      item.setting_key === settingKey ? { ...item, setting_value: settingValue } : item
+    );
 
-    if (error) throw error;
+    await apiRequest('/api/config/binary_settings', {
+      method: 'PUT',
+      body: JSON.stringify({ value: updated }),
+    });
 
     return { success: true };
   } catch (error: any) {
@@ -301,11 +334,8 @@ export interface SystemSetting {
 
 export const getSystemSettings = async () => {
   try {
-        // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
-
-    if (error) throw error;
-    return data || [];
+    const result = await apiRequest('/api/config');
+    return result.raw || []; // Get all config as array
   } catch (error: any) {
     console.error('Get system settings error:', error);
     return [];
@@ -314,10 +344,10 @@ export const getSystemSettings = async () => {
 
 export const updateSystemSetting = async (settingKey: string, settingValue: string) => {
   try {
-        // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
-
-    if (error) throw error;
+    await apiRequest(`/api/config/${settingKey}`, {
+      method: 'PUT',
+      body: JSON.stringify({ value: settingValue }),
+    });
 
     return { success: true };
   } catch (error: any) {
