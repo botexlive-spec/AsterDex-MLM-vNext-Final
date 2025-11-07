@@ -19,7 +19,7 @@ CREATE TABLE users (
 
   -- MLM Structure
   sponsor_id CHAR(36),
-  referral_code VARCHAR(20) UNIQUE NOT NULL,
+  referral_code VARCHAR(255) UNIQUE NOT NULL,
 
   -- Financial
   wallet_balance DECIMAL(15, 6) DEFAULT 0.00 NOT NULL,
