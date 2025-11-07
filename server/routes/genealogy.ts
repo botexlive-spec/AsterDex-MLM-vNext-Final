@@ -5,6 +5,7 @@
 
 import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { query } from '../db';
 
 const router = Router();
