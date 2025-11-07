@@ -11,7 +11,7 @@ export type { WalletBalance, Transaction, DepositAddress } from './wallet.servic
  * Get auth token from localStorage
  */
 function getAuthToken(): string | null {
-  return localStorage.getItem('authToken');
+  return localStorage.getItem('auth_token');
 }
 
 /**
