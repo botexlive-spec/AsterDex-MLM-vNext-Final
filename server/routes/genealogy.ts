@@ -371,11 +371,15 @@ router.post('/add-member', authenticateToken, async (req: Request, res: Response
       position, // 'left' or 'right'
     } = req.body;
 
-    console.log('👤 [Genealogy] User adding new member:', {
-      currentUser: currentUserId,
+    console.log('🚀 [Genealogy] ========== ADD MEMBER REQUEST ==========');
+    console.log('👤 [Genealogy] Current User ID:', currentUserId);
+    console.log('📝 [Genealogy] Request Body:', {
+      fullName,
       email,
+      phone,
       parentId,
-      position
+      position,
+      initialInvestment
     });
 
     // Validate required fields
@@ -453,10 +457,9 @@ router.post('/add-member', authenticateToken, async (req: Request, res: Response
     await query(
       `INSERT INTO users (
         id, email, password_hash, full_name, role, sponsor_id, referral_code,
-        wallet_balance, total_investment, total_earnings, roi_earnings,
-        commission_earnings, binary_earnings, current_rank, left_volume,
-        right_volume, phone_number, kyc_status, email_verified, is_active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        wallet_balance, total_investment, total_earnings, current_rank,
+        left_volume, right_volume, phone_number, kyc_status, email_verified, is_active
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         userId,
         email,
@@ -468,9 +471,6 @@ router.post('/add-member', authenticateToken, async (req: Request, res: Response
         initialInvestment,
         initialInvestment,
         0, // total_earnings
-        0, // roi_earnings
-        0, // commission_earnings
-        0, // binary_earnings
         'starter',
         0, // left_volume
         0, // right_volume
@@ -538,8 +538,12 @@ router.post('/add-member', authenticateToken, async (req: Request, res: Response
       message: `User ${fullName} created successfully at ${position} position`,
     });
   } catch (error: any) {
-    console.error('❌ [Genealogy] Add member error:', error);
-    res.status(500).json({ error: 'Failed to add member' });
+    console.error('❌ [Genealogy] ========== ADD MEMBER ERROR ==========');
+    console.error('❌ [Genealogy] Error Type:', error.constructor.name);
+    console.error('❌ [Genealogy] Error Message:', error.message);
+    console.error('❌ [Genealogy] Error Stack:', error.stack);
+    console.error('❌ [Genealogy] Full Error:', error);
+    res.status(500).json({ error: error.message || 'Failed to add member' });
   }
 });
 
