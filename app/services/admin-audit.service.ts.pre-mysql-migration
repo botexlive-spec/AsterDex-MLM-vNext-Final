@@ -4,64 +4,7 @@
  * Manages audit logs for admin actions, user actions, and system events
  */
 
-
-/**
- * ⚠️  MIGRATION IN PROGRESS: MySQL Backend Integration
- * 
- * This service is being migrated from Supabase to MySQL backend.
- * Some functions may return empty data or throw errors until backend
- * API endpoints are fully implemented.
- * 
- * Service: Audit logs
- * Supabase references removed: 2
- * 
- * Next steps:
- * 1. Create backend API routes in server/routes/admin-audit.ts
- * 2. Replace TODO comments with actual API calls using apiRequest()
- * 3. Follow pattern from admin-rank.service.ts
- */
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-
-/**
- * Get auth token from localStorage
- */
-function getAuthToken(): string | null {
-  return localStorage.getItem('auth_token');
-}
-
-/**
- * Make authenticated API request
- */
-async function apiRequest(endpoint: string, options: RequestInit = {}) {
-  const token = getAuthToken();
-
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
-
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-      ...options.headers,
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(error.error || `API request failed: ${response.status}`);
-  }
-
-  return response.json();
-}
-
-
-// ============================================
-// SERVICE FUNCTIONS (Need MySQL Backend APIs)
-// ============================================
-
+import { requireAdmin } from '../middleware/admin.middleware';
 
 export interface AdminLog {
   id: string;
@@ -89,7 +32,9 @@ export const getAdminLogs = async (
 ): Promise<AdminLog[]> => {
   try {
         // Verify admin access
-    // Admin auth handled by backend.from('admin_actions')
+    await requireAdmin();
+
+      .from('admin_actions')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(limit);
@@ -134,7 +79,9 @@ export const logAdminAction = async (
 ): Promise<void> => {
   try {
         // Verify admin access
-    // Admin auth handled by backend.from('admin_actions')
+    await requireAdmin();
+
+      .from('admin_actions')
       .insert([{
         action_type: actionType,
         target_id: targetId,
@@ -156,7 +103,9 @@ export const getUserActivityLogs = async (
 ): Promise<any[]> => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// This would query a user_activity_logs table if it exists
+    await requireAdmin();
+
+// This would query a user_activity_logs table if it exists
     // For now, we can get user-related data from mlm_transactions
       .from('mlm_transactions')
       .select(`
@@ -207,7 +156,9 @@ export const getSystemLogs = async (
 ): Promise<any[]> => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// Get commission runs as system logs
+    await requireAdmin();
+
+// Get commission runs as system logs
       .from('commission_runs')
       .select('*')
       .order('created_at', { ascending: false })
@@ -241,7 +192,9 @@ export const getSystemLogs = async (
 export const getAuditStats = async () => {
   try {
         // Verify admin access
-    // Admin auth handled by backendconst [adminActions, transactions] = await Promise.all([
+    await requireAdmin();
+
+const [adminActions, transactions] = await Promise.all([
 // TODO: Migrate to MySQL backend API -       supabase.from('admin_actions').select('*', { count: 'exact', head: true }),
 // TODO: Migrate to MySQL backend API -       supabase.from('mlm_transactions').select('*', { count: 'exact', head: true }),
     ]);

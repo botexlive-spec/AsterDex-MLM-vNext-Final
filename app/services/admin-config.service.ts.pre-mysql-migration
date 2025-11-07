@@ -3,68 +3,11 @@
  * Manage database-driven business rules and system settings
  */
 
+import { requireAdmin } from '../middleware/admin.middleware';
+
 // ============================================
 // LEVEL INCOME CONFIGURATION
 // ============================================
-
-
-/**
- * ⚠️  MIGRATION IN PROGRESS: MySQL Backend Integration
- * 
- * This service is being migrated from Supabase to MySQL backend.
- * Some functions may return empty data or throw errors until backend
- * API endpoints are fully implemented.
- * 
- * Service: System configuration management
- * Supabase references removed: 14
- * 
- * Next steps:
- * 1. Create backend API routes in server/routes/admin-config.ts
- * 2. Replace TODO comments with actual API calls using apiRequest()
- * 3. Follow pattern from admin-rank.service.ts
- */
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-
-/**
- * Get auth token from localStorage
- */
-function getAuthToken(): string | null {
-  return localStorage.getItem('auth_token');
-}
-
-/**
- * Make authenticated API request
- */
-async function apiRequest(endpoint: string, options: RequestInit = {}) {
-  const token = getAuthToken();
-
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
-
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-      ...options.headers,
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(error.error || `API request failed: ${response.status}`);
-  }
-
-  return response.json();
-}
-
-
-// ============================================
-// SERVICE FUNCTIONS (Need MySQL Backend APIs)
-// ============================================
-
 
 export interface LevelIncomeConfig {
   id?: string;
@@ -78,7 +21,12 @@ export interface LevelIncomeConfig {
 export const getLevelIncomeConfig = async () => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+const { data, error } = await supabase
+      .from('level_income_config')
+      .select('*')
+      .order('level', { ascending: true });
 
     if (error) throw error;
     return data || [];
@@ -91,7 +39,17 @@ export const getLevelIncomeConfig = async () => {
 export const updateLevelIncomeConfig = async (level: number, config: Partial<LevelIncomeConfig>) => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+const { error } = await supabase
+      .from('level_income_config')
+      .update({
+        percentage: config.percentage,
+        amount: config.amount,
+        is_active: config.is_active,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('level', level);
 
     if (error) throw error;
 
@@ -122,7 +80,12 @@ export interface MatchingBonusTier {
 export const getMatchingBonusTiers = async () => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+const { data, error } = await supabase
+      .from('matching_bonus_tiers')
+      .select('*')
+      .order('tier_level', { ascending: true });
 
     if (error) throw error;
     return data || [];
@@ -135,7 +98,20 @@ export const getMatchingBonusTiers = async () => {
 export const updateMatchingBonusTier = async (tierId: string, tier: Partial<MatchingBonusTier>) => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+const { error } = await supabase
+      .from('matching_bonus_tiers')
+      .update({
+        tier_name: tier.tier_name,
+        left_matches_required: tier.left_matches_required,
+        right_matches_required: tier.right_matches_required,
+        bonus_amount: tier.bonus_amount,
+        bonus_percentage: tier.bonus_percentage,
+        is_active: tier.is_active,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', tierId);
 
     if (error) throw error;
 
@@ -149,7 +125,19 @@ export const updateMatchingBonusTier = async (tierId: string, tier: Partial<Matc
 export const createMatchingBonusTier = async (tier: Omit<MatchingBonusTier, 'id' | 'created_at' | 'updated_at'>) => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+const { error } = await supabase
+      .from('matching_bonus_tiers')
+      .insert({
+        tier_name: tier.tier_name,
+        tier_level: tier.tier_level,
+        left_matches_required: tier.left_matches_required,
+        right_matches_required: tier.right_matches_required,
+        bonus_amount: tier.bonus_amount,
+        bonus_percentage: tier.bonus_percentage,
+        is_active: tier.is_active,
+      });
 
     if (error) throw error;
 
@@ -163,7 +151,12 @@ export const createMatchingBonusTier = async (tier: Omit<MatchingBonusTier, 'id'
 export const deleteMatchingBonusTier = async (tierId: string) => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+const { error } = await supabase
+      .from('matching_bonus_tiers')
+      .delete()
+      .eq('id', tierId);
 
     if (error) throw error;
 
@@ -197,7 +190,12 @@ export interface RankRequirement {
 export const getRankRequirements = async () => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+const { data, error } = await supabase
+      .from('rank_requirements')
+      .select('*')
+      .order('min_volume', { ascending: true });
 
     if (error) throw error;
     return data || [];
@@ -210,7 +208,24 @@ export const getRankRequirements = async () => {
 export const updateRankRequirement = async (rankId: string, rank: Partial<RankRequirement>) => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+const { error } = await supabase
+      .from('rank_requirements')
+      .update({
+        rank: rank.rank,
+        min_volume: rank.min_volume,
+        min_direct_referrals: rank.min_direct_referrals,
+        min_team_size: rank.min_team_size,
+        reward_amount: rank.reward_amount,
+        levels_unlocked: rank.levels_unlocked,
+        rank_color: rank.rank_color,
+        rank_icon: rank.rank_icon,
+        description: rank.description,
+        is_active: rank.is_active,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', rankId);
 
     if (error) throw error;
 
@@ -224,7 +239,22 @@ export const updateRankRequirement = async (rankId: string, rank: Partial<RankRe
 export const createRankRequirement = async (rank: Omit<RankRequirement, 'id' | 'created_at' | 'updated_at'>) => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+const { error } = await supabase
+      .from('rank_requirements')
+      .insert({
+        rank: rank.rank,
+        min_volume: rank.min_volume,
+        min_direct_referrals: rank.min_direct_referrals,
+        min_team_size: rank.min_team_size,
+        reward_amount: rank.reward_amount,
+        levels_unlocked: rank.levels_unlocked,
+        rank_color: rank.rank_color,
+        rank_icon: rank.rank_icon,
+        description: rank.description,
+        is_active: rank.is_active,
+      });
 
     if (error) throw error;
 
@@ -238,7 +268,12 @@ export const createRankRequirement = async (rank: Omit<RankRequirement, 'id' | '
 export const deleteRankRequirement = async (rankId: string) => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+const { error } = await supabase
+      .from('rank_requirements')
+      .delete()
+      .eq('id', rankId);
 
     if (error) throw error;
 
@@ -263,7 +298,12 @@ export interface BinarySetting {
 export const getBinarySettings = async () => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+const { data, error } = await supabase
+      .from('binary_settings')
+      .select('*')
+      .order('setting_key', { ascending: true });
 
     if (error) throw error;
     return data || [];
@@ -276,7 +316,15 @@ export const getBinarySettings = async () => {
 export const updateBinarySetting = async (settingKey: string, settingValue: string) => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+const { error } = await supabase
+      .from('binary_settings')
+      .update({
+        setting_value: settingValue,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('setting_key', settingKey);
 
     if (error) throw error;
 
@@ -302,7 +350,12 @@ export interface SystemSetting {
 export const getSystemSettings = async () => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+const { data, error } = await supabase
+      .from('mlm_system_settings')
+      .select('*')
+      .order('setting_key', { ascending: true });
 
     if (error) throw error;
     return data || [];
@@ -315,7 +368,15 @@ export const getSystemSettings = async () => {
 export const updateSystemSetting = async (settingKey: string, settingValue: string) => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+const { error } = await supabase
+      .from('mlm_system_settings')
+      .update({
+        setting_value: settingValue,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('setting_key', settingKey);
 
     if (error) throw error;
 
@@ -333,7 +394,9 @@ export const updateSystemSetting = async (settingKey: string, settingValue: stri
 export const clearConfigCache = async () => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// This will be handled on the backend by calling the clearConfigCache() function
+    await requireAdmin();
+
+// This will be handled on the backend by calling the clearConfigCache() function
     // from mlm.service.ts after any config update
     // For now, we'll just return success
     return { success: true, message: 'Configuration cache cleared successfully' };

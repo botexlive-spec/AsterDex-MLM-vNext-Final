@@ -3,65 +3,6 @@
  * Impersonate a user (admin only)
  * This allows admins to log in as another user to see their view
  */
-
-/**
- * ⚠️  MIGRATION IN PROGRESS: MySQL Backend Integration
- * 
- * This service is being migrated from Supabase to MySQL backend.
- * Some functions may return empty data or throw errors until backend
- * API endpoints are fully implemented.
- * 
- * Service: User impersonation
- * Supabase references removed: 6
- * 
- * Next steps:
- * 1. Create backend API routes in server/routes/admin-impersonate.ts
- * 2. Replace TODO comments with actual API calls using apiRequest()
- * 3. Follow pattern from admin-rank.service.ts
- */
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-
-/**
- * Get auth token from localStorage
- */
-function getAuthToken(): string | null {
-  return localStorage.getItem('auth_token');
-}
-
-/**
- * Make authenticated API request
- */
-async function apiRequest(endpoint: string, options: RequestInit = {}) {
-  const token = getAuthToken();
-
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
-
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-      ...options.headers,
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(error.error || `API request failed: ${response.status}`);
-  }
-
-  return response.json();
-}
-
-
-// ============================================
-// SERVICE FUNCTIONS (Need MySQL Backend APIs)
-// ============================================
-
-
 export const impersonateUser = async (userId: string): Promise<{ success: boolean; error?: string }> => {
   try {
     // Check if current user is admin
@@ -71,14 +12,22 @@ export const impersonateUser = async (userId: string): Promise<{ success: boolea
     }
 
     // Verify admin role
-    // TODO: Implement MySQL backend API endpoint
+    const { data: userData } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', currentUser.id)
+      .single();
 
     if (userData?.role !== 'admin') {
       return { success: false, error: 'Unauthorized: Admin access required' };
     }
 
     // Get the target user's email
-    // TODO: Implement MySQL backend API endpoint
+    const { data: targetUser, error: userError } = await supabase
+      .from('users')
+      .select('email, full_name')
+      .eq('id', userId)
+      .single();
 
     if (userError || !targetUser) {
       return { success: false, error: 'User not found' };
@@ -193,7 +142,11 @@ export const getImpersonatedUserData = async () => {
       return null;
     }
 
-    // TODO: Implement MySQL backend API endpoint
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', impersonationStatus.targetUserId)
+      .single();
 
     if (error) {
       console.error('Error fetching impersonated user:', error);

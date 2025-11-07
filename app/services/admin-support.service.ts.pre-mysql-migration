@@ -3,66 +3,9 @@
  * Handles all support ticket and live chat operations
  */
 
+import { requireAdmin } from '../middleware/admin.middleware';
+
 // Types
-
-/**
- * ⚠️  MIGRATION IN PROGRESS: MySQL Backend Integration
- * 
- * This service is being migrated from Supabase to MySQL backend.
- * Some functions may return empty data or throw errors until backend
- * API endpoints are fully implemented.
- * 
- * Service: Support tickets and live chat
- * Supabase references removed: 22
- * 
- * Next steps:
- * 1. Create backend API routes in server/routes/admin-support.ts
- * 2. Replace TODO comments with actual API calls using apiRequest()
- * 3. Follow pattern from admin-rank.service.ts
- */
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-
-/**
- * Get auth token from localStorage
- */
-function getAuthToken(): string | null {
-  return localStorage.getItem('auth_token');
-}
-
-/**
- * Make authenticated API request
- */
-async function apiRequest(endpoint: string, options: RequestInit = {}) {
-  const token = getAuthToken();
-
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
-
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-      ...options.headers,
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(error.error || `API request failed: ${response.status}`);
-  }
-
-  return response.json();
-}
-
-
-// ============================================
-// SERVICE FUNCTIONS (Need MySQL Backend APIs)
-// ============================================
-
-
 export type TicketStatus = 'open' | 'pending' | 'resolved' | 'closed';
 export type TicketPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type TicketCategory = 'technical' | 'billing' | 'account' | 'general' | 'kyc' | 'withdrawal';
@@ -142,7 +85,9 @@ export const getSupportTickets = async (filters?: {
   assignedTo?: string;
 }): Promise<Ticket[]> => {
   try {
-    // Admin auth handled by backendlet query = supabase
+    await requireAdmin();
+
+    let query = supabase
       .from('support_tickets')
       .select(`
         *,
@@ -197,7 +142,16 @@ export const getSupportTickets = async (filters?: {
  */
 export const getTicketMessages = async (ticketId: string): Promise<TicketMessage[]> => {
   try {
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+    const { data, error } = await supabase
+      .from('ticket_messages')
+      .select(`
+        *,
+        sender:users!sender_id(full_name, role)
+      `)
+      .eq('ticket_id', ticketId)
+      .order('created_at', { ascending: true });
 
     if (error) throw error;
 
@@ -227,10 +181,24 @@ export const createTicketMessage = async (
   isInternal: boolean = false
 ): Promise<TicketMessage> => {
   try {
-    // Admin auth handled by backendconst { data: { user }, error: authError } = await supabase.auth.getUser();
+    await requireAdmin();
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) throw new Error('User not authenticated');
 
-    // TODO: Implement MySQL backend API endpoint
+    const { data, error } = await supabase
+      .from('ticket_messages')
+      .insert({
+        ticket_id: ticketId,
+        sender_id: user.id,
+        message,
+        is_internal: isInternal,
+      })
+      .select(`
+        *,
+        sender:users!sender_id(full_name, role)
+      `)
+      .single();
 
     if (error) throw error;
 
@@ -269,7 +237,15 @@ export const updateTicketStatus = async (
   status: TicketStatus
 ): Promise<void> => {
   try {
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+    const { error } = await supabase
+      .from('support_tickets')
+      .update({
+        status,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', ticketId);
 
     if (error) throw error;
   } catch (error: any) {
@@ -286,7 +262,15 @@ export const updateTicketPriority = async (
   priority: TicketPriority
 ): Promise<void> => {
   try {
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+    const { error } = await supabase
+      .from('support_tickets')
+      .update({
+        priority,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', ticketId);
 
     if (error) throw error;
   } catch (error: any) {
@@ -303,7 +287,15 @@ export const assignTicket = async (
   adminId: string
 ): Promise<void> => {
   try {
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+    const { error } = await supabase
+      .from('support_tickets')
+      .update({
+        assigned_to: adminId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', ticketId);
 
     if (error) throw error;
   } catch (error: any) {
@@ -317,7 +309,9 @@ export const assignTicket = async (
  */
 export const getCannedResponses = async (category?: string): Promise<CannedResponse[]> => {
   try {
-    // Admin auth handled by backendlet query = supabase
+    await requireAdmin();
+
+    let query = supabase
       .from('canned_responses')
       .select('*')
       .order('usage_count', { ascending: false });
@@ -352,10 +346,22 @@ export const saveCannedResponse = async (
   response: Partial<CannedResponse> & { id?: string }
 ): Promise<CannedResponse> => {
   try {
-    // Admin auth handled by backendconst isNew = !response.id || response.id.startsWith('NEW');
+    await requireAdmin();
+
+    const isNew = !response.id || response.id.startsWith('NEW');
 
     if (isNew) {
-      // TODO: Implement MySQL backend API endpoint
+      const { data, error } = await supabase
+        .from('canned_responses')
+        .insert({
+          title: response.title,
+          content: response.content,
+          category: response.category,
+          shortcut: response.shortcut,
+          usage_count: 0,
+        })
+        .select()
+        .single();
 
       if (error) throw error;
 
@@ -369,7 +375,17 @@ export const saveCannedResponse = async (
         createdAt: new Date(data.created_at),
       };
     } else {
-      // TODO: Implement MySQL backend API endpoint
+      const { data, error } = await supabase
+        .from('canned_responses')
+        .update({
+          title: response.title,
+          content: response.content,
+          category: response.category,
+          shortcut: response.shortcut,
+        })
+        .eq('id', response.id)
+        .select()
+        .single();
 
       if (error) throw error;
 
@@ -394,7 +410,12 @@ export const saveCannedResponse = async (
  */
 export const deleteCannedResponse = async (id: string): Promise<void> => {
   try {
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+    const { error } = await supabase
+      .from('canned_responses')
+      .delete()
+      .eq('id', id);
 
     if (error) throw error;
   } catch (error: any) {
@@ -408,7 +429,9 @@ export const deleteCannedResponse = async (id: string): Promise<void> => {
  */
 export const getChatSessions = async (status?: ChatStatus): Promise<ChatSession[]> => {
   try {
-    // Admin auth handled by backendlet query = supabase
+    await requireAdmin();
+
+    let query = supabase
       .from('chat_sessions')
       .select(`
         *,
@@ -449,7 +472,16 @@ export const getChatSessions = async (status?: ChatStatus): Promise<ChatSession[
  */
 export const getChatMessages = async (chatId: string): Promise<ChatMessage[]> => {
   try {
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .select(`
+        *,
+        sender:users!sender_id(full_name, role)
+      `)
+      .eq('chat_id', chatId)
+      .order('created_at', { ascending: true });
 
     if (error) throw error;
 
@@ -476,10 +508,23 @@ export const sendChatMessage = async (
   message: string
 ): Promise<ChatMessage> => {
   try {
-    // Admin auth handled by backendconst { data: { user }, error: authError } = await supabase.auth.getUser();
+    await requireAdmin();
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) throw new Error('User not authenticated');
 
-    // TODO: Implement MySQL backend API endpoint
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .insert({
+        chat_id: chatId,
+        sender_id: user.id,
+        message,
+      })
+      .select(`
+        *,
+        sender:users!sender_id(full_name, role)
+      `)
+      .single();
 
     if (error) throw error;
 
@@ -516,12 +561,17 @@ export const updateChatStatus = async (
   assignedTo?: string
 ): Promise<void> => {
   try {
-    // Admin auth handled by backendconst updateData: any = { status };
+    await requireAdmin();
+
+    const updateData: any = { status };
     if (assignedTo !== undefined) {
       updateData.assigned_to = assignedTo;
     }
 
-    // TODO: Implement MySQL backend API endpoint
+    const { error } = await supabase
+      .from('chat_sessions')
+      .update(updateData)
+      .eq('id', chatId);
 
     if (error) throw error;
   } catch (error: any) {
@@ -535,13 +585,19 @@ export const updateChatStatus = async (
  */
 export const getSupportDashboardMetrics = async () => {
   try {
-    // Admin auth handled by backend// Get ticket counts by status
-    // TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+    // Get ticket counts by status
+    const { data: ticketCounts } = await supabase
+      .from('support_tickets')
+      .select('status', { count: 'exact' });
 
     const openTickets = ticketCounts?.filter(t => t.status === 'open').length || 0;
 
     // Get active and waiting chat sessions
-    // TODO: Implement MySQL backend API endpoint
+    const { data: chatSessions } = await supabase
+      .from('chat_sessions')
+      .select('status', { count: 'exact' });
 
     const activeChatCount = chatSessions?.filter(c => c.status === 'active').length || 0;
     const waitingChatCount = chatSessions?.filter(c => c.status === 'waiting').length || 0;

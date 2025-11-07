@@ -3,64 +3,7 @@
  * Handles KYC verification and management for admin panel
  */
 
-
-/**
- * ⚠️  MIGRATION IN PROGRESS: MySQL Backend Integration
- * 
- * This service is being migrated from Supabase to MySQL backend.
- * Some functions may return empty data or throw errors until backend
- * API endpoints are fully implemented.
- * 
- * Service: KYC verification and management
- * Supabase references removed: 18
- * 
- * Next steps:
- * 1. Create backend API routes in server/routes/admin-kyc.ts
- * 2. Replace TODO comments with actual API calls using apiRequest()
- * 3. Follow pattern from admin-rank.service.ts
- */
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-
-/**
- * Get auth token from localStorage
- */
-function getAuthToken(): string | null {
-  return localStorage.getItem('auth_token');
-}
-
-/**
- * Make authenticated API request
- */
-async function apiRequest(endpoint: string, options: RequestInit = {}) {
-  const token = getAuthToken();
-
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
-
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-      ...options.headers,
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(error.error || `API request failed: ${response.status}`);
-  }
-
-  return response.json();
-}
-
-
-// ============================================
-// SERVICE FUNCTIONS (Need MySQL Backend APIs)
-// ============================================
-
+import { requireAdmin } from '../middleware/admin.middleware';
 
 export interface KYCSubmissionAdmin {
   id: string;
@@ -102,7 +45,9 @@ export const getAllKYCSubmissions = async (filters?: {
 }): Promise<KYCSubmissionAdmin[]> => {
   try {
         // Verify admin access
-    // Admin auth handled by backendlet query = supabase
+    await requireAdmin();
+
+let query = supabase
       .from('kyc_documents')
       .select(`
         *,
@@ -145,7 +90,20 @@ export const getAllKYCSubmissions = async (filters?: {
 export const getKYCSubmission = async (submissionId: string): Promise<KYCSubmissionAdmin | null> => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+const { data, error } = await supabase
+      .from('kyc_documents')
+      .select(`
+        *,
+        user:user_id(
+          id,
+          email,
+          raw_user_meta_data
+        )
+      `)
+      .eq('id', submissionId)
+      .single();
 
     if (error) throw error;
     if (!data) return null;
@@ -172,12 +130,18 @@ export const approveKYC = async (
 ): Promise<void> => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// Auth handled by backend - admin ID from JWT token
+    await requireAdmin();
+
+const { data: { user: admin }, error: authError } = await supabase.auth.getUser();
     if (authError) throw authError;
     if (!admin) throw new Error('Admin not authenticated');
 
     // Get submission details
-    // TODO: Implement MySQL backend API endpoint
+    const { data: submission, error: submissionError } = await supabase
+      .from('kyc_documents')
+      .select('user_id, status')
+      .eq('id', submissionId)
+      .single();
 
     if (submissionError) throw submissionError;
     if (!submission) throw new Error('KYC submission not found');
@@ -187,12 +151,26 @@ export const approveKYC = async (
     }
 
     // Update KYC document status
-    // TODO: Implement MySQL backend API endpoint
+    const { error: updateDocError } = await supabase
+      .from('kyc_documents')
+      .update({
+        status: 'approved',
+        reviewed_by: admin.id,
+        reviewed_at: new Date().toISOString(),
+        notes,
+      })
+      .eq('id', submissionId);
 
     if (updateDocError) throw updateDocError;
 
     // Update user KYC status
-    // TODO: Implement MySQL backend API endpoint
+    const { error: updateUserError } = await supabase
+      .from('users')
+      .update({
+        kyc_status: 'approved',
+        kyc_approved_at: new Date().toISOString(),
+      })
+      .eq('id', submission.user_id);
 
     if (updateUserError) throw updateUserError;
 
@@ -220,23 +198,42 @@ export const rejectKYC = async (
 ): Promise<void> => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// Auth handled by backend - admin ID from JWT token
+    await requireAdmin();
+
+const { data: { user: admin }, error: authError } = await supabase.auth.getUser();
     if (authError) throw authError;
     if (!admin) throw new Error('Admin not authenticated');
 
     // Get submission details
-    // TODO: Implement MySQL backend API endpoint
+    const { data: submission, error: submissionError } = await supabase
+      .from('kyc_documents')
+      .select('user_id')
+      .eq('id', submissionId)
+      .single();
 
     if (submissionError) throw submissionError;
     if (!submission) throw new Error('KYC submission not found');
 
     // Update KYC document status
-    // TODO: Implement MySQL backend API endpoint
+    const { error: updateDocError } = await supabase
+      .from('kyc_documents')
+      .update({
+        status: 'rejected',
+        rejection_reason: reason,
+        reviewed_by: admin.id,
+        reviewed_at: new Date().toISOString(),
+      })
+      .eq('id', submissionId);
 
     if (updateDocError) throw updateDocError;
 
     // Update user KYC status
-    // TODO: Implement MySQL backend API endpoint
+    const { error: updateUserError } = await supabase
+      .from('users')
+      .update({
+        kyc_status: 'rejected',
+      })
+      .eq('id', submission.user_id);
 
     if (updateUserError) throw updateUserError;
 
@@ -264,23 +261,42 @@ export const requestKYCResubmission = async (
 ): Promise<void> => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// Auth handled by backend - admin ID from JWT token
+    await requireAdmin();
+
+const { data: { user: admin }, error: authError } = await supabase.auth.getUser();
     if (authError) throw authError;
     if (!admin) throw new Error('Admin not authenticated');
 
     // Get submission details
-    // TODO: Implement MySQL backend API endpoint
+    const { data: submission, error: submissionError } = await supabase
+      .from('kyc_documents')
+      .select('user_id')
+      .eq('id', submissionId)
+      .single();
 
     if (submissionError) throw submissionError;
     if (!submission) throw new Error('KYC submission not found');
 
     // Update KYC document status
-    // TODO: Implement MySQL backend API endpoint
+    const { error: updateDocError } = await supabase
+      .from('kyc_documents')
+      .update({
+        status: 'resubmission_required',
+        rejection_reason: reason,
+        reviewed_by: admin.id,
+        reviewed_at: new Date().toISOString(),
+      })
+      .eq('id', submissionId);
 
     if (updateDocError) throw updateDocError;
 
     // Update user KYC status
-    // TODO: Implement MySQL backend API endpoint
+    const { error: updateUserError } = await supabase
+      .from('users')
+      .update({
+        kyc_status: 'pending',
+      })
+      .eq('id', submission.user_id);
 
     if (updateUserError) throw updateUserError;
 
@@ -305,7 +321,11 @@ export const requestKYCResubmission = async (
 export const getKYCStats = async (): Promise<KYCStats> => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+const { data: submissions } = await supabase
+      .from('kyc_documents')
+      .select('status');
 
     const stats: KYCStats = {
       total_submissions: submissions?.length || 0,

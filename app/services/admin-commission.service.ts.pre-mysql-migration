@@ -4,64 +4,7 @@
  * Manages commission configurations, processing, and adjustments
  */
 
-
-/**
- * ⚠️  MIGRATION IN PROGRESS: MySQL Backend Integration
- * 
- * This service is being migrated from Supabase to MySQL backend.
- * Some functions may return empty data or throw errors until backend
- * API endpoints are fully implemented.
- * 
- * Service: Commission management
- * Supabase references removed: 1
- * 
- * Next steps:
- * 1. Create backend API routes in server/routes/admin-commission.ts
- * 2. Replace TODO comments with actual API calls using apiRequest()
- * 3. Follow pattern from admin-rank.service.ts
- */
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-
-/**
- * Get auth token from localStorage
- */
-function getAuthToken(): string | null {
-  return localStorage.getItem('auth_token');
-}
-
-/**
- * Make authenticated API request
- */
-async function apiRequest(endpoint: string, options: RequestInit = {}) {
-  const token = getAuthToken();
-
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
-
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-      ...options.headers,
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(error.error || `API request failed: ${response.status}`);
-  }
-
-  return response.json();
-}
-
-
-// ============================================
-// SERVICE FUNCTIONS (Need MySQL Backend APIs)
-// ============================================
-
+import { requireAdmin } from '../middleware/admin.middleware';
 
 export interface LevelCommissionConfig {
   level: number;
@@ -136,7 +79,9 @@ export interface CommissionRun {
 export const getCommissionSettings = async (): Promise<CommissionSettings> => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// Try to get from database first
+    await requireAdmin();
+
+// Try to get from database first
       .from('commission_settings')
       .select('*')
       .limit(1)
@@ -208,7 +153,9 @@ export const getDefaultSettings = (): CommissionSettings => {
 export const saveCommissionSettings = async (settings: CommissionSettings): Promise<void> => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// Check if settings exist
+    await requireAdmin();
+
+// Check if settings exist
       .from('commission_settings')
       .select('id')
       .limit(1)
@@ -265,7 +212,9 @@ export const saveCommissionSettings = async (settings: CommissionSettings): Prom
 export const getCommissionHistory = async (limit: number = 100): Promise<CommissionRun[]> => {
   try {
         // Verify admin access
-    // Admin auth handled by backend.from('commission_runs')
+    await requireAdmin();
+
+      .from('commission_runs')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(limit);
@@ -328,7 +277,9 @@ export const manualCommissionAdjustment = async (
 ): Promise<void> => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// Get user's current wallet balance
+    await requireAdmin();
+
+// Get user's current wallet balance
       .from('wallets')
       .select('available_balance, total_balance')
       .eq('user_id', userId)
@@ -388,7 +339,9 @@ export const manualCommissionAdjustment = async (
 export const getCommissionStats = async () => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// Get total commissions by type
+    await requireAdmin();
+
+// Get total commissions by type
       .from('mlm_transactions')
       .select('transaction_type, amount')
       .in('transaction_type', [
@@ -457,7 +410,9 @@ export const logCommissionChange = async (change: {
  */
 export const getCommissionChangelog = async (limit: number = 50): Promise<ChangelogEntry[]> => {
   try {
-    // Admin auth handled by backend.from('commission_changelog')
+    await requireAdmin();
+
+      .from('commission_changelog')
       .select(`
         *,
         user:changed_by(email, raw_user_meta_data)
@@ -479,7 +434,9 @@ export const getCommissionChangelog = async (limit: number = 50): Promise<Change
  */
 export const getCommissionRuns = async (limit: number = 50): Promise<any[]> => {
   try {
-    // Admin auth handled by backend.from('commission_runs')
+    await requireAdmin();
+
+      .from('commission_runs')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(limit);

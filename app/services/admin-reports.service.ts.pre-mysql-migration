@@ -4,64 +4,7 @@
  */
 
 import { format, subDays, subMonths, startOfMonth, endOfMonth } from 'date-fns';
-
-/**
- * ⚠️  MIGRATION IN PROGRESS: MySQL Backend Integration
- * 
- * This service is being migrated from Supabase to MySQL backend.
- * Some functions may return empty data or throw errors until backend
- * API endpoints are fully implemented.
- * 
- * Service: Admin reports generation
- * Supabase references removed: 17
- * 
- * Next steps:
- * 1. Create backend API routes in server/routes/admin-reports.ts
- * 2. Replace TODO comments with actual API calls using apiRequest()
- * 3. Follow pattern from admin-rank.service.ts
- */
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-
-/**
- * Get auth token from localStorage
- */
-function getAuthToken(): string | null {
-  return localStorage.getItem('auth_token');
-}
-
-/**
- * Make authenticated API request
- */
-async function apiRequest(endpoint: string, options: RequestInit = {}) {
-  const token = getAuthToken();
-
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
-
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-      ...options.headers,
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(error.error || `API request failed: ${response.status}`);
-  }
-
-  return response.json();
-}
-
-
-// ============================================
-// SERVICE FUNCTIONS (Need MySQL Backend APIs)
-// ============================================
-
+import { requireAdmin } from '../middleware/admin.middleware';
 
 export interface ReportDateRange {
   dateFrom: string;
@@ -75,7 +18,14 @@ export interface ReportDateRange {
 export const getUserGrowthReport = async (dateRange: ReportDateRange) => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+const { data: users, error } = await supabase
+      .from('users')
+      .select('created_at, is_active')
+      .gte('created_at', dateRange.dateFrom)
+      .lte('created_at', dateRange.dateTo)
+      .order('created_at');
 
     if (error) throw error;
 
@@ -112,13 +62,24 @@ export const getUserGrowthReport = async (dateRange: ReportDateRange) => {
 export const getRevenueReport = async (dateRange: ReportDateRange) => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// Get package sales
-    // TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+// Get package sales
+    const { data: packageSales, error: packagesError } = await supabase
+      .from('user_packages')
+      .select('amount, purchased_at')
+      .gte('purchased_at', dateRange.dateFrom)
+      .lte('purchased_at', dateRange.dateTo);
 
     if (packagesError) throw packagesError;
 
     // Get commission payouts
-    // TODO: Implement MySQL backend API endpoint
+    const { data: commissions, error: commissionsError } = await supabase
+      .from('mlm_transactions')
+      .select('amount, created_at')
+      .in('transaction_type', ['level_income', 'matching_bonus', 'booster_income', 'rank_bonus'])
+      .gte('created_at', dateRange.dateFrom)
+      .lte('created_at', dateRange.dateTo);
 
     if (commissionsError) throw commissionsError;
 
@@ -160,7 +121,19 @@ export const getRevenueReport = async (dateRange: ReportDateRange) => {
 export const getInvestmentReport = async (dateRange: ReportDateRange) => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+const { data: userPackages, error } = await supabase
+      .from('user_packages')
+      .select(`
+        amount,
+        purchased_at,
+        packages!inner (
+          name
+        )
+      `)
+      .gte('purchased_at', dateRange.dateFrom)
+      .lte('purchased_at', dateRange.dateTo);
 
     if (error) throw error;
 
@@ -189,7 +162,14 @@ export const getInvestmentReport = async (dateRange: ReportDateRange) => {
 export const getEarningsReport = async (dateRange: ReportDateRange) => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+const { data: transactions, error } = await supabase
+      .from('mlm_transactions')
+      .select('transaction_type, amount, user_id, created_at')
+      .in('transaction_type', ['level_income', 'matching_bonus', 'booster_income', 'rank_bonus', 'roi_income'])
+      .gte('created_at', dateRange.dateFrom)
+      .lte('created_at', dateRange.dateTo);
 
     if (error) throw error;
 
@@ -225,7 +205,13 @@ export const getEarningsReport = async (dateRange: ReportDateRange) => {
 export const getWithdrawalReport = async (dateRange: ReportDateRange) => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+const { data: withdrawals, error } = await supabase
+      .from('withdrawals')
+      .select('amount, status, created_at, approved_at, rejected_at')
+      .gte('created_at', dateRange.dateFrom)
+      .lte('created_at', dateRange.dateTo);
 
     if (error) throw error;
 
@@ -254,7 +240,21 @@ export const getWithdrawalReport = async (dateRange: ReportDateRange) => {
 export const getPackagePerformanceReport = async (dateRange: ReportDateRange) => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+const { data: userPackages, error } = await supabase
+      .from('user_packages')
+      .select(`
+        amount,
+        roi_earned,
+        is_active,
+        purchased_at,
+        packages!inner (
+          name
+        )
+      `)
+      .gte('purchased_at', dateRange.dateFrom)
+      .lte('purchased_at', dateRange.dateTo);
 
     if (error) throw error;
 
@@ -298,7 +298,13 @@ export const getPackagePerformanceReport = async (dateRange: ReportDateRange) =>
 export const getRankAchievementReport = async (dateRange: ReportDateRange) => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+const { data: achievements, error } = await supabase
+      .from('rank_achievements')
+      .select('rank, reward_amount, achieved_at, user_id')
+      .gte('achieved_at', dateRange.dateFrom)
+      .lte('achieved_at', dateRange.dateTo);
 
     if (error) throw error;
 
@@ -338,8 +344,16 @@ export const getRankAchievementReport = async (dateRange: ReportDateRange) => {
 export const getTeamPerformanceReport = async (dateRange: ReportDateRange) => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// Get all users who registered in date range
-    // TODO: Implement MySQL backend API endpoint // Top 50 performers
+    await requireAdmin();
+
+// Get all users who registered in date range
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('id, full_name, email, sponsor_id, direct_count, team_count, total_investment, total_earnings, created_at')
+      .gte('created_at', dateRange.dateFrom)
+      .lte('created_at', dateRange.dateTo)
+      .order('team_count', { ascending: false })
+      .limit(50); // Top 50 performers
 
     if (error) throw error;
 
@@ -364,7 +378,13 @@ export const getTeamPerformanceReport = async (dateRange: ReportDateRange) => {
 export const getKYCStatusReport = async (dateRange: ReportDateRange) => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+const { data: kycSubmissions, error } = await supabase
+      .from('kyc_submissions')
+      .select('status, submitted_at, reviewed_at')
+      .gte('submitted_at', dateRange.dateFrom)
+      .lte('submitted_at', dateRange.dateTo);
 
     if (error) throw error;
 
@@ -409,8 +429,14 @@ export const getKYCStatusReport = async (dateRange: ReportDateRange) => {
 export const getActiveUsersReport = async (dateRange: ReportDateRange) => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// Get user activity from transactions
-    // TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+// Get user activity from transactions
+    const { data: transactions, error } = await supabase
+      .from('mlm_transactions')
+      .select('user_id, created_at')
+      .gte('created_at', dateRange.dateFrom)
+      .lte('created_at', dateRange.dateTo);
 
     if (error) throw error;
 
@@ -442,7 +468,9 @@ export const getActiveUsersReport = async (dateRange: ReportDateRange) => {
 export const getAnalyticsDashboardData = async () => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// Get last 7 months of data
+    await requireAdmin();
+
+// Get last 7 months of data
     const last7Months = [];
     for (let i = 6; i >= 0; i--) {
       const date = subMonths(new Date(), i);
@@ -457,7 +485,11 @@ export const getAnalyticsDashboardData = async () => {
         .lte('created_at', end.toISOString());
 
       // Get revenue for this month
-      // TODO: Implement MySQL backend API endpoint
+      const { data: packages } = await supabase
+        .from('user_packages')
+        .select('amount')
+        .gte('purchased_at', start.toISOString())
+        .lte('purchased_at', end.toISOString());
 
       const revenue = packages?.reduce((sum, pkg) => sum + pkg.amount, 0) || 0;
 
@@ -482,20 +514,33 @@ export const getAnalyticsDashboardData = async () => {
 export const getRevenueBreakdown = async () => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// Get package sales (last 30 days)
+    await requireAdmin();
+
+// Get package sales (last 30 days)
     const thirtyDaysAgo = subDays(new Date(), 30);
 
-    // TODO: Implement MySQL backend API endpoint
+    const { data: packages } = await supabase
+      .from('user_packages')
+      .select('amount')
+      .gte('purchased_at', thirtyDaysAgo.toISOString());
 
     const packageSales = packages?.reduce((sum, pkg) => sum + pkg.amount, 0) || 0;
 
     // Get commission payouts
-    // TODO: Implement MySQL backend API endpoint
+    const { data: commissions } = await supabase
+      .from('mlm_transactions')
+      .select('amount')
+      .in('transaction_type', ['level_income', 'matching_bonus', 'booster_income'])
+      .gte('created_at', thirtyDaysAgo.toISOString());
 
     const commissionPayouts = commissions?.reduce((sum, txn) => sum + txn.amount, 0) || 0;
 
     // Get withdrawals
-    // TODO: Implement MySQL backend API endpoint
+    const { data: withdrawals } = await supabase
+      .from('withdrawals')
+      .select('amount')
+      .eq('status', 'approved')
+      .gte('created_at', thirtyDaysAgo.toISOString());
 
     const withdrawalAmount = withdrawals?.reduce((sum, w) => sum + w.amount, 0) || 0;
 
@@ -520,7 +565,16 @@ export const getRevenueBreakdown = async () => {
 export const getPackagePerformanceData = async () => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// TODO: Implement MySQL backend API endpoint
+    await requireAdmin();
+
+const { data: userPackages } = await supabase
+      .from('user_packages')
+      .select(`
+        amount,
+        packages!inner (
+          name
+        )
+      `);
 
     // Group by package
     const grouped = userPackages?.reduce((acc: any, pkg: any) => {

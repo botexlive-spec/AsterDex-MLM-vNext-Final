@@ -4,64 +4,7 @@
  * Manages binary tree operations, placements, and settings
  */
 
-
-/**
- * ⚠️  MIGRATION IN PROGRESS: MySQL Backend Integration
- * 
- * This service is being migrated from Supabase to MySQL backend.
- * Some functions may return empty data or throw errors until backend
- * API endpoints are fully implemented.
- * 
- * Service: Binary tree management
- * Supabase references removed: 1
- * 
- * Next steps:
- * 1. Create backend API routes in server/routes/admin-binary.ts
- * 2. Replace TODO comments with actual API calls using apiRequest()
- * 3. Follow pattern from admin-rank.service.ts
- */
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-
-/**
- * Get auth token from localStorage
- */
-function getAuthToken(): string | null {
-  return localStorage.getItem('auth_token');
-}
-
-/**
- * Make authenticated API request
- */
-async function apiRequest(endpoint: string, options: RequestInit = {}) {
-  const token = getAuthToken();
-
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
-
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-      ...options.headers,
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(error.error || `API request failed: ${response.status}`);
-  }
-
-  return response.json();
-}
-
-
-// ============================================
-// SERVICE FUNCTIONS (Need MySQL Backend APIs)
-// ============================================
-
+import { requireAdmin } from '../middleware/admin.middleware';
 
 export interface BinaryNode {
   id: string;
@@ -110,7 +53,9 @@ export interface BinaryReport {
 export const getBinaryTree = async (userId: string): Promise<BinaryNode | null> => {
   try {
         // Verify admin access
-    // Admin auth handled by backend.from('binary_nodes')
+    await requireAdmin();
+
+      .from('binary_nodes')
       .select(`
         id,
         user_id,
@@ -193,7 +138,9 @@ export const getBinaryTree = async (userId: string): Promise<BinaryNode | null> 
 export const getAllBinaryNodes = async (): Promise<BinaryNode[]> => {
   try {
         // Verify admin access
-    // Admin auth handled by backend.from('binary_nodes')
+    await requireAdmin();
+
+      .from('binary_nodes')
       .select(`
         id,
         user_id,
@@ -238,7 +185,9 @@ export const getAllBinaryNodes = async (): Promise<BinaryNode[]> => {
 export const getBinarySettings = async (): Promise<BinarySettings> => {
   try {
         // Verify admin access
-    // Admin auth handled by backend.from('binary_settings')
+    await requireAdmin();
+
+      .from('binary_settings')
       .select('*')
       .limit(1)
       .single();
@@ -278,7 +227,9 @@ export const getDefaultBinarySettings = (): BinarySettings => {
 export const saveBinarySettings = async (settings: BinarySettings): Promise<void> => {
   try {
         // Verify admin access
-    // Admin auth handled by backend.from('binary_settings')
+    await requireAdmin();
+
+      .from('binary_settings')
       .select('id')
       .limit(1)
       .single();
@@ -313,7 +264,9 @@ export const manualBinaryPlacement = async (
 ): Promise<void> => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// Check if position is available
+    await requireAdmin();
+
+// Check if position is available
       .from('binary_nodes')
       .select('id')
       .eq('parent_id', parentId)
@@ -359,7 +312,9 @@ export const manualBinaryPlacement = async (
 export const getBinaryReports = async (): Promise<BinaryReport[]> => {
   try {
         // Verify admin access
-    // Admin auth handled by backend.from('binary_nodes')
+    await requireAdmin();
+
+      .from('binary_nodes')
       .select(`
         user_id,
         left_volume,
@@ -404,7 +359,9 @@ export const getBinaryReports = async (): Promise<BinaryReport[]> => {
 export const recalculateBinaryVolumes = async (): Promise<number> => {
   try {
         // Verify admin access
-    // Admin auth handled by backend// This would typically be a database function or complex calculation
+    await requireAdmin();
+
+// This would typically be a database function or complex calculation
     // For now, return a count of nodes processed
     const nodes = await getAllBinaryNodes();
 
