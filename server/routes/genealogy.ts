@@ -55,8 +55,8 @@ async function buildBinaryTree(userId: string, depth: number = 5, currentDepth: 
 
   // Get binary node data
   const nodeResult = await query(
-    `SELECT id, parentId, leftChildId, rightChildId
-     FROM mlm_binary_node WHERE referralId = ?`,
+    `SELECT id, parent_id, left_child_id, right_child_id
+     FROM binary_tree WHERE user_id = ?`,
     [userId]
   );
 
@@ -80,15 +80,15 @@ async function buildBinaryTree(userId: string, depth: number = 5, currentDepth: 
   };
 
   // Recursively get left and right children
-  if (node?.leftChildId) {
+  if (node?.left_child_id) {
     // Get the user ID from the left child node
     const leftNodeResult = await query(
-      'SELECT referralId FROM mlm_binary_node WHERE id = ?',
-      [node.leftChildId]
+      'SELECT user_id FROM binary_tree WHERE id = ?',
+      [node.left_child_id]
     );
-    console.log(`  🔍 [Genealogy] Left child node ${node.leftChildId} → user:`, leftNodeResult.rows[0]?.referralId);
+    console.log(`  🔍 [Genealogy] Left child node ${node.left_child_id} → user:`, leftNodeResult.rows[0]?.user_id);
     if (leftNodeResult.rows && leftNodeResult.rows.length > 0) {
-      const leftUserId = leftNodeResult.rows[0].referralId;
+      const leftUserId = leftNodeResult.rows[0].user_id;
       const leftChild = await buildBinaryTree(leftUserId, depth, currentDepth + 1);
       if (leftChild) {
         leftChild.position = 'left';
@@ -100,15 +100,15 @@ async function buildBinaryTree(userId: string, depth: number = 5, currentDepth: 
     }
   }
 
-  if (node?.rightChildId) {
+  if (node?.right_child_id) {
     // Get the user ID from the right child node
     const rightNodeResult = await query(
-      'SELECT referralId FROM mlm_binary_node WHERE id = ?',
-      [node.rightChildId]
+      'SELECT user_id FROM binary_tree WHERE id = ?',
+      [node.right_child_id]
     );
-    console.log(`  🔍 [Genealogy] Right child node ${node.rightChildId} → user:`, rightNodeResult.rows[0]?.referralId);
+    console.log(`  🔍 [Genealogy] Right child node ${node.right_child_id} → user:`, rightNodeResult.rows[0]?.user_id);
     if (rightNodeResult.rows && rightNodeResult.rows.length > 0) {
-      const rightUserId = rightNodeResult.rows[0].referralId;
+      const rightUserId = rightNodeResult.rows[0].user_id;
       const rightChild = await buildBinaryTree(rightUserId, depth, currentDepth + 1);
       if (rightChild) {
         rightChild.position = 'right';
@@ -174,7 +174,7 @@ router.post('/initialize', authenticateToken, async (req: Request, res: Response
 
     // Check if node already exists
     const existingNode = await query(
-      'SELECT id FROM mlm_binary_node WHERE referralId = ?',
+      'SELECT id FROM binary_tree WHERE user_id = ?',
       [userId]
     );
 
@@ -189,8 +189,8 @@ router.post('/initialize', authenticateToken, async (req: Request, res: Response
     // Create new binary node
     const nodeId = crypto.randomUUID();
     await query(
-      `INSERT INTO mlm_binary_node (id, referralId, parentId, leftChildId, rightChildId)
-       VALUES (?, ?, NULL, NULL, NULL)`,
+      `INSERT INTO binary_tree (id, user_id, parent_id, left_child_id, right_child_id, level, position)
+       VALUES (?, ?, NULL, NULL, NULL, 0, 'root')`,
       [nodeId, userId]
     );
 
@@ -227,7 +227,7 @@ router.post('/place-member', authenticateToken, async (req: Request, res: Respon
 
     // Check if parent node exists
     const parentNode = await query(
-      'SELECT id, leftChildId, rightChildId FROM mlm_binary_node WHERE referralId = ?',
+      'SELECT id, left_child_id, right_child_id FROM binary_tree WHERE user_id = ?',
       [parentId]
     );
 
@@ -238,7 +238,7 @@ router.post('/place-member', authenticateToken, async (req: Request, res: Respon
     const parent = parentNode.rows[0];
 
     // Check if position is available
-    const occupiedChildId = position === 'left' ? parent.leftChildId : parent.rightChildId;
+    const occupiedChildId = position === 'left' ? parent.left_child_id : parent.right_child_id;
     if (occupiedChildId) {
       return res.status(400).json({ error: `${position} position is already occupied` });
     }
@@ -246,16 +246,16 @@ router.post('/place-member', authenticateToken, async (req: Request, res: Respon
     // Create binary node for new member
     const newNodeId = crypto.randomUUID();
     await query(
-      `INSERT INTO mlm_binary_node (id, referralId, parentId, leftChildId, rightChildId)
-       VALUES (?, ?, ?, NULL, NULL)`,
-      [newNodeId, memberId, parentId]
+      `INSERT INTO binary_tree (id, user_id, parent_id, left_child_id, right_child_id, level, position)
+       VALUES (?, ?, ?, NULL, NULL, 1, ?)`,
+      [newNodeId, memberId, parent.id, position]
     );
 
     // Update parent's child pointer
-    const updateField = position === 'left' ? 'leftChildId' : 'rightChildId';
+    const updateField = position === 'left' ? 'left_child_id' : 'right_child_id';
     await query(
-      `UPDATE mlm_binary_node SET ${updateField} = ? WHERE id = ?`,
-      [memberId, parent.id]
+      `UPDATE binary_tree SET ${updateField} = ? WHERE id = ?`,
+      [newNodeId, parent.id]
     );
 
     console.log(`✅ [Genealogy] Member placed successfully at ${position}`);
@@ -280,7 +280,7 @@ router.get('/available-positions/:parentId', authenticateToken, async (req: Requ
     const { parentId } = req.params;
 
     const parentNode = await query(
-      'SELECT leftChildId, rightChildId FROM mlm_binary_node WHERE referralId = ?',
+      'SELECT left_child_id, right_child_id FROM binary_tree WHERE user_id = ?',
       [parentId]
     );
 
@@ -291,14 +291,14 @@ router.get('/available-positions/:parentId', authenticateToken, async (req: Requ
     const parent = parentNode.rows[0];
     const availablePositions = [];
 
-    if (!parent.leftChildId) availablePositions.push('left');
-    if (!parent.rightChildId) availablePositions.push('right');
+    if (!parent.left_child_id) availablePositions.push('left');
+    if (!parent.right_child_id) availablePositions.push('right');
 
     res.json({
       success: true,
       availablePositions,
-      leftOccupied: !!parent.leftChildId,
-      rightOccupied: !!parent.rightChildId,
+      leftOccupied: !!parent.left_child_id,
+      rightOccupied: !!parent.right_child_id,
     });
   } catch (error: any) {
     console.error('❌ [Genealogy] Error checking positions:', error);
@@ -424,7 +424,7 @@ router.post('/add-member', authenticateToken, async (req: Request, res: Response
 
     // Check if parent has a binary node
     const parentBinaryNode = await query(
-      'SELECT id, leftChildId, rightChildId FROM mlm_binary_node WHERE referralId = ?',
+      'SELECT id, left_child_id, right_child_id FROM binary_tree WHERE user_id = ?',
       [parentId]
     );
 
@@ -435,7 +435,7 @@ router.post('/add-member', authenticateToken, async (req: Request, res: Response
     const parentNode = parentBinaryNode.rows[0];
 
     // Check if position is already occupied
-    const occupiedChildId = position === 'left' ? parentNode.leftChildId : parentNode.rightChildId;
+    const occupiedChildId = position === 'left' ? parentNode.left_child_id : parentNode.right_child_id;
     if (occupiedChildId) {
       return res.status(400).json({ error: `${position} position is already occupied` });
     }
@@ -482,20 +482,27 @@ router.post('/add-member', authenticateToken, async (req: Request, res: Response
 
     console.log(`✅ [Genealogy] User created: ${userId}`);
 
+    // Get parent level to set correct level for new node
+    const parentLevelResult = await query(
+      'SELECT level FROM binary_tree WHERE id = ?',
+      [parentNode.id]
+    );
+    const parentLevel = parentLevelResult.rows[0]?.level || 0;
+
     // Create binary tree node for new user
     const nodeId = crypto.randomUUID();
     await query(
-      `INSERT INTO mlm_binary_node (id, referralId, parentId, leftChildId, rightChildId)
-       VALUES (?, ?, ?, NULL, NULL)`,
-      [nodeId, userId, parentNode.id]
+      `INSERT INTO binary_tree (id, user_id, parent_id, left_child_id, right_child_id, level, position)
+       VALUES (?, ?, ?, NULL, NULL, ?, ?)`,
+      [nodeId, userId, parentNode.id, parentLevel + 1, position]
     );
 
     console.log(`✅ [Genealogy] Binary node created: ${nodeId}`);
 
     // Update parent's child pointer
-    const updateField = position === 'left' ? 'leftChildId' : 'rightChildId';
+    const updateField = position === 'left' ? 'left_child_id' : 'right_child_id';
     await query(
-      `UPDATE mlm_binary_node SET ${updateField} = ? WHERE id = ?`,
+      `UPDATE binary_tree SET ${updateField} = ? WHERE id = ?`,
       [nodeId, parentNode.id]
     );
 
