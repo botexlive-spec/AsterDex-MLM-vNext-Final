@@ -295,31 +295,12 @@ export const assignTicket = async (
 
 /**
  * Get all canned responses
+ * TODO: Implement MySQL backend API endpoint
  */
 export const getCannedResponses = async (category?: string): Promise<CannedResponse[]> => {
   try {
-    // Admin auth handled by backendlet query = supabase
-      .from('canned_responses')
-      .select('*')
-      .order('usage_count', { ascending: false });
-
-    if (category && category !== 'all') {
-      query = query.eq('category', category);
-    }
-
-    const { data, error } = await query;
-
-    if (error) throw error;
-
-    return (data || []).map(response => ({
-      id: response.id,
-      title: response.title,
-      content: response.content,
-      category: response.category,
-      shortcut: response.shortcut,
-      usageCount: response.usage_count || 0,
-      createdAt: new Date(response.created_at),
-    }));
+    console.warn('getCannedResponses: Not yet implemented with MySQL backend');
+    return [];
   } catch (error: any) {
     console.error('Get canned responses error:', error);
     throw new Error(error.message || 'Failed to fetch canned responses');
@@ -386,39 +367,12 @@ export const deleteCannedResponse = async (id: string): Promise<void> => {
 
 /**
  * Get all chat sessions
+ * TODO: Implement MySQL backend API endpoint
  */
 export const getChatSessions = async (status?: ChatStatus): Promise<ChatSession[]> => {
   try {
-    // Admin auth handled by backendlet query = supabase
-      .from('chat_sessions')
-      .select(`
-        *,
-        user:users!user_id(full_name, email),
-        assigned_admin:users!assigned_to(full_name)
-      `)
-      .order('started_at', { ascending: false });
-
-    if (status) {
-      query = query.eq('status', status);
-    }
-
-    const { data, error } = await query;
-
-    if (error) throw error;
-
-    return (data || []).map(session => ({
-      id: session.id,
-      userId: session.user_id,
-      userName: session.user?.full_name || 'Unknown User',
-      userEmail: session.user?.email || '',
-      status: session.status as ChatStatus,
-      assignedTo: session.assigned_to,
-      assignedToName: session.assigned_admin?.full_name,
-      startedAt: new Date(session.started_at),
-      lastMessageAt: new Date(session.last_message_at || session.started_at),
-      messagesCount: session.messages_count || 0,
-      waitingTime: session.waiting_time || 0,
-    }));
+    console.warn('getChatSessions: Not yet implemented with MySQL backend');
+    return [];
   } catch (error: any) {
     console.error('Get chat sessions error:', error);
     throw new Error(error.message || 'Failed to fetch chat sessions');
@@ -451,37 +405,15 @@ export const getChatMessages = async (chatId: string): Promise<ChatMessage[]> =>
 
 /**
  * Send a chat message
+ * TODO: Implement MySQL backend API endpoint
  */
 export const sendChatMessage = async (
   chatId: string,
   message: string
 ): Promise<ChatMessage> => {
   try {
-    // Admin auth handled by backendconst { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) throw new Error('User not authenticated');
-
-    // TODO: Implement MySQL backend API endpoint
-
-    if (error) throw error;
-
-    // Update chat session's last_message_at and messages_count
-    await supabase
-      .from('chat_sessions')
-      .update({
-        last_message_at: new Date().toISOString(),
-        messages_count: supabase.raw('messages_count + 1'),
-      })
-      .eq('id', chatId);
-
-    return {
-      id: data.id,
-      chatId: data.chat_id,
-      senderId: data.sender_id,
-      senderName: data.sender?.full_name || 'Unknown',
-      senderRole: data.sender?.role === 'admin' ? 'admin' : 'user',
-      message: data.message,
-      createdAt: new Date(data.created_at),
-    };
+    console.warn('sendChatMessage: Not yet implemented with MySQL backend');
+    throw new Error('Chat feature not yet implemented');
   } catch (error: any) {
     console.error('Send chat message error:', error);
     throw new Error(error.message || 'Failed to send chat message');

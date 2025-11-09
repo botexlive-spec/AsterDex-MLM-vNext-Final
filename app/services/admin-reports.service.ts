@@ -399,30 +399,17 @@ export const getActiveUsersReport = async (dateRange: ReportDateRange) => {
 
 export const getAnalyticsDashboardData = async () => {
   try {
-        // Verify admin access
-    // Admin auth handled by backend// Get last 7 months of data
+    // TODO: Implement MySQL backend API endpoint for analytics
+    console.warn('getAnalyticsDashboardData: Not yet implemented with MySQL backend');
+
+    // Return empty data structure for now
     const last7Months = [];
     for (let i = 6; i >= 0; i--) {
       const date = subMonths(new Date(), i);
-      const start = startOfMonth(date);
-      const end = endOfMonth(date);
-
-      // Count users created in this month
-      const { count: userCount } = await supabase
-        .from('users')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', start.toISOString())
-        .lte('created_at', end.toISOString());
-
-      // Get revenue for this month
-      // TODO: Implement MySQL backend API endpoint
-
-      const revenue = packages?.reduce((sum, pkg) => sum + pkg.amount, 0) || 0;
-
       last7Months.push({
         month: format(date, 'MMM'),
-        users: userCount || 0,
-        revenue: revenue,
+        users: 0,
+        revenue: 0,
       });
     }
 
