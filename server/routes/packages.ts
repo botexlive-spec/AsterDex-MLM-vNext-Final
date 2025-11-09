@@ -5,6 +5,7 @@
 import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { query } from '../db';
+import { cache, CacheKeys } from '../services/cache.service';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'finaster_jwt_secret_key_change_in_production_2024';
@@ -203,6 +204,21 @@ router.post('/purchase', authenticateToken, async (req: Request, res: Response) 
     }
 
     console.log(`✅ Package purchased: User ${userId}, Package ${package_id}, Amount $${amount}`);
+
+    // Invalidate user's dashboard cache since investment and earnings changed
+    cache.delete(CacheKeys.userDashboard(userId));
+
+    // Also invalidate sponsor's dashboard cache since their team stats may have changed
+    const userSponsorResult = await query(
+      'SELECT sponsor_id FROM users WHERE id = ? LIMIT 1',
+      [userId]
+    );
+    if (userSponsorResult.rows.length > 0 && userSponsorResult.rows[0].sponsor_id) {
+      const sponsorId = userSponsorResult.rows[0].sponsor_id;
+      cache.delete(CacheKeys.userDashboard(sponsorId));
+      cache.delete(CacheKeys.binaryStats(sponsorId));
+      cache.deletePattern(`genealogy:${sponsorId}:.*`);
+    }
 
     res.json({
       success: true,

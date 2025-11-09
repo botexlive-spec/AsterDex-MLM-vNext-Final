@@ -7,6 +7,7 @@ import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { query } from '../db';
+import { cache, CacheKeys, CacheTTL } from '../services/cache.service';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'finaster_mlm_secret_key_change_in_production_2024';
@@ -116,6 +117,7 @@ async function buildBinaryTree(userId: string, depth: number = 5, currentDepth: 
 /**
  * GET /api/genealogy/tree
  * Get binary tree for current user
+ * Cached for 5 minutes for performance
  */
 router.get('/tree', authenticateToken, async (req: Request, res: Response) => {
   try {
@@ -124,7 +126,15 @@ router.get('/tree', authenticateToken, async (req: Request, res: Response) => {
 
     console.log(`🌳 [Genealogy] Building binary tree for user: ${userId}, depth: ${depth}`);
 
-    const tree = await buildBinaryTree(userId, depth);
+    // Use cache.getOrSet to cache tree data for 5 minutes
+    const tree = await cache.getOrSet(
+      CacheKeys.genealogyTree(userId, depth),
+      async () => {
+        console.log(`🔄 [Genealogy] Cache miss - fetching fresh tree from DB`);
+        return await buildBinaryTree(userId, depth);
+      },
+      CacheTTL.MEDIUM // 5 minutes cache
+    );
 
     if (!tree) {
       return res.json({
@@ -134,12 +144,7 @@ router.get('/tree', authenticateToken, async (req: Request, res: Response) => {
       });
     }
 
-    console.log(`✅ [Genealogy] Tree built successfully`);
-    console.log(`📤 [Genealogy] Sending tree structure:`, JSON.stringify({
-      root: tree?.email,
-      children_count: tree?.children?.length || 0,
-      children_positions: tree?.children?.map(c => ({ email: c.email, position: c.position })) || []
-    }, null, 2));
+    console.log(`✅ [Genealogy] Tree retrieved (cached or fresh)`);
 
     res.json({
       success: true,
@@ -298,45 +303,60 @@ router.get('/available-positions/:parentId', authenticateToken, async (req: Requ
 /**
  * GET /api/genealogy/stats
  * Get binary tree statistics
+ * Cached for 5 minutes for performance
  */
 router.get('/stats', authenticateToken, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
 
-    // Get user volumes
-    const userResult = await query(
-      'SELECT left_volume, right_volume FROM users WHERE id = ?',
-      [userId]
+    // Use cache.getOrSet to cache stats for 5 minutes
+    const stats = await cache.getOrSet(
+      CacheKeys.binaryStats(userId),
+      async () => {
+        // Get user volumes
+        const userResult = await query(
+          'SELECT left_volume, right_volume FROM users WHERE id = ?',
+          [userId]
+        );
+
+        if (userResult.rows.length === 0) {
+          throw new Error('User not found');
+        }
+
+        const user = userResult.rows[0];
+        const leftVolume = parseFloat(user.left_volume || 0);
+        const rightVolume = parseFloat(user.right_volume || 0);
+
+        // Calculate stats
+        const weakerLeg = leftVolume < rightVolume ? 'left' : 'right';
+        const weakerLegVolume = Math.min(leftVolume, rightVolume);
+        const strongerLegVolume = Math.max(leftVolume, rightVolume);
+        const carryForward = strongerLegVolume - weakerLegVolume;
+
+        return {
+          leftVolume,
+          rightVolume,
+          weakerLeg,
+          weakerLegVolume,
+          strongerLegVolume,
+          carryForward,
+          totalBinaryPoints: weakerLegVolume,
+        };
+      },
+      CacheTTL.MEDIUM // 5 minutes cache
     );
-
-    if (userResult.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    const user = userResult.rows[0];
-    const leftVolume = parseFloat(user.left_volume || 0);
-    const rightVolume = parseFloat(user.right_volume || 0);
-
-    // Calculate stats
-    const weakerLeg = leftVolume < rightVolume ? 'left' : 'right';
-    const weakerLegVolume = Math.min(leftVolume, rightVolume);
-    const strongerLegVolume = Math.max(leftVolume, rightVolume);
-    const carryForward = strongerLegVolume - weakerLegVolume;
 
     res.json({
       success: true,
-      stats: {
-        leftVolume,
-        rightVolume,
-        weakerLeg,
-        weakerLegVolume,
-        strongerLegVolume,
-        carryForward,
-        totalBinaryPoints: weakerLegVolume,
-      },
+      stats,
     });
   } catch (error: any) {
     console.error('❌ [Genealogy] Error getting stats:', error);
+
+    if (error.message === 'User not found') {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
     res.status(500).json({ error: 'Failed to get binary tree stats' });
   }
 });
@@ -518,6 +538,23 @@ router.post('/add-member', authenticateToken, async (req: Request, res: Response
       'SELECT id, email, full_name, referral_code, wallet_balance, total_investment, created_at FROM users WHERE id = ?',
       [userId]
     );
+
+    // Invalidate caches for parent and upline since tree structure changed
+    console.log(`🗑️ [Genealogy] Invalidating caches for parent ${parentId} and upline`);
+
+    // Invalidate parent's genealogy tree cache (all depths)
+    cache.deletePattern(`genealogy:${parentId}:.*`);
+
+    // Invalidate parent's binary stats cache
+    cache.delete(CacheKeys.binaryStats(parentId));
+
+    // Invalidate parent's dashboard cache (team stats changed)
+    cache.delete(CacheKeys.userDashboard(parentId));
+
+    // Invalidate current user's dashboard if they added the member
+    if (currentUserId !== parentId) {
+      cache.delete(CacheKeys.userDashboard(currentUserId));
+    }
 
     res.status(201).json({
       success: true,
