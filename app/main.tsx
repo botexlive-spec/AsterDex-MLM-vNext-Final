@@ -49,6 +49,7 @@ const KYC = lazy(() => import('./pages/user/KYCNew'));
 const Wallet = lazy(() => import('./pages/user/WalletNew'));
 const Deposit = lazy(() => import('./pages/user/Deposit'));
 const Withdraw = lazy(() => import('./pages/user/Withdraw'));
+const WithdrawNew = lazy(() => import('./pages/user/WithdrawNew'));
 const Team = lazy(() => import('./pages/user/TeamNew'));
 const TeamReport = lazy(() => import('./pages/user/TeamReport'));
 const Referrals = lazy(() => import('./pages/user/ReferralsNew'));
@@ -78,6 +79,7 @@ const SupportManagement = lazy(() => import('./pages/admin/SupportManagement'));
 const AuditLogs = lazy(() => import('./pages/admin/AuditLogs'));
 const SystemConfiguration = lazy(() => import('./pages/admin/SystemConfiguration'));
 const IncomeSimulator = lazy(() => import('./pages/admin/IncomeSimulator'));
+const WithdrawalApproval = lazy(() => import('./pages/admin/WithdrawalApproval'));
 
 async function loadRuntimeConfig() {
   return new Promise<void>((resolve) => {
@@ -232,7 +234,7 @@ const router = createBrowserRouter([
         children: [
           { index: true, element: <Wallet /> },
           { path: 'deposit', element: <Deposit /> },
-          { path: 'withdraw', element: <Withdraw /> },
+          { path: 'withdraw', element: <WithdrawNew /> },
         ],
       },
       {
@@ -371,6 +373,7 @@ const router = createBrowserRouter([
           { path: 'user-management', element: <Navigate to="/admin/users" replace /> },
           { path: 'kyc', element: <KYCManagement /> },
           { path: 'packages', element: <PackageManagement /> },
+          { path: 'withdrawals', element: <WithdrawalApproval /> },
           { path: 'financial', element: <FinancialManagement /> },
           { path: 'commissions', element: <CommissionManagement /> },
           { path: 'income-simulator', element: <IncomeSimulator /> },
