@@ -402,61 +402,61 @@ loadRuntimeConfig().then(() => {
     <React.StrictMode>
       <HelmetProvider>
         <SettingsProvider>
-          <PlanSettingsProvider>
-            <AuthProvider>
+          <AuthProvider>
+            <PlanSettingsProvider>
               <RouterProvider router={router} />
-            <Toaster
-              position="top-right"
-              reverseOrder={false}
-              gutter={8}
-              containerStyle={{
-                top: 20,
-                right: 20,
-                bottom: 20,
-                left: 20,
-              }}
-              toastOptions={{
-                duration: 4000,
-                style: {
-                  background: '#1e293b',
-                  color: '#f8fafc',
-                  border: '1px solid #475569',
-                  borderRadius: '8px',
-                  padding: '16px',
-                  boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-                  maxWidth: '420px',
-                },
-                success: {
-                  iconTheme: {
-                    primary: '#10b981',
-                    secondary: '#f8fafc',
-                  },
+              <Toaster
+                position="top-right"
+                reverseOrder={false}
+                gutter={8}
+                containerStyle={{
+                  top: 20,
+                  right: 20,
+                  bottom: 20,
+                  left: 20,
+                }}
+                toastOptions={{
+                  duration: 4000,
                   style: {
-                    border: '1px solid #10b981',
+                    background: '#1e293b',
+                    color: '#f8fafc',
+                    border: '1px solid #475569',
+                    borderRadius: '8px',
+                    padding: '16px',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+                    maxWidth: '420px',
                   },
-                },
-                error: {
-                  iconTheme: {
-                    primary: '#ef4444',
-                    secondary: '#f8fafc',
+                  success: {
+                    iconTheme: {
+                      primary: '#10b981',
+                      secondary: '#f8fafc',
+                    },
+                    style: {
+                      border: '1px solid #10b981',
+                    },
                   },
-                  style: {
-                    border: '1px solid #ef4444',
+                  error: {
+                    iconTheme: {
+                      primary: '#ef4444',
+                      secondary: '#f8fafc',
+                    },
+                    style: {
+                      border: '1px solid #ef4444',
+                    },
                   },
-                },
-                loading: {
-                  iconTheme: {
-                    primary: '#00C7D1',
-                    secondary: '#f8fafc',
+                  loading: {
+                    iconTheme: {
+                      primary: '#00C7D1',
+                      secondary: '#f8fafc',
+                    },
+                    style: {
+                      border: '1px solid #00C7D1',
+                    },
                   },
-                  style: {
-                    border: '1px solid #00C7D1',
-                  },
-                },
-              }}
-            />
-            </AuthProvider>
-          </PlanSettingsProvider>
+                }}
+              />
+            </PlanSettingsProvider>
+          </AuthProvider>
         </SettingsProvider>
       </HelmetProvider>
     </React.StrictMode>

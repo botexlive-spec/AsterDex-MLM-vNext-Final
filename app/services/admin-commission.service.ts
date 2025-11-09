@@ -132,26 +132,10 @@ export interface CommissionRun {
  */
 export const getCommissionSettings = async (): Promise<CommissionSettings> => {
   try {
-        // Verify admin access
-    // Admin auth handled by backend// Try to get from database first
-      .from('commission_settings')
-      .select('*')
-      .limit(1)
-      .single();
-
-    if (error) {
-      console.log('No commission settings found in database, returning defaults');
-      return getDefaultSettings();
-    }
-
-    return {
-      level_commissions: data.level_commissions || getDefaultSettings().level_commissions,
-      binary_settings: data.binary_settings || getDefaultSettings().binary_settings,
-      roi_settings: data.roi_settings || getDefaultSettings().roi_settings,
-      rank_rewards: data.rank_rewards || getDefaultSettings().rank_rewards,
-      booster_settings: data.booster_settings || getDefaultSettings().booster_settings,
-      active_levels: data.active_levels || 30,
-    };
+    // Admin auth handled by backend
+    // For now, return default settings until backend endpoint is created
+    console.log('Loading default commission settings');
+    return getDefaultSettings();
   } catch (error: any) {
     console.error('Error getting commission settings:', error);
     return getDefaultSettings();
