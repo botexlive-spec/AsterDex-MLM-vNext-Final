@@ -8,6 +8,7 @@ import { withBasePath } from './utils/base-path';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 import { SettingsProvider } from './context/SettingsContext';
+import { PlanSettingsProvider } from './context/PlanSettingsContext';
 import { UserRole } from './types/auth.types';
 import UserLayoutComponent from './layouts/UserLayout';
 import AdminLayoutComponent from './layouts/AdminLayout';
@@ -80,6 +81,7 @@ const AuditLogs = lazy(() => import('./pages/admin/AuditLogs'));
 const SystemConfiguration = lazy(() => import('./pages/admin/SystemConfiguration'));
 const IncomeSimulator = lazy(() => import('./pages/admin/IncomeSimulator'));
 const WithdrawalApproval = lazy(() => import('./pages/admin/WithdrawalApproval'));
+const PlanSettings = lazy(() => import('./pages/admin/PlanSettings'));
 
 async function loadRuntimeConfig() {
   return new Promise<void>((resolve) => {
@@ -386,6 +388,7 @@ const router = createBrowserRouter([
           { path: 'audit', element: <AuditLogs /> },
           { path: 'settings', element: <SettingsAdmin /> },
           { path: 'configuration', element: <SystemConfiguration /> },
+          { path: 'plan-settings', element: <PlanSettings /> },
         ],
       },
     ],
@@ -397,8 +400,9 @@ loadRuntimeConfig().then(() => {
     <React.StrictMode>
       <HelmetProvider>
         <SettingsProvider>
-          <AuthProvider>
-            <RouterProvider router={router} />
+          <PlanSettingsProvider>
+            <AuthProvider>
+              <RouterProvider router={router} />
             <Toaster
               position="top-right"
               reverseOrder={false}
@@ -449,7 +453,8 @@ loadRuntimeConfig().then(() => {
                 },
               }}
             />
-          </AuthProvider>
+            </AuthProvider>
+          </PlanSettingsProvider>
         </SettingsProvider>
       </HelmetProvider>
     </React.StrictMode>

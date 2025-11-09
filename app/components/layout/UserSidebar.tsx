@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { usePlanSettings } from '../../context/PlanSettingsContext';
 
 // Menu item interface
 interface MenuItem {
@@ -9,6 +10,7 @@ interface MenuItem {
   icon: string;
   path?: string;
   subItems?: MenuItem[];
+  planFeatureKey?: 'binary_plan' | 'generation_plan' | 'robot_plan' | 'investment_plan' | 'booster_income' | 'principal_withdrawal' | 'monthly_rewards';
 }
 
 // Menu structure
@@ -30,12 +32,14 @@ const menuItems: MenuItem[] = [
     label: 'Packages',
     icon: '📦',
     path: '/packages',
+    planFeatureKey: 'investment_plan',
   },
   {
     id: 'robot',
     label: 'Trading Robot',
     icon: '🤖',
     path: '/robot',
+    planFeatureKey: 'robot_plan',
   },
   {
     id: 'wallet',
@@ -44,7 +48,7 @@ const menuItems: MenuItem[] = [
     subItems: [
       { id: 'wallet-overview', label: 'Overview', icon: '👁️', path: '/wallet' },
       { id: 'wallet-deposit', label: 'Deposit', icon: '⬇️', path: '/wallet/deposit' },
-      { id: 'wallet-withdraw', label: 'Withdraw', icon: '⬆️', path: '/wallet/withdraw' },
+      { id: 'wallet-withdraw', label: 'Withdraw', icon: '⬆️', path: '/wallet/withdraw', planFeatureKey: 'principal_withdrawal' },
     ],
   },
   {
@@ -55,7 +59,7 @@ const menuItems: MenuItem[] = [
       { id: 'team-overview', label: 'My Team', icon: '🌳', path: '/team' },
       { id: 'team-report', label: 'Team Report', icon: '📈', path: '/team-report' },
       { id: 'team-referrals', label: 'Referrals', icon: '🔗', path: '/referrals' },
-      { id: 'team-genealogy', label: 'Genealogy', icon: '📊', path: '/genealogy' },
+      { id: 'team-genealogy', label: 'Genealogy', icon: '📊', path: '/genealogy', planFeatureKey: 'binary_plan' },
     ],
   },
   {
@@ -73,6 +77,7 @@ const menuItems: MenuItem[] = [
     label: 'Ranks & Rewards',
     icon: '🏆',
     path: '/ranks',
+    planFeatureKey: 'monthly_rewards',
   },
   {
     id: 'profile',
@@ -190,6 +195,12 @@ const adminMenuItems: MenuItem[] = [
     icon: '⚙️',
     path: '/admin/settings',
   },
+  {
+    id: 'admin-plan-settings',
+    label: 'Plan Settings',
+    icon: '🎛️',
+    path: '/admin/plan-settings',
+  },
 ];
 
 interface UserSidebarProps {
@@ -203,6 +214,7 @@ export const UserSidebar: React.FC<UserSidebarProps> = ({ className = '', isAdmi
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { isPlanActive } = usePlanSettings();
 
   // Auto-expand submenu if a child item is active
   React.useEffect(() => {
@@ -246,6 +258,32 @@ export const UserSidebar: React.FC<UserSidebarProps> = ({ className = '', isAdmi
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
+  };
+
+  // Check if menu item should be visible based on plan settings
+  const isMenuItemVisible = (item: MenuItem): boolean => {
+    // If no plan feature key, always show
+    if (!item.planFeatureKey) return true;
+    // Check if the plan is active
+    return isPlanActive(item.planFeatureKey);
+  };
+
+  // Filter menu items based on plan settings
+  const filterMenuItems = (items: MenuItem[]): MenuItem[] => {
+    return items
+      .map(item => {
+        // If item has subitems, filter them too
+        if (item.subItems) {
+          const filteredSubItems = item.subItems.filter(isMenuItemVisible);
+          // If all subitems are filtered out, hide the parent too (unless parent itself has a path)
+          if (filteredSubItems.length === 0 && !item.path) {
+            return null;
+          }
+          return { ...item, subItems: filteredSubItems };
+        }
+        return item;
+      })
+      .filter((item): item is MenuItem => item !== null && isMenuItemVisible(item));
   };
 
   const renderMenuItem = (item: MenuItem) => {
@@ -407,7 +445,7 @@ export const UserSidebar: React.FC<UserSidebarProps> = ({ className = '', isAdmi
             {/* User Menu - Only show if NOT admin */}
             {!isAdmin && (
               <ul className="space-y-1">
-                {menuItems.map((item) => renderMenuItem(item))}
+                {filterMenuItems(menuItems).map((item) => renderMenuItem(item))}
               </ul>
             )}
 
