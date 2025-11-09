@@ -284,6 +284,18 @@ router.post('/users', authenticateAdmin, async (req: Request, res: Response) => 
 
     console.log(`✅ [Admin] Placed user at ${position} of parent ${parentId}`);
 
+    // Update sponsor's level unlocks (generation plan)
+    if (parentId) {
+      try {
+        const { updateUserLevelUnlocks } = await import('../services/generation-plan.service');
+        await updateUserLevelUnlocks(parentId);
+        console.log(`✅ [Admin] Updated level unlocks for sponsor ${parentId}`);
+      } catch (error) {
+        console.error(`⚠️  Failed to update level unlocks for sponsor:`, error);
+        // Don't fail user creation if level unlock update fails
+      }
+    }
+
     // Create transaction record for initial investment if any
     if (initialInvestment > 0) {
       await query(
