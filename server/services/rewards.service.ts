@@ -139,7 +139,7 @@ async function calculateLegVolume(
     const endDate = new Date(year, month, 0, 23, 59, 59);
 
     const volumeResult = await query(
-      `SELECT COALESCE(SUM(up.package_amount), 0) as total_volume
+      `SELECT COALESCE(SUM(up.investment_amount), 0) as total_volume
        FROM user_packages up
        WHERE up.user_id IN (${downlineIds.map(() => '?').join(',')})
        AND up.created_at >= ?
@@ -231,7 +231,7 @@ export async function updateUserBusinessVolume(
     // Check if record exists
     const existingResult = await query(
       `SELECT id FROM user_business_volumes
-       WHERE user_id = ? AND period_month = ? AND period_year = ?
+       WHERE user_id = ? AND month = ? AND year = ?
        LIMIT 1`,
       [userId, volume.period_month, volume.period_year]
     );
@@ -241,8 +241,8 @@ export async function updateUserBusinessVolume(
       await query(
         `UPDATE user_business_volumes
          SET leg1_volume = ?, leg2_volume = ?, leg3_volume = ?,
-             total_volume = ?, qualified_volume = ?, last_updated = NOW()
-         WHERE user_id = ? AND period_month = ? AND period_year = ?`,
+             total_volume = ?, qualified_volume = ?, updated_at = NOW()
+         WHERE user_id = ? AND month = ? AND year = ?`,
         [
           volume.leg1_volume,
           volume.leg2_volume,
@@ -258,7 +258,7 @@ export async function updateUserBusinessVolume(
       // Insert new
       await query(
         `INSERT INTO user_business_volumes
-         (user_id, leg1_volume, leg2_volume, leg3_volume, total_volume, qualified_volume, period_month, period_year)
+         (user_id, leg1_volume, leg2_volume, leg3_volume, total_volume, qualified_volume, month, year)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           userId,
@@ -295,7 +295,7 @@ export async function getUserBusinessVolume(
 
     const result = await query(
       `SELECT * FROM user_business_volumes
-       WHERE user_id = ? AND period_month = ? AND period_year = ?
+       WHERE user_id = ? AND month = ? AND year = ?
        LIMIT 1`,
       [userId, targetMonth, targetYear]
     );
@@ -616,8 +616,8 @@ export async function distributeMonthlyRewards(): Promise<void> {
     const result = await query(
       `SELECT DISTINCT user_id FROM user_business_volumes
        WHERE qualified_volume > 0
-       AND period_month = MONTH(CURDATE())
-       AND period_year = YEAR(CURDATE())`
+       AND month = MONTH(CURDATE())
+       AND year = YEAR(CURDATE())`
     );
 
     let distributed = 0;
