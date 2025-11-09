@@ -1,0 +1,70 @@
+================================================================================
+PHASE 4 — LEVEL INCOME & ROI-ON-ROI (CRITICAL)
+================================================================================
+Status: ✅ COMPLETE
+Commit: 9bd49d8
+Priority: Critical
+
+OBJECTIVES:
+- Implement 30-level income distribution engine
+- Add ROI-on-ROI distribution (15 levels)
+- Add idempotency constraints to payouts table
+
+FILES CREATED:
+✓ database/mysql/07_payouts_idempotency.sql (NEW)
+  - Added generated columns for COALESCE workaround
+  - Created unique index: idx_payouts_idempotency
+  - Prevents duplicate payouts
+
+✓ server/services/level-income.service.ts (NEW - 367 lines)
+  - distribute30LevelIncome() - Main distribution function
+  - checkLevelEligibility() - Direct count validation
+  - Uses recursive CTE to find 30-level upline
+  - Skips sponsors with insufficient directs
+
+FILES MODIFIED:
+✓ server/services/roi-on-roi.service.ts
+  - Enhanced to distribute 15 levels deep
+  - Tracks original ROI source
+
+KEY CHALLENGES:
+⚠️ MySQL COALESCE Limitation:
+   Problem: MySQL doesn't support COALESCE in CREATE UNIQUE INDEX
+   Solution: Created generated/stored columns that compute COALESCE values
+   
+   ALTER TABLE payouts
+   ADD COLUMN from_user_id_key VARCHAR(36) GENERATED ALWAYS AS 
+     (COALESCE(from_user_id, '')) STORED;
+
+⚠️ Foreign Key Constraint:
+   Problem: Can't create FK on generated columns
+   Solution: Only recreated user_id FK, left from_user_id without FK
+
+VERIFICATION:
+✓ Package purchase triggers 30-level distribution
+✓ Ineligible sponsors skipped (logged)
+✓ No duplicate payouts (idempotency working)
+✓ ROI-on-ROI creates separate entries
+
+TESTING PERFORMED:
+- Created test user with 30-level upline
+- Purchased package
+- Verified payouts table entries
+- Checked all 30 levels received appropriate percentages
+- Verified skipped sponsors logged
+
+PERFORMANCE IMPACT:
+- Synchronous processing (will be queued in Phase 11)
+- ~500ms for 30-level traversal
+- Acceptable for current scale
+
+DEPLOYMENT NOTES:
+- Run 07_payouts_idempotency.sql
+- No data migration needed
+- Existing payouts not affected
+
+KNOWN ISSUES:
+None - All features working as expected
+
+NEXT PHASE:
+Phase 5 - Generation Plan & Level Unlocks

@@ -1,0 +1,68 @@
+================================================================================
+PHASE 5 — GENERATION PLAN & LEVEL UNLOCKS (HIGH)
+================================================================================
+Status: ✅ COMPLETE
+Commit: bd38da9
+Priority: High
+
+OBJECTIVES:
+- Implement generation plan unlock logic
+- Update UI with level badges showing unlock status
+
+FILES CREATED:
+✓ database/mysql/08_extend_level_unlocks.sql (NEW)
+  - Extended level_unlocks table to 30 levels
+  - Added unlocked_at timestamp tracking
+
+✓ server/services/generation-plan.service.ts (NEW - 272 lines)
+  - LEVEL_UNLOCK_RULES constant
+  - updateLevelUnlocks() - Auto-update on direct count change
+  - getLevelEligibility() - Check earning eligibility
+  - getLockedLevels() - UI display helper
+
+✓ app/components/level-unlocks/LevelUnlockBadges.tsx (NEW - 187 lines)
+  - Visual display of all 30 levels
+  - Color-coded status (green/gray/yellow)
+  - Shows unlock requirements
+
+UNLOCK RULES IMPLEMENTED:
+- 1 direct   → L1
+- 2-8 directs → L2-L8
+- 9 directs  → L9-L10
+- 10 directs → L11-L15
+- 15 directs → L16-L20
+- 20 directs → L21-L25
+- 25 directs → L26-L30
+
+KEY IMPLEMENTATION:
+Integration with level-income distribution:
+- Before distributing to level X, check if sponsor has unlocked level X
+- Skip distribution if level locked
+- Log skipped levels for transparency
+
+VERIFICATION:
+✓ Creating directs updates level_unlocks table
+✓ UI shows all 30 levels with correct status
+✓ Level income respects unlock status
+✓ Database updates automatically
+
+TESTING PERFORMED:
+- Created users with varying direct counts
+- Verified unlock rules at each threshold
+- Checked UI badge colors
+- Tested level income skipping locked levels
+
+PERFORMANCE IMPACT:
+- Minimal (single table update on user creation)
+- No performance degradation
+
+DEPLOYMENT NOTES:
+- Run 08_extend_level_unlocks.sql
+- Existing users will have all levels locked initially
+- Run migration to initialize based on current direct counts
+
+KNOWN ISSUES:
+None
+
+NEXT PHASE:
+Phase 6 - Booster Logic

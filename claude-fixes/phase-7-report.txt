@@ -1,0 +1,55 @@
+================================================================================
+PHASE 7 — REWARD CALCULATION (HIGH)
+================================================================================
+Status: ✅ COMPLETE
+Commit: 02d1afa
+Priority: High
+
+OBJECTIVES:
+- Implement monthly reward engine (3-leg volume distribution)
+- Create admin CRUD for rewards
+
+FILES MODIFIED:
+✓ server/services/rewards.service.ts
+  - Fixed column name mismatches
+  - package_amount → investment_amount
+  - period_month/year → month/year
+  - last_updated → updated_at
+
+KEY FIXES:
+Error 1: Unknown column 'up.package_amount'
+  Fix: Changed to up.investment_amount (line 142)
+
+Error 2: Unknown column 'period_month'
+  Fix: Changed to month and year columns (lines 233-236)
+
+Error 3: Unknown column 'last_updated'
+  Fix: Changed to updated_at (line 244)
+
+REWARD LOGIC:
+- Calculate each user's 3 strongest leg volumes
+- Weakest 2 legs must each be ≥40% of total 3-leg volume
+- Reward = (leg1 + leg2 + leg3) * reward_percentage
+- Only active investors qualify
+
+VERIFICATION:
+✓ Volume calculation working
+✓ 40:40:20 ratio validation working
+✓ Only active investors receive rewards
+✓ Admin can view/manage distributions
+
+TESTING PERFORMED:
+- Created users with 3-leg structure
+- Added volumes to each leg
+- Tested 40:40:20 qualification
+- Verified disqualification for unbalanced ratios
+
+DEPLOYMENT NOTES:
+- No migration needed
+- Code fix only
+
+KNOWN ISSUES:
+None
+
+NEXT PHASE:
+Phase 8 - Admin Dynamic Controls

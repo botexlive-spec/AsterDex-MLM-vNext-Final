@@ -1,0 +1,59 @@
+================================================================================
+PHASE 8 — ADMIN DYNAMIC CONTROLS (HIGH)
+================================================================================
+Status: ✅ COMPLETE
+Commit: e9a7c3f
+Priority: High
+
+OBJECTIVES:
+- Create plan_settings table for feature toggles
+- Build admin UI to toggle features
+- Frontend hides inactive features
+
+FILES CREATED:
+✓ database/mysql/09_plan_settings.sql (NEW)
+  - plan_settings table with feature flags
+  - Default: all features active
+
+✓ app/context/PlanSettingsContext.tsx (NEW - 145 lines)
+  - Fetches settings from API
+  - Provides isPlanActive() hook
+  - Caches in React context
+
+✓ app/pages/admin/PlanSettings.tsx (NEW - 312 lines)
+  - Toggle switches for each feature
+  - Real-time updates
+  - Success/error notifications
+
+FILES MODIFIED:
+✓ app/components/layout/UserSidebar.tsx
+  - Filters menu items based on settings
+  - Uses usePlanSettings() hook
+
+FEATURES CONTROLLED:
+- Binary Plan (binary matching, binary tree)
+- Generation Plan (30-level income, unlocks)
+- Robot (trading robot features)
+- Investment (package purchases)
+
+VERIFICATION:
+✓ Admin can toggle features on/off
+✓ Frontend hides disabled menu items
+✓ Changes persist in database
+✓ Page refreshes maintain state
+
+TESTING PERFORMED:
+- Toggled each feature on/off
+- Verified menu items hide/show
+- Checked database persistence
+- Tested with different user roles
+
+DEPLOYMENT NOTES:
+- Run 09_plan_settings.sql
+- Inserts default active settings
+
+KNOWN ISSUES:
+None
+
+NEXT PHASE:
+Phase 9 - UI/UX Polish

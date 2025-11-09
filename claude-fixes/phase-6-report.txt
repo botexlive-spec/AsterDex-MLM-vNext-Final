@@ -1,0 +1,60 @@
+================================================================================
+PHASE 6 — BOOSTER LOGIC (HIGH)
+================================================================================
+Status: ✅ COMPLETE
+Commit: 4ca8521
+Priority: High
+
+OBJECTIVES:
+- Implement 30-day booster tracker (3 directs with investments)
+- Add UI countdown timer
+
+FILES MODIFIED:
+✓ server/services/booster.service.ts
+  - Fixed counting to only include directs WITH investments
+  - Uses INNER JOIN with user_packages table
+  - initializeBooster() on first investment
+  - updateBoosterDirectCount() when sponsor gains qualifying direct
+
+FILES CREATED:
+✓ app/components/booster/BoosterCountdownTimer.tsx (NEW - 156 lines)
+  - Real-time countdown display
+  - Shows days remaining / 30
+  - Displays current directs count
+  - Visual progress bar
+
+KEY BUG FIX:
+Previous Implementation:
+  SELECT COUNT(*) FROM users WHERE sponsor_id = ?
+  
+Fixed Implementation:
+  SELECT COUNT(DISTINCT u.id)
+  FROM users u
+  INNER JOIN user_packages up ON u.id = up.user_id
+  WHERE u.sponsor_id = ? AND up.status = 'active'
+
+VERIFICATION:
+✓ First investment initializes booster
+✓ Only directs with investments count
+✓ UI shows accurate countdown
+✓ Bonus paid when 3 qualifying directs within 30 days
+
+TESTING PERFORMED:
+- Created user and made first investment
+- Verified booster initialized
+- Created 3 directs WITHOUT investments - count = 0
+- Created 3 directs WITH investments - count = 3
+- Verified 3x bonus triggered
+
+PERFORMANCE IMPACT:
+- Minimal (indexed query on sponsor_id and user_id)
+
+DEPLOYMENT NOTES:
+- No migration needed
+- Code changes only
+
+KNOWN ISSUES:
+None
+
+NEXT PHASE:
+Phase 7 - Reward Calculation
