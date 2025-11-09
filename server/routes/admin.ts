@@ -733,8 +733,8 @@ router.get('/analytics/overview', authenticateAdmin, async (req: Request, res: R
     // Total investments and earnings
     const investmentsResult = await query('SELECT COALESCE(SUM(total_investment), 0) as total FROM users');
     const earningsResult = await query('SELECT COALESCE(SUM(total_earnings), 0) as total FROM users');
-    const roiEarningsResult = await query('SELECT COALESCE(SUM(roi_earnings), 0) as total FROM users');
-    const commissionEarningsResult = await query('SELECT COALESCE(SUM(commission_earnings), 0) as total FROM users');
+    const roiEarningsResult = await query('SELECT COALESCE(SUM(roi_on_roi_earnings), 0) as total FROM users');
+    const commissionEarningsResult = await query('SELECT COALESCE(SUM(booster_earnings + reward_earnings), 0) as total FROM users');
 
     // Package metrics
     const activePackagesResult = await query('SELECT COUNT(*) as total FROM user_packages WHERE status = "active"');
@@ -765,8 +765,8 @@ router.get('/analytics/overview', authenticateAdmin, async (req: Request, res: R
       'SELECT SUM(amount) as total FROM mlm_transactions WHERE transaction_type IN ("level_income", "matching_bonus", "binary_bonus")'
     );
 
-    // Binary earnings
-    const binaryResult = await query('SELECT COALESCE(SUM(binary_earnings), 0) as total FROM users');
+    // Binary earnings - calculate from mlm_transactions
+    const binaryResult = await query('SELECT COALESCE(SUM(amount), 0) as total FROM mlm_transactions WHERE transaction_type = "binary_bonus"');
 
     res.json({
       // User metrics

@@ -130,7 +130,7 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
     const startTime = Date.now();
 
     // Call the analytics overview endpoint
-    const data = await apiRequest<any>('/admin/analytics/overview');
+    const data = await apiRequest<any>('/api/admin/analytics/overview');
 
     const loadTime = Date.now() - startTime;
     console.log(`✅ Dashboard stats loaded in ${loadTime}ms`);
@@ -175,13 +175,13 @@ export const getRecentActivities = async (limit: number = 20): Promise<RecentAct
 
     // Get recent transactions (includes package purchases, withdrawals, etc.)
     const transactions = await safeQuery(async () => {
-      const data = await apiRequest<any>(`/admin/transactions?limit=${limit}&sort=created_at&order=desc`);
+      const data = await apiRequest<any>(`/api/admin/transactions?limit=${limit}&sort=created_at&order=desc`);
       return data.transactions || [];
     }, []);
 
     // Get recent users for registration activities
     const recentUsers = await safeQuery(async () => {
-      const data = await apiRequest<any>(`/admin/users?limit=10&sort=created_at&order=desc`);
+      const data = await apiRequest<any>(`/api/admin/users?limit=10&sort=created_at&order=desc`);
       return data.users || [];
     }, []);
 
@@ -251,7 +251,7 @@ export const getTopUsers = async (limit: number = 10): Promise<TopUser[]> => {
     // Verify admin access
     await requireAdmin();
 
-    const data = await apiRequest<any>(`/admin/users?limit=${limit}&sort=total_investment&order=desc`);
+    const data = await apiRequest<any>(`/api/admin/users?limit=${limit}&sort=total_investment&order=desc`);
     const users = data.users || [];
 
     const topUsers: TopUser[] = users.map((user: any) => ({
@@ -280,7 +280,7 @@ export const getGrowthChartData = async (days: number = 30) => {
     await requireAdmin();
 
     // Get all users and group by date
-    const data = await apiRequest<any>('/admin/users?limit=10000');
+    const data = await apiRequest<any>('/api/admin/users?limit=10000');
     const users = data.users || [];
 
     const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
@@ -315,7 +315,7 @@ export const getRevenueChartData = async (days: number = 30) => {
     // Verify admin access
     await requireAdmin();
 
-    const data = await apiRequest<any>(`/admin/analytics/revenue?days=${days}`);
+    const data = await apiRequest<any>(`/api/admin/analytics/revenue?days=${days}`);
 
     if (data.revenue_by_day) {
       return data.revenue_by_day.map((item: any) => ({
@@ -326,7 +326,7 @@ export const getRevenueChartData = async (days: number = 30) => {
 
     // Fallback: calculate from transactions
     const transactions = await safeQuery(async () => {
-      const txnData = await apiRequest<any>('/admin/transactions?limit=10000');
+      const txnData = await apiRequest<any>('/api/admin/transactions?limit=10000');
       return txnData.transactions || [];
     }, []);
 
