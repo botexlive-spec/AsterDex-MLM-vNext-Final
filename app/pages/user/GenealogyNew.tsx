@@ -1851,8 +1851,31 @@ const GenealogyNew: React.FC = () => {
               className="relative overflow-auto bg-[#0f172a] rounded-lg border border-[#334155]"
               style={{ height: '600px', cursor: 'grab' }}
               onMouseMove={(e) => {
-                if (hoveredNode) {
-                  setTooltipPosition({ x: e.clientX, y: e.clientY });
+                if (hoveredNode && containerRef.current) {
+                  const rect = containerRef.current.getBoundingClientRect();
+                  const tooltipWidth = 280; // Approximate tooltip width
+                  const tooltipHeight = 200; // Approximate tooltip height
+
+                  // Calculate position relative to container
+                  let x = e.clientX;
+                  let y = e.clientY - tooltipHeight - 10; // Position above cursor with 10px gap
+
+                  // Clamp to viewport bounds
+                  const viewportWidth = window.innerWidth;
+                  const viewportHeight = window.innerHeight;
+
+                  // Horizontal clamping - center tooltip on cursor
+                  x = Math.max(10, Math.min(x - tooltipWidth / 2, viewportWidth - tooltipWidth - 10));
+
+                  // Vertical clamping - if tooltip would go above viewport, show below cursor instead
+                  if (y < 10) {
+                    y = e.clientY + 20; // Position below cursor
+                  }
+
+                  // Ensure doesn't go below viewport
+                  y = Math.max(10, Math.min(y, viewportHeight - tooltipHeight - 10));
+
+                  setTooltipPosition({ x, y });
                 }
               }}
             >
@@ -1894,17 +1917,17 @@ const GenealogyNew: React.FC = () => {
                 </div>
               </div>
 
-              {/* Hover Tooltip - Follows cursor */}
+              {/* Hover Tooltip - Follows cursor, centered above node */}
               {hoveredNode && (
                 <div
-                  className="fixed p-4 bg-[#1e293b]/98 backdrop-blur-md border-2 border-[#00C7D1] rounded-xl shadow-2xl z-50 max-w-xs"
+                  className="fixed p-4 bg-[#1e293b]/98 backdrop-blur-md border-2 border-[#00C7D1] rounded-xl shadow-2xl z-50 w-72"
                   style={{
-                    left: `${tooltipPosition.x + 20}px`,
-                    top: `${tooltipPosition.y - 20}px`,
+                    left: `${tooltipPosition.x}px`,
+                    top: `${tooltipPosition.y}px`,
                     pointerEvents: 'none',
                     transform: 'translateZ(0)',
-                    transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-                    animation: 'tooltipFadeIn 0.2s ease-out',
+                    transition: 'left 0.05s ease-out, top 0.05s ease-out',
+                    animation: 'tooltipFadeIn 0.15s ease-out',
                   }}
                 >
                   <h4 className="text-[#f8fafc] font-bold mb-3 text-lg flex items-center gap-2">
@@ -2055,12 +2078,52 @@ const GenealogyNew: React.FC = () => {
               <form onSubmit={async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.currentTarget);
+
+                // Client-side validation
+                const fullName = (formData.get('fullName') as string)?.trim();
+                const email = (formData.get('email') as string)?.trim();
+                const password = formData.get('password') as string;
+                const confirmPassword = formData.get('confirmPassword') as string;
+                const investment = formData.get('investment') as string;
+
+                // Validate full name
+                if (!fullName || fullName.length < 2) {
+                  toast.error('Full name must be at least 2 characters');
+                  return;
+                }
+
+                // Validate email format
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!email || !emailRegex.test(email)) {
+                  toast.error('Please enter a valid email address');
+                  return;
+                }
+
+                // Validate password
+                if (!password || password.length < 6) {
+                  toast.error('Password must be at least 6 characters');
+                  return;
+                }
+
+                // Validate password confirmation
+                if (password !== confirmPassword) {
+                  toast.error('Passwords do not match');
+                  return;
+                }
+
+                // Validate investment amount
+                const investmentAmount = parseFloat(investment || '0');
+                if (investmentAmount < 0) {
+                  toast.error('Investment amount cannot be negative');
+                  return;
+                }
+
                 const userData = {
-                  fullName: formData.get('fullName') as string,
-                  email: formData.get('email') as string,
+                  fullName,
+                  email,
                   phone: formData.get('phone') as string || undefined,
-                  password: formData.get('password') as string,
-                  initialInvestment: parseFloat(formData.get('investment') as string || '0'),
+                  password,
+                  initialInvestment: investmentAmount,
                   parentId: selectedParent.node.id,
                   position: selectedParent.position,
                 };
@@ -2081,9 +2144,12 @@ const GenealogyNew: React.FC = () => {
                   setShowAddUserModal(false);
                   setSelectedParent(null);
 
-                  // Refresh the tree to show the new member
+                  // Refresh the tree immediately to show the new member
                   console.log('🔄 Refreshing tree to show new member...');
                   setRefreshTrigger(prev => prev + 1);
+
+                  // Reset form
+                  (e.target as HTMLFormElement).reset();
                 } catch (error: any) {
                   console.error('❌ Error creating member:', error);
                   toast.error(error.message || 'Failed to create member');
@@ -2143,6 +2209,21 @@ const GenealogyNew: React.FC = () => {
                       minLength={6}
                       className="w-full px-4 py-2 bg-[#1e293b] border border-[#334155] rounded-lg text-[#f8fafc] focus:outline-none focus:border-[#00C7D1]"
                       placeholder="Min. 6 characters"
+                    />
+                  </div>
+
+                  {/* Confirm Password */}
+                  <div>
+                    <label className="block text-sm font-medium text-[#f8fafc] mb-2">
+                      Confirm Password <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="password"
+                      name="confirmPassword"
+                      required
+                      minLength={6}
+                      className="w-full px-4 py-2 bg-[#1e293b] border border-[#334155] rounded-lg text-[#f8fafc] focus:outline-none focus:border-[#00C7D1]"
+                      placeholder="Re-enter password"
                     />
                   </div>
 
