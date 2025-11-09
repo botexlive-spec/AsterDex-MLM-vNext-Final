@@ -26,9 +26,11 @@ import planSettingsRoutes from './routes/planSettings';
 import boosterRoutes from './routes/booster';
 import levelUnlocksRoutes from './routes/levelUnlocks';
 import rewardsRoutes from './routes/rewards';
+import binaryRoutes from './routes/binary';
 import { pool, query } from './db';
 import { distributeROI } from './cron/roi-distribution';
 import { distributeEnhancedROI } from './cron/roi-distribution-v2';
+import { runBinaryMatchingNow } from './cron/binary-matching';
 import { expireBoostersDaily } from './services/booster.service';
 import { calculateAllBusinessVolumes, distributeMonthlyRewards } from './services/rewards.service';
 
@@ -89,6 +91,7 @@ app.use('/api/plan-settings', planSettingsRoutes);
 app.use('/api/booster', boosterRoutes);
 app.use('/api/level-unlocks', levelUnlocksRoutes);
 app.use('/api/rewards', rewardsRoutes);
+app.use('/api/binary', binaryRoutes);
 
 // Error handler
 app.use((err: Error, req: Request, res: Response, next: any) => {
@@ -157,7 +160,21 @@ app.listen(PORT, () => {
     timezone: "UTC"
   });
 
-  // 4. Distribute Monthly Rewards (1st day of month at 03:00 UTC)
+  // 4. Binary Matching (daily at 02:30 UTC, after business volumes)
+  // Execute binary matching for all users with unmatched volumes
+  cron.schedule('30 2 * * *', async () => {
+    console.log('⏰ [CRON] Binary matching starting...');
+    try {
+      await runBinaryMatchingNow();
+      console.log('✅ [CRON] Binary matching completed');
+    } catch (error) {
+      console.error('❌ [CRON] Binary matching failed:', error);
+    }
+  }, {
+    timezone: "UTC"
+  });
+
+  // 5. Distribute Monthly Rewards (1st day of month at 03:00 UTC)
   // Distribute monthly rewards based on business volume
   cron.schedule('0 3 1 * *', async () => {
     console.log('⏰ [CRON] Monthly rewards distribution starting...');
@@ -175,6 +192,7 @@ app.listen(PORT, () => {
   console.log('  ├─ Enhanced ROI Distribution: Daily at 00:00 UTC');
   console.log('  ├─ Booster Expiration: Daily at 01:00 UTC');
   console.log('  ├─ Business Volume Calculation: Daily at 02:00 UTC');
+  console.log('  ├─ Binary Matching: Daily at 02:30 UTC');
   console.log('  └─ Monthly Rewards: 1st of month at 03:00 UTC\n');
 });
 

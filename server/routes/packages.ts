@@ -154,6 +154,16 @@ router.post('/purchase', authenticateToken, async (req: Request, res: Response) 
     // Calculate and distribute level income commissions
     await distributeLevelIncome(userId, amount, packageData);
 
+    // Update binary tree volume for binary matching
+    try {
+      const { updateBinaryVolume } = await import('../services/binary-matching.service');
+      await updateBinaryVolume(userId, amount);
+      console.log(`📊 Binary volume updated for user ${userId}`);
+    } catch (error) {
+      console.error(`⚠️  Binary volume update failed for user ${userId}:`, error);
+      // Don't fail the entire purchase if binary update fails
+    }
+
     console.log(`✅ Package purchased: User ${userId}, Package ${package_id}, Amount $${amount}`);
 
     res.json({
