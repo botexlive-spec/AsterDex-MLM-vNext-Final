@@ -50,10 +50,10 @@ router.get('/tickets', async (req: Request, res: Response) => {
       SELECT
         t.*,
         u.email as user_email,
-        u.raw_user_meta_data as user_meta,
+        u.full_name as user_meta,
         a.email as assigned_to_email
-      FROM support_tickets t
-      LEFT JOIN users u ON t.user_id = u.id
+      FROM support_ticket t
+      LEFT JOIN users u ON t.userId = u.id
       LEFT JOIN users a ON t.assigned_to = a.id
       WHERE 1=1
     `;
@@ -79,7 +79,7 @@ router.get('/tickets', async (req: Request, res: Response) => {
       params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
-    query += ' ORDER BY t.priority DESC, t.created_at DESC';
+    query += ' ORDER BY t.priority DESC, t.createdAt DESC';
 
     const [rows] = await pool.query<RowDataPacket[]>(query, params);
 
@@ -102,10 +102,10 @@ router.get('/tickets/:id', async (req: Request, res: Response) => {
       `SELECT
         t.*,
         u.email as user_email,
-        u.raw_user_meta_data as user_meta,
+        u.full_name as user_meta,
         a.email as assigned_to_email
-      FROM support_tickets t
-      LEFT JOIN users u ON t.user_id = u.id
+      FROM support_ticket t
+      LEFT JOIN users u ON t.userId = u.id
       LEFT JOIN users a ON t.assigned_to = a.id
       WHERE t.id = ?`,
       [id]
@@ -120,11 +120,11 @@ router.get('/tickets/:id', async (req: Request, res: Response) => {
       `SELECT
         r.*,
         u.email as user_email,
-        u.raw_user_meta_data as user_meta
+        u.full_name as user_meta
       FROM support_ticket_replies r
-      LEFT JOIN users u ON r.user_id = u.id
+      LEFT JOIN users u ON r.userId = u.id
       WHERE r.ticket_id = ?
-      ORDER BY r.created_at ASC`,
+      ORDER BY r.createdAt ASC`,
       [id]
     );
 
@@ -158,7 +158,7 @@ router.put('/tickets/:id', async (req: Request, res: Response) => {
     const setClause = fields.map(field => `${field} = ?`).join(', ');
 
     await pool.query(
-      `UPDATE support_tickets SET ${setClause}, updated_at = NOW() WHERE id = ?`,
+      `UPDATE support_ticket SET ${setClause}, updatedAt = NOW() WHERE id = ?`,
       [...values, id]
     );
 
@@ -166,7 +166,7 @@ router.put('/tickets/:id', async (req: Request, res: Response) => {
     const adminId = (req as any).user.id;
     await pool.query(
       `INSERT INTO audit_logs (
-        user_id, action, details, created_at
+        userId, action, details, createdAt
       ) VALUES (?, ?, ?, NOW())`,
       [adminId, 'ticket_updated', `Updated ticket ${id}: ${JSON.stringify(updates)}`]
     );
@@ -194,17 +194,17 @@ router.post('/tickets/:id/reply', async (req: Request, res: Response) => {
     // Create reply
     const [result] = await pool.query<ResultSetHeader>(
       `INSERT INTO support_ticket_replies (
-        ticket_id, user_id, message, is_admin_reply, is_internal, created_at
+        ticket_id, userId, message, is_admin_reply, is_internal, createdAt
       ) VALUES (?, ?, ?, true, ?, NOW())`,
       [id, adminId, message, isInternal || false]
     );
 
     // Update ticket's last response time and status if needed
     await pool.query(
-      `UPDATE support_tickets SET
+      `UPDATE support_ticket SET
         last_response_at = NOW(),
         status = CASE WHEN status = 'open' THEN 'in_progress' ELSE status END,
-        updated_at = NOW()
+        updatedAt = NOW()
       WHERE id = ?`,
       [id]
     );
@@ -215,7 +215,7 @@ router.post('/tickets/:id/reply', async (req: Request, res: Response) => {
         r.*,
         u.email as user_email
       FROM support_ticket_replies r
-      LEFT JOIN users u ON r.user_id = u.id
+      LEFT JOIN users u ON r.userId = u.id
       WHERE r.id = ?`,
       [result.insertId]
     );
@@ -233,7 +233,7 @@ router.post('/tickets/:id/reply', async (req: Request, res: Response) => {
 router.get('/stats', async (req: Request, res: Response) => {
   try {
     const [tickets] = await pool.query<RowDataPacket[]>(
-      'SELECT * FROM support_tickets'
+      'SELECT * FROM support_ticket'
     );
 
     const totalTickets = tickets.length;
@@ -258,7 +258,7 @@ router.get('/stats', async (req: Request, res: Response) => {
     let avgResponseTime = 0;
     if (ticketsWithResponse.length > 0) {
       const totalResponseTime = ticketsWithResponse.reduce((sum, t) => {
-        const created = new Date(t.created_at).getTime();
+        const created = new Date(t.createdAt).getTime();
         const responded = new Date(t.last_response_at).getTime();
         return sum + (responded - created);
       }, 0);
@@ -270,9 +270,9 @@ router.get('/stats', async (req: Request, res: Response) => {
       `SELECT
         t.*,
         u.email as user_email
-      FROM support_tickets t
-      LEFT JOIN users u ON t.user_id = u.id
-      ORDER BY t.created_at DESC
+      FROM support_ticket t
+      LEFT JOIN users u ON t.userId = u.id
+      ORDER BY t.createdAt DESC
       LIMIT 10`
     );
 

@@ -80,7 +80,7 @@ router.get('/balance', async (req: Request, res: Response) => {
     const pendingResult = await query(
       `SELECT COALESCE(SUM(amount), 0) as pending_amount
        FROM mlm_transactions
-       WHERE user_id = ?
+       WHERE userId = ?
        AND status = 'pending'
        AND transaction_type IN ('deposit', 'withdrawal')`,
       [userId]
@@ -196,7 +196,7 @@ router.post('/deposit', async (req: Request, res: Response) => {
     // Create deposit transaction
     const result = await query(
       `INSERT INTO mlm_transactions
-       (user_id, transaction_type, amount, status, method, description, metadata)
+       (userId, transaction_type, amount, status, method, description, metadata)
        VALUES (?, 'deposit', ?, 'pending', ?, ?, ?)`,
       [
         userId,
@@ -237,30 +237,30 @@ router.get('/withdrawal/limits', async (req: Request, res: Response) => {
     const dailyResult = await query(
       `SELECT COALESCE(SUM(ABS(amount)), 0) as total
        FROM mlm_transactions
-       WHERE user_id = ?
+       WHERE userId = ?
        AND transaction_type = 'withdrawal'
        AND status = 'completed'
-       AND created_at >= ?`,
+       AND createdAt >= ?`,
       [userId, todayStart]
     );
 
     const weeklyResult = await query(
       `SELECT COALESCE(SUM(ABS(amount)), 0) as total
        FROM mlm_transactions
-       WHERE user_id = ?
+       WHERE userId = ?
        AND transaction_type = 'withdrawal'
        AND status = 'completed'
-       AND created_at >= ?`,
+       AND createdAt >= ?`,
       [userId, weekAgo]
     );
 
     const monthlyResult = await query(
       `SELECT COALESCE(SUM(ABS(amount)), 0) as total
        FROM mlm_transactions
-       WHERE user_id = ?
+       WHERE userId = ?
        AND transaction_type = 'withdrawal'
        AND status = 'completed'
-       AND created_at >= ?`,
+       AND createdAt >= ?`,
       [userId, monthAgo]
     );
 
@@ -339,7 +339,7 @@ router.post('/withdrawal', async (req: Request, res: Response) => {
         status: withdrawal.status,
         withdrawal_type: withdrawal.withdrawal_type,
         method: withdrawal.method,
-        created_at: withdrawal.created_at
+        createdAt: withdrawal.createdAt
       }
     });
   } catch (error: any) {
@@ -416,7 +416,7 @@ router.post('/transfer', async (req: Request, res: Response) => {
     // Create sender transaction
     const senderTxResult = await query(
       `INSERT INTO mlm_transactions
-       (user_id, from_user_id, transaction_type, amount, status, description, metadata)
+       (userId, from_user_id, transaction_type, amount, status, description, metadata)
        VALUES (?, ?, 'transfer_out', ?, 'completed', ?, ?)`,
       [
         userId,
@@ -430,7 +430,7 @@ router.post('/transfer', async (req: Request, res: Response) => {
     // Create recipient transaction
     await query(
       `INSERT INTO mlm_transactions
-       (user_id, from_user_id, transaction_type, amount, status, description, metadata)
+       (userId, from_user_id, transaction_type, amount, status, description, metadata)
        VALUES (?, ?, 'transfer_in', ?, 'completed', ?, ?)`,
       [
         recipient.id,
@@ -444,7 +444,7 @@ router.post('/transfer', async (req: Request, res: Response) => {
     // Create fee transaction
     await query(
       `INSERT INTO mlm_transactions
-       (user_id, transaction_type, amount, status, description)
+       (userId, transaction_type, amount, status, description)
        VALUES (?, 'transfer_out', ?, 'completed', 'Transfer fee (1%)')`,
       [userId, -fee]
     );
@@ -474,10 +474,10 @@ router.get('/transactions/pending', async (req: Request, res: Response) => {
 
     const result = await query(
       `SELECT * FROM mlm_transactions
-       WHERE user_id = ?
+       WHERE userId = ?
        AND status = 'pending'
        AND transaction_type IN ('deposit', 'withdrawal')
-       ORDER BY created_at DESC`,
+       ORDER BY createdAt DESC`,
       [userId]
     );
 
@@ -554,7 +554,7 @@ router.post('/withdrawals/:id/approve', authenticateAdmin, async (req: Request, 
       message: 'Withdrawal approved successfully',
       withdrawal: {
         id: withdrawal.id,
-        user_id: withdrawal.user_id,
+        userId: withdrawal.userId,
         request_amount: withdrawal.request_amount,
         final_amount: withdrawal.final_amount,
         status: withdrawal.status,
@@ -597,7 +597,7 @@ router.post('/withdrawals/:id/reject', authenticateAdmin, async (req: Request, r
       message: 'Withdrawal rejected successfully',
       withdrawal: {
         id: withdrawal.id,
-        user_id: withdrawal.user_id,
+        userId: withdrawal.userId,
         request_amount: withdrawal.request_amount,
         status: withdrawal.status,
         rejection_reason: withdrawal.rejection_reason,

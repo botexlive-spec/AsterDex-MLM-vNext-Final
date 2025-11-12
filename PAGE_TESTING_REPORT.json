@@ -1,0 +1,142 @@
+{
+  "totalTests": 14,
+  "passed": 2,
+  "failed": 12,
+  "tests": [
+    {
+      "name": "Admin Dashboard Stats",
+      "status": "failed",
+      "error": "HTTP 500"
+    },
+    {
+      "name": "Admin Users List",
+      "status": "failed",
+      "error": "HTTP 500"
+    },
+    {
+      "name": "Admin Transactions",
+      "status": "failed",
+      "error": "HTTP 500"
+    },
+    {
+      "name": "Admin Packages",
+      "status": "passed",
+      "statusCode": 200
+    },
+    {
+      "name": "KYC Submissions",
+      "status": "failed",
+      "error": "HTTP 500"
+    },
+    {
+      "name": "Audit Logs",
+      "status": "failed",
+      "error": "HTTP 500"
+    },
+    {
+      "name": "System Config",
+      "status": "failed",
+      "error": "HTTP 500"
+    },
+    {
+      "name": "Support Tickets",
+      "status": "failed",
+      "error": "HTTP 500"
+    },
+    {
+      "name": "Ranks",
+      "status": "failed",
+      "error": "HTTP 500"
+    },
+    {
+      "name": "Rank Achievements",
+      "status": "failed",
+      "statusCode": 404,
+      "error": "Endpoint not found"
+    },
+    {
+      "name": "Rank Stats",
+      "status": "failed",
+      "error": "HTTP 500"
+    },
+    {
+      "name": "Packages List",
+      "status": "failed",
+      "statusCode": 404,
+      "error": "Endpoint not found"
+    },
+    {
+      "name": "Plan Settings",
+      "status": "failed",
+      "statusCode": 404,
+      "error": "Endpoint not found"
+    },
+    {
+      "name": "Health Check",
+      "status": "passed",
+      "statusCode": 200
+    }
+  ],
+  "errors": [
+    {
+      "endpoint": "Admin Dashboard Stats",
+      "error": "HTTP 500",
+      "url": "/api/admin/analytics/overview"
+    },
+    {
+      "endpoint": "Admin Users List",
+      "error": "HTTP 500",
+      "url": "/api/admin/users"
+    },
+    {
+      "endpoint": "Admin Transactions",
+      "error": "HTTP 500",
+      "url": "/api/admin/transactions"
+    },
+    {
+      "endpoint": "KYC Submissions",
+      "error": "HTTP 500",
+      "url": "/api/kyc"
+    },
+    {
+      "endpoint": "Audit Logs",
+      "error": "HTTP 500",
+      "url": "/api/audit/logs"
+    },
+    {
+      "endpoint": "System Config",
+      "error": "HTTP 500",
+      "url": "/api/config"
+    },
+    {
+      "endpoint": "Support Tickets",
+      "error": "HTTP 500",
+      "url": "/api/support/tickets"
+    },
+    {
+      "endpoint": "Ranks",
+      "error": "HTTP 500",
+      "url": "/api/ranks"
+    },
+    {
+      "endpoint": "Rank Achievements",
+      "error": "Endpoint returns 404",
+      "url": "/api/ranks/achievements"
+    },
+    {
+      "endpoint": "Rank Stats",
+      "error": "HTTP 500",
+      "url": "/api/ranks/stats"
+    },
+    {
+      "endpoint": "Packages List",
+      "error": "Endpoint returns 404",
+      "url": "/packages"
+    },
+    {
+      "endpoint": "Plan Settings",
+      "error": "Endpoint returns 404",
+      "url": "/plan-settings/all"
+    }
+  ]
+}

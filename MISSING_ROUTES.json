@@ -1,0 +1,9 @@
+{
+  "GET /plan-settings/all": {
+    "method": "get",
+    "endpoint": "/plan-settings/all",
+    "usedBy": [
+      "app/pages/admin/PlanSettings.tsx"
+    ]
+  }
+}

@@ -28,6 +28,7 @@ import boosterRoutes from './routes/booster';
 import levelUnlocksRoutes from './routes/levelUnlocks';
 import rewardsRoutes from './routes/rewards';
 import binaryRoutes from './routes/binary';
+import stabilityRoutes from './routes/stability.routes';
 import { pool, query } from './db';
 import { distributeROI } from './cron/roi-distribution';
 import { distributeEnhancedROI } from './cron/roi-distribution-v2';
@@ -94,6 +95,7 @@ app.use('/api/booster', boosterRoutes);
 app.use('/api/level-unlocks', levelUnlocksRoutes);
 app.use('/api/rewards', rewardsRoutes);
 app.use('/api/binary', binaryRoutes);
+app.use('/api/stability', stabilityRoutes);
 
 // Error handler
 app.use((err: Error, req: Request, res: Response, next: any) => {

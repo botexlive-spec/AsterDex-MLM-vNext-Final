@@ -50,7 +50,7 @@ router.get('/users', async (req: Request, res: Response) => {
     const params: any[] = [];
 
     if (startDate && endDate) {
-      dateFilter = 'WHERE created_at BETWEEN ? AND ?';
+      dateFilter = 'WHERE createdAt BETWEEN ? AND ?';
       params.push(startDate, endDate);
     }
 
@@ -70,7 +70,7 @@ router.get('/users', async (req: Request, res: Response) => {
 
     const [registrations] = await pool.query<RowDataPacket[]>(
       `SELECT
-        DATE_FORMAT(created_at, ?) as period,
+        DATE_FORMAT(createdAt, ?) as period,
         COUNT(*) as count
       FROM users
       ${dateFilter}
@@ -107,7 +107,7 @@ router.get('/users', async (req: Request, res: Response) => {
 
     // Get users with packages
     const [usersWithPackages] = await pool.query<RowDataPacket[]>(
-      `SELECT COUNT(DISTINCT user_id) as count
+      `SELECT COUNT(DISTINCT userId) as count
       FROM user_packages
       WHERE status = 'active'`
     );
@@ -137,7 +137,7 @@ router.get('/transactions', async (req: Request, res: Response) => {
     const params: any[] = [];
 
     if (startDate && endDate) {
-      query += ' AND created_at BETWEEN ? AND ?';
+      query += ' AND createdAt BETWEEN ? AND ?';
       params.push(startDate, endDate);
     }
 
@@ -152,7 +152,7 @@ router.get('/transactions', async (req: Request, res: Response) => {
     }
 
     const [transactions] = await pool.query<RowDataPacket[]>(
-      query + ' ORDER BY created_at DESC',
+      query + ' ORDER BY createdAt DESC',
       params
     );
 
@@ -204,27 +204,27 @@ router.get('/commissions', async (req: Request, res: Response) => {
       SELECT
         c.*,
         u.email as user_email,
-        u.raw_user_meta_data as user_meta,
+        u.full_name as user_meta,
         r.email as from_user_email
       FROM commissions c
-      LEFT JOIN users u ON c.user_id = u.id
+      LEFT JOIN users u ON c.userId = u.id
       LEFT JOIN users r ON c.from_user_id = r.id
       WHERE 1=1
     `;
     const params: any[] = [];
 
     if (startDate && endDate) {
-      query += ' AND c.created_at BETWEEN ? AND ?';
+      query += ' AND c.createdAt BETWEEN ? AND ?';
       params.push(startDate, endDate);
     }
 
     if (userId) {
-      query += ' AND c.user_id = ?';
+      query += ' AND c.userId = ?';
       params.push(userId);
     }
 
     const [commissions] = await pool.query<RowDataPacket[]>(
-      query + ' ORDER BY c.created_at DESC',
+      query + ' ORDER BY c.createdAt DESC',
       params
     );
 
@@ -256,13 +256,13 @@ router.get('/commissions', async (req: Request, res: Response) => {
       `SELECT
         u.id,
         u.email,
-        u.raw_user_meta_data as user_meta,
+        u.full_name as user_meta,
         SUM(c.commission_amount) as total_commission,
         COUNT(*) as commission_count
       FROM commissions c
-      LEFT JOIN users u ON c.user_id = u.id
-      WHERE 1=1 ${startDate && endDate ? 'AND c.created_at BETWEEN ? AND ?' : ''}
-      GROUP BY u.id, u.email, u.raw_user_meta_data
+      LEFT JOIN users u ON c.userId = u.id
+      WHERE 1=1 ${startDate && endDate ? 'AND c.createdAt BETWEEN ? AND ?' : ''}
+      GROUP BY u.id, u.email, u.full_name
       ORDER BY total_commission DESC
       LIMIT 10`,
       startDate && endDate ? [startDate, endDate] : []
@@ -294,7 +294,7 @@ router.get('/revenue', async (req: Request, res: Response) => {
     const params: any[] = [];
 
     if (startDate && endDate) {
-      dateFilter = 'WHERE created_at BETWEEN ? AND ?';
+      dateFilter = 'WHERE createdAt BETWEEN ? AND ?';
       params.push(startDate, endDate);
     }
 
@@ -318,7 +318,7 @@ router.get('/revenue', async (req: Request, res: Response) => {
 
     const [revenueByPeriod] = await pool.query<RowDataPacket[]>(
       `SELECT
-        DATE_FORMAT(created_at, ?) as period,
+        DATE_FORMAT(createdAt, ?) as period,
         SUM(price) as revenue,
         COUNT(*) as sales
       FROM user_packages

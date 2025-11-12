@@ -1,0 +1,448 @@
+{
+  "projectInfo": {
+    "name": "AsterDex MLM vNext",
+    "baseCommit": "671ec1d",
+    "repository": "https://github.com/botexlive-spec/asterdex-trading-platform.git",
+    "setupDate": "2025-11-12",
+    "currentPhase": "Initial Setup Complete",
+    "completionPercentage": 15
+  },
+  "environment": {
+    "frontend": {
+      "framework": "React 18.3 + TypeScript",
+      "buildTool": "Vite 7.1",
+      "styling": "Tailwind CSS",
+      "port": 5173,
+      "status": "configured"
+    },
+    "backend": {
+      "framework": "Express.js 5.1",
+      "runtime": "Node.js 22.12",
+      "port": 3001,
+      "status": "configured"
+    },
+    "database": {
+      "type": "MySQL 8.4",
+      "name": "finaster_mlm",
+      "host": "localhost",
+      "status": "connected"
+    },
+    "dependencies": {
+      "total": 3132,
+      "installed": true,
+      "vulnerabilities": {
+        "low": 35,
+        "moderate": 9,
+        "high": 50,
+        "critical": 5
+      }
+    }
+  },
+  "adminMenus": {
+    "total": 20,
+    "menus": [
+      {
+        "id": "admin-dashboard",
+        "name": "Dashboard",
+        "file": "app/pages/admin/Dashboard.tsx",
+        "service": "server/services/admin-dashboard.service.ts",
+        "status": "existing",
+        "features": ["User stats", "Financial overview", "Activity logs"],
+        "tested": false
+      },
+      {
+        "id": "admin-users",
+        "name": "User Management",
+        "file": "app/pages/admin/UserManagement.tsx",
+        "service": "server/services/admin-user.service.ts",
+        "status": "existing",
+        "features": ["User CRUD", "Search", "Status management"],
+        "tested": false
+      },
+      {
+        "id": "admin-kyc",
+        "name": "KYC Management",
+        "file": "app/pages/admin/KYCManagement.tsx",
+        "service": "server/services/admin-kyc.service.ts",
+        "status": "existing",
+        "features": ["KYC verification", "Document review", "Approval workflow"],
+        "tested": false
+      },
+      {
+        "id": "admin-packages",
+        "name": "Package Management",
+        "file": "app/pages/admin/PackageManagement.tsx",
+        "service": "server/services/admin-package.service.ts",
+        "status": "existing",
+        "features": ["Package CRUD", "Pricing", "ROI configuration"],
+        "tested": false
+      },
+      {
+        "id": "admin-commissions",
+        "name": "Commission Management",
+        "file": "app/pages/admin/CommissionManagement.tsx",
+        "service": "server/services/admin-commission.service.ts",
+        "status": "existing",
+        "features": ["30-level commission config", "Rate management"],
+        "tested": false
+      },
+      {
+        "id": "admin-binary",
+        "name": "Binary Management",
+        "file": "app/pages/admin/BinaryManagement.tsx",
+        "service": "server/services/admin-binary.service.ts",
+        "status": "existing",
+        "features": ["Binary tree view", "Matching bonus config"],
+        "tested": false
+      },
+      {
+        "id": "admin-financial",
+        "name": "Financial Management",
+        "file": "app/pages/admin/FinancialManagement.tsx",
+        "service": "server/services/admin-financial.service.ts",
+        "status": "existing",
+        "features": ["Deposits", "Withdrawals", "Transaction approval"],
+        "tested": false
+      },
+      {
+        "id": "admin-reports",
+        "name": "Reports",
+        "file": "app/pages/admin/ReportsAdmin.tsx",
+        "service": "server/services/admin-reports.service.ts",
+        "status": "existing",
+        "features": ["10+ report types", "Export", "Analytics"],
+        "tested": false
+      },
+      {
+        "id": "admin-communications",
+        "name": "Communications",
+        "file": "app/pages/admin/CommunicationsAdmin.tsx",
+        "service": "server/services/admin-communications.service.ts",
+        "status": "existing",
+        "features": ["Email", "SMS", "Push notifications"],
+        "tested": false
+      },
+      {
+        "id": "admin-support",
+        "name": "Support Management",
+        "file": "app/pages/admin/SupportManagement.tsx",
+        "service": "server/services/admin-support.service.ts",
+        "status": "existing",
+        "features": ["Ticket management", "Response system"],
+        "tested": false
+      },
+      {
+        "id": "admin-audit",
+        "name": "Audit Logs",
+        "file": "app/pages/admin/AuditLogs.tsx",
+        "service": "server/services/admin-audit.service.ts",
+        "status": "existing",
+        "features": ["Activity logging", "Security audit"],
+        "tested": false
+      },
+      {
+        "id": "admin-config",
+        "name": "System Configuration",
+        "file": "app/pages/admin/SystemConfiguration.tsx",
+        "service": "server/services/admin-config.service.ts",
+        "status": "existing",
+        "features": ["System settings", "Feature toggles"],
+        "tested": false
+      },
+      {
+        "id": "admin-rank",
+        "name": "Rank Management",
+        "file": "app/pages/admin/RankManagement.tsx",
+        "service": "server/services/admin-rank.service.ts",
+        "status": "existing",
+        "features": ["7-tier rank system", "Criteria management"],
+        "tested": false
+      },
+      {
+        "id": "admin-plan-settings",
+        "name": "Plan Settings",
+        "file": "app/pages/admin/PlanSettings.tsx",
+        "service": "server/routes/planSettings.ts",
+        "status": "existing",
+        "features": ["MLM plan configuration"],
+        "tested": false
+      },
+      {
+        "id": "admin-income-simulator",
+        "name": "Income Simulator",
+        "file": "app/pages/admin/IncomeSimulator.tsx",
+        "service": null,
+        "status": "existing",
+        "features": ["Income projection", "Simulation tools"],
+        "tested": false
+      }
+    ]
+  },
+  "userMenus": {
+    "total": 15,
+    "menus": [
+      {
+        "id": "user-dashboard",
+        "name": "Dashboard",
+        "file": "app/pages/user/Dashboard.tsx",
+        "service": "server/routes/dashboard.ts",
+        "status": "existing",
+        "features": ["Overview", "Stats", "Quick actions"],
+        "tested": false
+      },
+      {
+        "id": "user-profile",
+        "name": "Profile",
+        "file": "app/pages/user/Profile.tsx",
+        "service": "server/services/auth.service.ts",
+        "status": "existing",
+        "features": ["Profile editing", "Password change"],
+        "tested": false
+      },
+      {
+        "id": "user-kyc",
+        "name": "KYC Verification",
+        "file": "app/pages/user/KYC.tsx",
+        "service": "server/services/kyc.service.ts",
+        "status": "existing",
+        "features": ["Document upload", "Verification status"],
+        "tested": false
+      },
+      {
+        "id": "user-packages",
+        "name": "Packages",
+        "file": "app/pages/user/Packages.tsx",
+        "service": "server/services/package.service.ts",
+        "status": "existing",
+        "features": ["Package purchase", "Active packages"],
+        "tested": false
+      },
+      {
+        "id": "user-earnings",
+        "name": "Earnings",
+        "file": "app/pages/user/EarningsNew.tsx",
+        "service": "server/routes/transactions.ts",
+        "status": "existing",
+        "features": ["Earnings breakdown", "Transaction history"],
+        "tested": false
+      },
+      {
+        "id": "user-genealogy",
+        "name": "Genealogy/Team Tree",
+        "file": "app/pages/user/GenealogyNew.tsx",
+        "service": "server/services/genealogy.service.ts",
+        "status": "existing",
+        "features": ["Binary tree view", "Unilevel view"],
+        "tested": false
+      },
+      {
+        "id": "user-referrals",
+        "name": "Referrals",
+        "file": "app/pages/user/ReferralsNew.tsx",
+        "service": "server/services/referral.service.ts",
+        "status": "existing",
+        "features": ["Referral link", "Direct referrals list"],
+        "tested": false
+      },
+      {
+        "id": "user-wallet",
+        "name": "Wallet",
+        "file": "app/pages/user/Wallet.tsx",
+        "service": "server/services/wallet.service.ts",
+        "status": "existing",
+        "features": ["Balance", "Deposit", "Withdrawal"],
+        "tested": false
+      },
+      {
+        "id": "user-deposit",
+        "name": "Deposit",
+        "file": "app/pages/user/Deposit.tsx",
+        "service": "server/services/wallet.service.ts",
+        "status": "existing",
+        "features": ["Deposit request", "Payment methods"],
+        "tested": false
+      },
+      {
+        "id": "user-reports",
+        "name": "Reports",
+        "file": "app/pages/user/Reports.tsx",
+        "service": "server/routes/reports.ts",
+        "status": "existing",
+        "features": ["Income reports", "Team reports"],
+        "tested": false
+      },
+      {
+        "id": "user-robot",
+        "name": "Robot/Trading Bot",
+        "file": "app/pages/user/Robot.tsx",
+        "service": null,
+        "status": "existing",
+        "features": ["Bot subscription", "Performance"],
+        "tested": false
+      },
+      {
+        "id": "user-ranks",
+        "name": "Ranks",
+        "file": "app/pages/user/Ranks.tsx",
+        "service": "server/routes/ranks.ts",
+        "status": "existing",
+        "features": ["Current rank", "Progression"],
+        "tested": false
+      },
+      {
+        "id": "user-settings",
+        "name": "Settings",
+        "file": "app/pages/user/Settings.tsx",
+        "service": "server/services/admin-config.service.ts",
+        "status": "existing",
+        "features": ["Preferences", "Notifications"],
+        "tested": false
+      }
+    ]
+  },
+  "coreFeatures": {
+    "mlmSystem": {
+      "commissionLevels": 30,
+      "binaryTree": true,
+      "rankSystem": {
+        "tiers": 7,
+        "names": ["Starter", "Bronze", "Silver", "Gold", "Platinum", "Emerald", "Diamond"]
+      },
+      "roiDistribution": {
+        "enabled": true,
+        "automated": true,
+        "cap": "300%"
+      },
+      "boosterIncome": {
+        "enabled": true,
+        "percentage": 10,
+        "requirement": "2 direct purchases"
+      }
+    },
+    "authentication": {
+      "type": "JWT",
+      "layers": ["Supabase Auth", "Application Authorization", "Database RLS"]
+    },
+    "security": {
+      "adminFunctionsSecured": 99,
+      "rlsPolicies": 80,
+      "securedTables": 21
+    }
+  },
+  "cronJobs": {
+    "roiDistribution": {
+      "schedule": "Daily at 00:00 UTC",
+      "status": "configured"
+    },
+    "boosterExpiration": {
+      "schedule": "Daily at 01:00 UTC",
+      "status": "configured"
+    },
+    "businessVolumeCalculation": {
+      "schedule": "Daily at 02:00 UTC",
+      "status": "configured"
+    },
+    "binaryMatching": {
+      "schedule": "Daily at 02:30 UTC",
+      "status": "configured"
+    },
+    "monthlyRewards": {
+      "schedule": "1st of month at 03:00 UTC",
+      "status": "configured"
+    }
+  },
+  "developmentWorkflow": {
+    "phases": [
+      {
+        "phase": 1,
+        "name": "Initial Setup",
+        "status": "completed",
+        "tasks": [
+          "Create project folder",
+          "Clone repository",
+          "Install dependencies",
+          "Configure environment"
+        ]
+      },
+      {
+        "phase": 2,
+        "name": "Documentation & Analysis",
+        "status": "in_progress",
+        "tasks": [
+          "Build requirement memory system",
+          "Document all menus",
+          "Analyze existing code"
+        ]
+      },
+      {
+        "phase": 3,
+        "name": "Testing & Validation",
+        "status": "pending",
+        "tasks": [
+          "Test server startup",
+          "Test admin menus",
+          "Test user menus",
+          "Set up automated testing"
+        ]
+      },
+      {
+        "phase": 4,
+        "name": "Build & Optimization",
+        "status": "pending",
+        "tasks": [
+          "Run production build",
+          "Fix build errors",
+          "Optimize performance",
+          "Security audit"
+        ]
+      },
+      {
+        "phase": 5,
+        "name": "Continuous Development",
+        "status": "pending",
+        "tasks": [
+          "Implement auto-testing",
+          "Bug fixing workflow",
+          "Feature enhancement",
+          "Documentation updates"
+        ]
+      }
+    ]
+  },
+  "testingFramework": {
+    "unit": {
+      "framework": "Jest",
+      "status": "pending"
+    },
+    "integration": {
+      "framework": "Supertest",
+      "status": "pending"
+    },
+    "e2e": {
+      "framework": "Playwright",
+      "status": "pending"
+    }
+  },
+  "buildStatus": {
+    "lastBuild": null,
+    "status": "not_started",
+    "errors": [],
+    "warnings": []
+  },
+  "knownIssues": [
+    {
+      "severity": "low",
+      "category": "dependencies",
+      "description": "99 npm package vulnerabilities (35 low, 9 moderate, 50 high, 5 critical)",
+      "status": "acknowledged",
+      "resolution": "Review and update packages as needed"
+    }
+  ],
+  "nextSteps": [
+    "Complete admin/user menu documentation",
+    "Test server startup and all routes",
+    "Set up automated testing framework",
+    "Run initial build and fix issues",
+    "Implement continuous development workflow with auto-testing"
+  ]
+}

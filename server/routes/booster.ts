@@ -119,17 +119,17 @@ router.get('/all', authenticateToken, authenticateAdmin, async (req: Request, re
  */
 router.post('/refresh', authenticateToken, authenticateAdmin, async (req: Request, res: Response) => {
   try {
-    const { user_id } = req.body;
+    const { userId } = req.body;
 
-    if (!user_id) {
-      return res.status(400).json({ error: 'user_id is required' });
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
     }
 
-    await updateBoosterDirectCount(user_id);
+    await updateBoosterDirectCount(userId);
 
-    const updated = await getBoosterStatus(user_id);
+    const updated = await getBoosterStatus(userId);
 
-    console.log(`✅ Booster refreshed for user ${user_id} by admin ${(req as any).user.id}`);
+    console.log(`✅ Booster refreshed for user ${userId} by admin ${(req as any).user.id}`);
 
     res.json({
       success: true,

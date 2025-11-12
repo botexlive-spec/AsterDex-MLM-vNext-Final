@@ -76,10 +76,10 @@ router.get('/users', authenticateAdmin, async (req: Request, res: Response) => {
     const usersResult = await query(
       `SELECT id, email, full_name, role, sponsor_id, referral_code, wallet_balance,
        total_investment, total_earnings, roi_on_roi_earnings, booster_earnings, reward_earnings,
-       current_rank, kyc_status, email_verified, is_active, created_at, updated_at,
+       current_rank, kyc_status, email_verified, is_active, createdAt, updatedAt,
        phone_number, country, left_volume, right_volume, direct_referrals_count
        FROM users ${whereClause}
-       ORDER BY created_at DESC
+       ORDER BY createdAt DESC
        LIMIT ${limit} OFFSET ${offset}`,
       params
     );
@@ -120,8 +120,8 @@ router.get('/users/:id', authenticateAdmin, async (req: Request, res: Response) 
       `SELECT up.*, p.name as package_name
        FROM user_packages up
        JOIN packages p ON up.package_id = p.id
-       WHERE up.user_id = ?
-       ORDER BY up.created_at DESC`,
+       WHERE up.userId = ?
+       ORDER BY up.createdAt DESC`,
       [id]
     );
 
@@ -130,8 +130,8 @@ router.get('/users/:id', authenticateAdmin, async (req: Request, res: Response) 
       `SELECT c.*, u.email as from_user_email
        FROM commissions c
        LEFT JOIN users u ON c.from_user_id = u.id
-       WHERE c.user_id = ?
-       ORDER BY c.created_at DESC
+       WHERE c.userId = ?
+       ORDER BY c.createdAt DESC
        LIMIT 50`,
       [id]
     );
@@ -139,8 +139,8 @@ router.get('/users/:id', authenticateAdmin, async (req: Request, res: Response) 
     // Get user's transactions
     const transactionsResult = await query(
       `SELECT * FROM mlm_transactions
-       WHERE user_id = ?
-       ORDER BY created_at DESC
+       WHERE userId = ?
+       ORDER BY createdAt DESC
        LIMIT 50`,
       [id]
     );
@@ -301,7 +301,7 @@ router.post('/users', authenticateAdmin, async (req: Request, res: Response) => 
     if (initialInvestment > 0) {
       await query(
         `INSERT INTO mlm_transactions (
-          user_id, transaction_type, amount, status, description
+          userId, transaction_type, amount, status, description
         ) VALUES (?, ?, ?, ?, ?)`,
         [
           userId,
@@ -315,7 +315,7 @@ router.post('/users', authenticateAdmin, async (req: Request, res: Response) => 
 
     // Get created user (without password)
     const userResult = await query(
-      'SELECT id, email, full_name, referral_code, wallet_balance, created_at FROM users WHERE id = ?',
+      'SELECT id, email, full_name, referral_code, wallet_balance, createdAt FROM users WHERE id = ?',
       [userId]
     );
 
@@ -384,7 +384,7 @@ router.put('/users/:id', authenticateAdmin, async (req: Request, res: Response) 
       return res.status(400).json({ error: 'No fields to update' });
     }
 
-    updates.push('updated_at = NOW()');
+    updates.push('updatedAt = NOW()');
     values.push(id);
 
     await query(
@@ -409,7 +409,7 @@ router.delete('/users/:id', authenticateAdmin, async (req: Request, res: Respons
     const { id } = req.params;
 
     // Soft delete by setting is_active to false
-    await query('UPDATE users SET is_active = false, updated_at = NOW() WHERE id = ?', [id]);
+    await query('UPDATE users SET is_active = false, updatedAt = NOW() WHERE id = ?', [id]);
 
     console.log(`✅ Admin deleted user ${id}`);
     res.json({ success: true, message: 'User deleted successfully' });
@@ -435,7 +435,7 @@ router.post('/users/:id/reset-password', authenticateAdmin, async (req: Request,
     const hashedPassword = await bcrypt.hash(new_password, 10);
 
     await query(
-      'UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?',
+      'UPDATE users SET password_hash = ?, updatedAt = NOW() WHERE id = ?',
       [hashedPassword, id]
     );
 
@@ -491,7 +491,7 @@ router.post('/packages', authenticateAdmin, async (req: Request, res: Response) 
     await query(
       `INSERT INTO packages
        (name, min_investment, max_investment, daily_roi_percentage, duration_days,
-        level_income_percentages, matching_bonus_percentage, is_active, created_at, updated_at)
+        level_income_percentages, matching_bonus_percentage, is_active, createdAt, updatedAt)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
       [
         name,
@@ -571,7 +571,7 @@ router.put('/packages/:id', authenticateAdmin, async (req: Request, res: Respons
       return res.status(400).json({ error: 'No fields to update' });
     }
 
-    updates.push('updated_at = NOW()');
+    updates.push('updatedAt = NOW()');
     values.push(id);
 
     await query(
@@ -595,7 +595,7 @@ router.delete('/packages/:id', authenticateAdmin, async (req: Request, res: Resp
   try {
     const { id } = req.params;
 
-    await query('UPDATE packages SET is_active = 0, updated_at = NOW() WHERE id = ?', [id]);
+    await query('UPDATE packages SET is_active = 0, updatedAt = NOW() WHERE id = ?', [id]);
 
     console.log(`✅ Admin deleted package ${id}`);
     res.json({ success: true, message: 'Package deleted successfully' });
@@ -643,9 +643,9 @@ router.get('/transactions', authenticateAdmin, async (req: Request, res: Respons
     const transactionsResult = await query(
       `SELECT t.*, u.email, u.full_name
        FROM mlm_transactions t
-       JOIN users u ON t.user_id = u.id
+       JOIN users u ON t.userId = u.id
        ${whereClause}
-       ORDER BY t.created_at DESC
+       ORDER BY t.createdAt DESC
        LIMIT ${limit} OFFSET ${offset}`,
       params
     );
@@ -684,10 +684,10 @@ router.get('/commissions', authenticateAdmin, async (req: Request, res: Response
        u2.email as from_user_email, u2.full_name as from_user_name,
        p.name as package_name
        FROM commissions c
-       JOIN users u1 ON c.user_id = u1.id
+       JOIN users u1 ON c.userId = u1.id
        LEFT JOIN users u2 ON c.from_user_id = u2.id
        LEFT JOIN packages p ON c.package_id = p.id
-       ORDER BY c.created_at DESC
+       ORDER BY c.createdAt DESC
        LIMIT ${limit} OFFSET ${offset}`
     );
 
@@ -720,15 +720,15 @@ router.get('/analytics/overview', authenticateAdmin, async (req: Request, res: R
     const usersResult = await query('SELECT COUNT(*) as total, SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active FROM users');
 
     const todayRegistrations = await query(
-      'SELECT COUNT(*) as count FROM users WHERE DATE(created_at) = CURDATE()'
+      'SELECT COUNT(*) as count FROM users WHERE DATE(createdAt) = CURDATE()'
     );
 
     const weekRegistrations = await query(
-      'SELECT COUNT(*) as count FROM users WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)'
+      'SELECT COUNT(*) as count FROM users WHERE createdAt >= DATE_SUB(NOW(), INTERVAL 7 DAY)'
     );
 
     const monthRegistrations = await query(
-      'SELECT COUNT(*) as count FROM users WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)'
+      'SELECT COUNT(*) as count FROM users WHERE createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)'
     );
 
     // Total investments and earnings
@@ -821,31 +821,31 @@ router.get('/analytics/revenue', authenticateAdmin, async (req: Request, res: Re
     const days = parseInt(req.query.days as string) || 30;
 
     const dailyRevenueResult = await query(
-      `SELECT DATE(created_at) as date, SUM(amount) as revenue
+      `SELECT DATE(createdAt) as date, SUM(amount) as revenue
        FROM mlm_transactions
        WHERE transaction_type = 'package_purchase'
-       AND created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
-       GROUP BY DATE(created_at)
+       AND createdAt >= DATE_SUB(NOW(), INTERVAL ? DAY)
+       GROUP BY DATE(createdAt)
        ORDER BY date DESC`,
       [days]
     );
 
     const commissionPaidResult = await query(
-      `SELECT DATE(created_at) as date, SUM(amount) as commissions
+      `SELECT DATE(createdAt) as date, SUM(amount) as commissions
        FROM mlm_transactions
        WHERE transaction_type IN ('level_income', 'matching_bonus', 'binary_bonus')
-       AND created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
-       GROUP BY DATE(created_at)
+       AND createdAt >= DATE_SUB(NOW(), INTERVAL ? DAY)
+       GROUP BY DATE(createdAt)
        ORDER BY date DESC`,
       [days]
     );
 
     const roiPaidResult = await query(
-      `SELECT DATE(created_at) as date, SUM(amount) as roi
+      `SELECT DATE(createdAt) as date, SUM(amount) as roi
        FROM mlm_transactions
        WHERE transaction_type = 'roi_distribution'
-       AND created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
-       GROUP BY DATE(created_at)
+       AND createdAt >= DATE_SUB(NOW(), INTERVAL ? DAY)
+       GROUP BY DATE(createdAt)
        ORDER BY date DESC`,
       [days]
     );

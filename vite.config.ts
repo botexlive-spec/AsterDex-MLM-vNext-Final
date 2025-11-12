@@ -71,3 +71,8 @@ export default defineConfig(() => {
     },
   };
 });
+
+// Force alternative port if 5173 is busy
+if (process.env.VITE_PORT) {
+  config.server.port = parseInt(process.env.VITE_PORT);
+}

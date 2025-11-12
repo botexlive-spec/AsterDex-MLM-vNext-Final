@@ -168,7 +168,7 @@ router.post('/login', authRateLimiter, async (req: Request, res: Response) => {
     // Store refresh token
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     await query(
-      `INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (?, ?, ?)`,
+      `INSERT INTO refresh_tokens (userId, token, expires_at) VALUES (?, ?, ?)`,
       [user.id, refreshToken, expiresAt]
     );
 

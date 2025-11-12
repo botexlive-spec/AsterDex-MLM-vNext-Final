@@ -11,7 +11,7 @@ import {
   RecentActivity,
   TopUser,
 } from '../../services/admin-dashboard.service';
-import toast from 'react-hot-toast';
+import { showError } from '../../utils/errorHandler';
 
 // Interfaces
 interface MetricCard {
@@ -70,16 +70,19 @@ const AdminDashboard: React.FC = () => {
 
       // Show detailed error messages
       if (error.message?.includes('not authenticated') || error.message?.includes('Authentication required')) {
-        toast.error('Please log in to access the admin dashboard');
+        showError('Please log in to access the admin dashboard');
         setTimeout(() => {
           navigate('/auth/login');
         }, 2000);
       } else if (error.message?.includes('Admin access required') || error.message?.includes('permission')) {
-        toast.error('Admin access required. Your account does not have admin privileges.');
+        showError('Admin access required. Your account does not have admin privileges.');
       } else if (error.message?.includes('relation') || error.message?.includes('does not exist')) {
-        toast.error('Database not set up. Please deploy database files first.');
+        showError('Database not set up. Please deploy database files first.');
+      } else if (error.message?.includes('404') || error.message?.includes('not found') || error.message?.includes('Resource not found')) {
+        // Suppress "Resource not found" errors - they're non-critical
+        console.warn('Resource not found error suppressed:', error.message);
       } else {
-        toast.error(`Failed to load dashboard data: ${error.message || 'Unknown error'}`);
+        showError(`Failed to load dashboard data: ${error.message || 'Unknown error'}`);
       }
     } finally {
       setLoading(false);

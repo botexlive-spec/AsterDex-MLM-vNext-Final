@@ -1,0 +1,47 @@
+  const handleTradeExecuted = async (trade: any) => {
+    try {
+      // MySQL backend handles auth
+      if (!user) return;
+
+      // TODO: Record trade in database via backend API
+      // This functionality should be implemented in the backend
+      console.log('Trade executed:', trade);
+
+      // Future: Call backend API to record trade
+      // await api.post('/dex/trades', {
+      //   user_id: user.id,
+      //   trade_type: trade.side,
+      //   symbol: trade.symbol,
+      //   amount: trade.amount,
+      //   price: trade.price,
+      //   total_value: trade.total,
+      //   fee: trade.fee || 0,
+      //   status: 'completed',
+      //   trade_data: trade,
+      // }, token);
+
+    } catch (error) {
+      console.error('Error handling trade execution:', error);
+    }
+  };
+
+  const handleOrderPlaced = async (order: any) => {
+    try {
+      // MySQL backend handles auth
+      if (!user) return;
+
+      // TODO: Create notification via backend API
+      console.log('Order placed:', order);
+
+      // Future: Call backend API to create notification
+      // await api.post('/notifications', {
+      //   user_id: user.id,
+      //   title: 'Order Placed',
+      //   message: \`\${order.type.toUpperCase()} order placed: \${order.side} \${order.amount} \${order.symbol}\`,
+      //   notification_type: 'order',
+      // }, token);
+
+    } catch (error) {
+      console.error('Error handling order placement:', error);
+    }
+  };

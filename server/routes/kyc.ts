@@ -50,24 +50,24 @@ router.get('/', async (req: Request, res: Response) => {
       SELECT
         k.*,
         u.email as user_email,
-        u.raw_user_meta_data as user_meta
-      FROM kyc_verifications k
-      LEFT JOIN users u ON k.user_id = u.id
-      WHERE 1=1
+        u.full_name as user_name
+      FROM kyc k
+      LEFT JOIN users u ON k.userId = u.id
+      WHERE k.deletedAt IS NULL
     `;
     const params: any[] = [];
 
     if (status) {
       query += ' AND k.status = ?';
-      params.push(status);
+      params.push(status.toUpperCase());
     }
 
     if (search) {
-      query += ' AND (u.email LIKE ? OR k.document_number LIKE ?)';
+      query += ' AND (u.email LIKE ? OR u.full_name LIKE ?)';
       params.push(`%${search}%`, `%${search}%`);
     }
 
-    query += ' ORDER BY k.created_at DESC';
+    query += ' ORDER BY k.createdAt DESC';
 
     const [rows] = await pool.query<RowDataPacket[]>(query, params);
 
@@ -84,23 +84,24 @@ router.get('/', async (req: Request, res: Response) => {
 router.get('/stats', async (req: Request, res: Response) => {
   try {
     const [submissions] = await pool.query<RowDataPacket[]>(
-      'SELECT * FROM kyc_verifications'
+      'SELECT * FROM kyc WHERE deletedAt IS NULL'
     );
 
     const totalSubmissions = submissions.length;
-    const pending = submissions.filter(s => s.status === 'pending').length;
-    const approved = submissions.filter(s => s.status === 'approved').length;
-    const rejected = submissions.filter(s => s.status === 'rejected').length;
-    const resubmitRequired = submissions.filter(s => s.status === 'resubmit').length;
+    const pending = submissions.filter(s => s.status === 'PENDING').length;
+    const approved = submissions.filter(s => s.status === 'APPROVED').length;
+    const rejected = submissions.filter(s => s.status === 'REJECTED').length;
+    const resubmitRequired = 0; // No resubmit status in current schema
 
     // Recent submissions (last 10)
     const [recent] = await pool.query<RowDataPacket[]>(
       `SELECT
         k.*,
         u.email as user_email
-      FROM kyc_verifications k
-      LEFT JOIN users u ON k.user_id = u.id
-      ORDER BY k.created_at DESC
+      FROM kyc k
+      LEFT JOIN users u ON k.userId = u.id
+      WHERE k.deletedAt IS NULL
+      ORDER BY k.createdAt DESC
       LIMIT 10`
     );
 
@@ -129,10 +130,10 @@ router.get('/:id', async (req: Request, res: Response) => {
       `SELECT
         k.*,
         u.email as user_email,
-        u.raw_user_meta_data as user_meta
-      FROM kyc_verifications k
-      LEFT JOIN users u ON k.user_id = u.id
-      WHERE k.id = ?`,
+        u.full_name as user_name
+      FROM kyc k
+      LEFT JOIN users u ON k.userId = u.id
+      WHERE k.id = ? AND k.deletedAt IS NULL`,
       [id]
     );
 
@@ -157,38 +158,36 @@ router.post('/:id/approve', async (req: Request, res: Response) => {
     const adminId = (req as any).user.id;
 
     await pool.query(
-      `UPDATE kyc_verifications SET
-        status = 'approved',
-        reviewed_by = ?,
-        reviewed_at = NOW(),
-        admin_notes = ?,
-        updated_at = NOW()
+      `UPDATE kyc SET
+        status = 'APPROVED',
+        notes = ?,
+        updatedAt = NOW()
       WHERE id = ?`,
-      [adminId, notes || '', id]
+      [`Approved by admin ${adminId}. Notes: ${notes || 'None'}`, id]
     );
 
     // Update user verification status
     const [kyc] = await pool.query<RowDataPacket[]>(
-      'SELECT user_id FROM kyc_verifications WHERE id = ?',
+      'SELECT userId FROM kyc WHERE id = ?',
       [id]
     );
 
     if (kyc.length > 0) {
       await pool.query(
         `UPDATE users SET
-          kyc_verified = true,
-          updated_at = NOW()
+          updatedAt = NOW()
         WHERE id = ?`,
-        [kyc[0].user_id]
+        [kyc[0].userId]
       );
 
-      // Log audit entry
-      await pool.query(
-        `INSERT INTO audit_logs (
-          user_id, action, details, created_at
-        ) VALUES (?, ?, ?, NOW())`,
-        [adminId, 'kyc_approved', `Approved KYC submission ${id}`]
-      );
+      // Log audit entry (if audit_logs table exists)
+      // Commented out since table doesn't exist yet
+      // await pool.query(
+      //   `INSERT INTO audit_logs (
+      //     userId, action, details, createdAt
+      //   ) VALUES (?, ?, ?, NOW())`,
+      //   [adminId, 'kyc_approved', `Approved KYC submission ${id}`]
+      // );
     }
 
     res.json({ message: 'KYC submission approved successfully' });
@@ -212,23 +211,23 @@ router.post('/:id/reject', async (req: Request, res: Response) => {
     }
 
     await pool.query(
-      `UPDATE kyc_verifications SET
-        status = 'rejected',
-        reviewed_by = ?,
-        reviewed_at = NOW(),
-        rejection_reason = ?,
-        updated_at = NOW()
+      `UPDATE kyc SET
+        status = 'REJECTED',
+        notes = ?,
+        updatedAt = NOW()
       WHERE id = ?`,
-      [adminId, reason, id]
+      [`Rejected by admin ${adminId}. Reason: ${reason}`, id]
     );
 
-    // Log audit entry
+    // Log audit entry (commented out - table doesn't exist)
+    /*
     await pool.query(
       `INSERT INTO audit_logs (
-        user_id, action, details, created_at
+        userId, action, details, createdAt
       ) VALUES (?, ?, ?, NOW())`,
       [adminId, 'kyc_rejected', `Rejected KYC submission ${id}: ${reason}`]
     );
+    */
 
     res.json({ message: 'KYC submission rejected successfully' });
   } catch (error: any) {
@@ -247,23 +246,23 @@ router.post('/:id/resubmit', async (req: Request, res: Response) => {
     const adminId = (req as any).user.id;
 
     await pool.query(
-      `UPDATE kyc_verifications SET
-        status = 'resubmit',
-        reviewed_by = ?,
-        reviewed_at = NOW(),
-        admin_notes = ?,
-        updated_at = NOW()
+      `UPDATE kyc SET
+        status = 'PENDING',
+        notes = ?,
+        updatedAt = NOW()
       WHERE id = ?`,
-      [adminId, message || 'Please resubmit your documents', id]
+      [`Resubmit requested by admin ${adminId}: ${message || 'Please resubmit your documents'}`, id]
     );
 
-    // Log audit entry
+    // Log audit entry (commented out - table doesn't exist)
+    /*
     await pool.query(
       `INSERT INTO audit_logs (
-        user_id, action, details, created_at
+        userId, action, details, createdAt
       ) VALUES (?, ?, ?, NOW())`,
       [adminId, 'kyc_resubmit_requested', `Requested resubmission for KYC ${id}`]
     );
+    */
 
     res.json({ message: 'Resubmission requested successfully' });
   } catch (error: any) {

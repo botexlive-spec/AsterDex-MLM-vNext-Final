@@ -1,0 +1,23 @@
+{
+  "timestamp": "2025-11-12T17:59:27.279Z",
+  "fixes": [
+    "Added index idx_created_at to commissions",
+    "Added index idx_user_status to user_packages",
+    "Added index idx_user_status to withdrawals"
+  ],
+  "created": [
+    "Table created: transactions"
+  ],
+  "repaired": [],
+  "errors": [
+    "Failed to create support_ticket_replies: Referencing column 'ticket_id' and referenced column 'id' in foreign key constraint 'support_ticket_replies_ibfk_1' are incompatible."
+  ],
+  "warnings": [
+    "users missing columns: placement_id",
+    "packages missing columns: price",
+    "user_packages missing columns: amount, roi_earned",
+    "commissions missing columns: type, status",
+    "withdrawals missing columns: amount",
+    "wallet missing columns: user_id, available_balance, commission_balance"
+  ]
+}

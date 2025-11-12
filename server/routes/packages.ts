@@ -132,8 +132,8 @@ router.post('/purchase', authenticateToken, async (req: Request, res: Response) 
     // Insert user package
     const userPackageResult = await query(
       `INSERT INTO user_packages
-       (user_id, package_id, investment_amount, daily_roi_amount, total_roi_earned,
-        total_roi_limit, status, activation_date, expiry_date, created_at, updated_at)
+       (userId, package_id, investment_amount, daily_roi_amount, total_roi_earned,
+        total_roi_limit, status, activation_date, expiry_date, createdAt, updatedAt)
        VALUES (?, ?, ?, ?, 0, ?, 'active', ?, ?, NOW(), NOW())`,
       [userId, package_id, amount, dailyROI, totalROILimit, activationDate, expiryDate]
     );
@@ -149,7 +149,7 @@ router.post('/purchase', authenticateToken, async (req: Request, res: Response) 
     // Create transaction record
     await query(
       `INSERT INTO mlm_transactions
-       (user_id, transaction_type, amount, description, status, created_at, updated_at)
+       (userId, transaction_type, amount, description, status, createdAt, updatedAt)
        VALUES (?, 'package_purchase', ?, ?, 'completed', NOW(), NOW())`,
       [userId, amount, `Purchased ${packageData.name} - $${amount}`]
     );
@@ -179,7 +179,7 @@ router.post('/purchase', authenticateToken, async (req: Request, res: Response) 
 
       // Check if this is user's first investment (initialize booster)
       const firstPackageCheck = await query(
-        'SELECT COUNT(*) as count FROM user_packages WHERE user_id = ?',
+        'SELECT COUNT(*) as count FROM user_packages WHERE userId = ?',
         [userId]
       );
 
@@ -251,8 +251,8 @@ router.get('/my-packages', authenticateToken, async (req: Request, res: Response
       `SELECT up.*, p.name as package_name, p.daily_roi_percentage
        FROM user_packages up
        JOIN packages p ON up.package_id = p.id
-       WHERE up.user_id = ?
-       ORDER BY up.created_at DESC`,
+       WHERE up.userId = ?
+       ORDER BY up.createdAt DESC`,
       [userId]
     );
 

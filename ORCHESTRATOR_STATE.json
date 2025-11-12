@@ -1,0 +1,69 @@
+{
+  "startTime": "2025-11-12T15:36:50.540Z",
+  "currentIteration": 10,
+  "maxIterations": 10,
+  "targetStability": 95,
+  "currentStability": 68.8,
+  "history": [
+    {
+      "iteration": 1,
+      "stability": 68.8,
+      "duration": "3.04",
+      "timestamp": "2025-11-12T15:36:53.582Z"
+    },
+    {
+      "iteration": 2,
+      "stability": 68.8,
+      "duration": "0.50",
+      "timestamp": "2025-11-12T15:36:59.096Z"
+    },
+    {
+      "iteration": 3,
+      "stability": 68.8,
+      "duration": "0.53",
+      "timestamp": "2025-11-12T15:37:04.632Z"
+    },
+    {
+      "iteration": 4,
+      "stability": 68.8,
+      "duration": "0.50",
+      "timestamp": "2025-11-12T15:37:10.153Z"
+    },
+    {
+      "iteration": 5,
+      "stability": 68.8,
+      "duration": "0.52",
+      "timestamp": "2025-11-12T15:37:15.684Z"
+    },
+    {
+      "iteration": 6,
+      "stability": 68.8,
+      "duration": "0.53",
+      "timestamp": "2025-11-12T15:37:21.228Z"
+    },
+    {
+      "iteration": 7,
+      "stability": 68.8,
+      "duration": "0.51",
+      "timestamp": "2025-11-12T15:37:26.754Z"
+    },
+    {
+      "iteration": 8,
+      "stability": 68.8,
+      "duration": "0.53",
+      "timestamp": "2025-11-12T15:37:32.291Z"
+    },
+    {
+      "iteration": 9,
+      "stability": 68.8,
+      "duration": "0.55",
+      "timestamp": "2025-11-12T15:37:37.854Z"
+    },
+    {
+      "iteration": 10,
+      "stability": 68.8,
+      "duration": "0.49",
+      "timestamp": "2025-11-12T15:37:43.362Z"
+    }
+  ]
+}

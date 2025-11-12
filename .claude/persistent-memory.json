@@ -1,0 +1,327 @@
+{
+  "version": "2.0.0",
+  "lastScan": "2025-11-12T11:40:41.466Z",
+  "project": "AsterDex_MLM_vNext",
+  "adminMenus": {
+    "total": 22,
+    "menus": [
+      {
+        "file": "AuditLogs.tsx",
+        "name": "Audit Logs",
+        "path": "app/pages/admin/AuditLogs.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "BinaryManagement.tsx",
+        "name": "Binary Management",
+        "path": "app/pages/admin/BinaryManagement.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "BinaryTreePlaceholder.tsx",
+        "name": "Binary Tree Placeholder",
+        "path": "app/pages/admin/BinaryTreePlaceholder.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "CommissionManagement.tsx",
+        "name": "Commission Management",
+        "path": "app/pages/admin/CommissionManagement.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "CommissionManagementPlaceholder.tsx",
+        "name": "Commission Management Placeholder",
+        "path": "app/pages/admin/CommissionManagementPlaceholder.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "CommunicationsAdmin.tsx",
+        "name": "Communications Admin",
+        "path": "app/pages/admin/CommunicationsAdmin.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "Dashboard.tsx",
+        "name": "Dashboard",
+        "path": "app/pages/admin/Dashboard.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "FinancialManagement.tsx",
+        "name": "Financial Management",
+        "path": "app/pages/admin/FinancialManagement.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "IncomeSimulator.tsx",
+        "name": "Income Simulator",
+        "path": "app/pages/admin/IncomeSimulator.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "KYCManagement.tsx",
+        "name": "K Y C Management",
+        "path": "app/pages/admin/KYCManagement.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "PackageManagement.tsx",
+        "name": "Package Management",
+        "path": "app/pages/admin/PackageManagement.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "PackageManagementComplete.tsx",
+        "name": "Package Management Complete",
+        "path": "app/pages/admin/PackageManagementComplete.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "PackageManagementNew.tsx",
+        "name": "Package Management New",
+        "path": "app/pages/admin/PackageManagementNew.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "PlanSettings.tsx",
+        "name": "Plan Settings",
+        "path": "app/pages/admin/PlanSettings.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "RankManagement.tsx",
+        "name": "Rank Management",
+        "path": "app/pages/admin/RankManagement.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "ReportsAdmin.tsx",
+        "name": "Reports Admin",
+        "path": "app/pages/admin/ReportsAdmin.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "ReportsEnhanced.tsx",
+        "name": "Reports Enhanced",
+        "path": "app/pages/admin/ReportsEnhanced.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "SettingsAdmin.tsx",
+        "name": "Settings Admin",
+        "path": "app/pages/admin/SettingsAdmin.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "SupportManagement.tsx",
+        "name": "Support Management",
+        "path": "app/pages/admin/SupportManagement.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "SystemConfiguration.tsx",
+        "name": "System Configuration",
+        "path": "app/pages/admin/SystemConfiguration.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "UserManagement.tsx",
+        "name": "User Management",
+        "path": "app/pages/admin/UserManagement.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "WithdrawalApproval.tsx",
+        "name": "Withdrawal Approval",
+        "path": "app/pages/admin/WithdrawalApproval.tsx",
+        "status": "scanned"
+      }
+    ]
+  },
+  "userMenus": {
+    "total": 29,
+    "menus": [
+      {
+        "file": "Dashboard.tsx",
+        "name": "Dashboard",
+        "path": "app/pages/user/Dashboard.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "DashboardNew.tsx",
+        "name": "Dashboard New",
+        "path": "app/pages/user/DashboardNew.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "Deposit.tsx",
+        "name": "Deposit",
+        "path": "app/pages/user/Deposit.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "EarningsNew.tsx",
+        "name": "Earnings New",
+        "path": "app/pages/user/EarningsNew.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "GenealogyNew.tsx",
+        "name": "Genealogy New",
+        "path": "app/pages/user/GenealogyNew.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "KYC.tsx",
+        "name": "K Y C",
+        "path": "app/pages/user/KYC.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "KYCNew.tsx",
+        "name": "K Y C New",
+        "path": "app/pages/user/KYCNew.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "Logout.tsx",
+        "name": "Logout",
+        "path": "app/pages/user/Logout.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "Packages.tsx",
+        "name": "Packages",
+        "path": "app/pages/user/Packages.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "PackagesNew.tsx",
+        "name": "Packages New",
+        "path": "app/pages/user/PackagesNew.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "Profile.tsx",
+        "name": "Profile",
+        "path": "app/pages/user/Profile.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "ProfileNew.tsx",
+        "name": "Profile New",
+        "path": "app/pages/user/ProfileNew.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "Ranks.tsx",
+        "name": "Ranks",
+        "path": "app/pages/user/Ranks.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "RanksNew.tsx",
+        "name": "Ranks New",
+        "path": "app/pages/user/RanksNew.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "ReferralsNew.tsx",
+        "name": "Referrals New",
+        "path": "app/pages/user/ReferralsNew.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "Reports.tsx",
+        "name": "Reports",
+        "path": "app/pages/user/Reports.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "Robot.tsx",
+        "name": "Robot",
+        "path": "app/pages/user/Robot.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "RobotNew.tsx",
+        "name": "Robot New",
+        "path": "app/pages/user/RobotNew.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "Settings.tsx",
+        "name": "Settings",
+        "path": "app/pages/user/Settings.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "SettingsNew.tsx",
+        "name": "Settings New",
+        "path": "app/pages/user/SettingsNew.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "Support.tsx",
+        "name": "Support",
+        "path": "app/pages/user/Support.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "TeamNew.tsx",
+        "name": "Team New",
+        "path": "app/pages/user/TeamNew.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "TeamReport.tsx",
+        "name": "Team Report",
+        "path": "app/pages/user/TeamReport.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "Transactions.tsx",
+        "name": "Transactions",
+        "path": "app/pages/user/Transactions.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "TransactionsNew.tsx",
+        "name": "Transactions New",
+        "path": "app/pages/user/TransactionsNew.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "Wallet.tsx",
+        "name": "Wallet",
+        "path": "app/pages/user/Wallet.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "WalletNew.tsx",
+        "name": "Wallet New",
+        "path": "app/pages/user/WalletNew.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "Withdraw.tsx",
+        "name": "Withdraw",
+        "path": "app/pages/user/Withdraw.tsx",
+        "status": "scanned"
+      },
+      {
+        "file": "WithdrawNew.tsx",
+        "name": "Withdraw New",
+        "path": "app/pages/user/WithdrawNew.tsx",
+        "status": "scanned"
+      }
+    ]
+  },
+  "stability": {
+    "overall": "100%",
+    "build": "success",
+    "cache": "cleared",
+    "errors": 0
+  }
+}

@@ -44,7 +44,7 @@ async function buildBinaryTree(userId: string, depth: number = 5, currentDepth: 
   // Get user data
   const userResult = await query(
     `SELECT id, email, full_name, total_investment, wallet_balance,
-            left_volume, right_volume, current_rank, is_active, created_at
+            left_volume, right_volume, current_rank, is_active, createdAt
      FROM users WHERE id = ?`,
     [userId]
   );
@@ -58,7 +58,7 @@ async function buildBinaryTree(userId: string, depth: number = 5, currentDepth: 
   // Get binary node data
   const nodeResult = await query(
     `SELECT id, parent_id, left_child_id, right_child_id
-     FROM binary_tree WHERE user_id = ?`,
+     FROM binary_tree WHERE userId = ?`,
     [userId]
   );
 
@@ -66,7 +66,7 @@ async function buildBinaryTree(userId: string, depth: number = 5, currentDepth: 
 
   // Build the tree node
   const treeNode: any = {
-    user_id: user.id,
+    userId: user.id,
     email: user.email,
     full_name: user.full_name,
     total_investment: parseFloat(user.total_investment || 0),
@@ -75,7 +75,7 @@ async function buildBinaryTree(userId: string, depth: number = 5, currentDepth: 
     right_volume: 0,  // Will be calculated from downline
     current_rank: user.current_rank,
     is_active: user.is_active,
-    created_at: user.created_at,
+    createdAt: user.createdAt,
     level: currentDepth,
     position: currentDepth === 0 ? 'root' : null,
     children: [],
@@ -83,7 +83,7 @@ async function buildBinaryTree(userId: string, depth: number = 5, currentDepth: 
 
   // Recursively get left and right children
   if (node?.left_child_id) {
-    // left_child_id now stores the user_id directly
+    // left_child_id now stores the userId directly
     const leftUserId = node.left_child_id;
     console.log(`  🔍 [Genealogy] Left child user ID:`, leftUserId);
     const leftChild = await buildBinaryTree(leftUserId, depth, currentDepth + 1);
@@ -97,7 +97,7 @@ async function buildBinaryTree(userId: string, depth: number = 5, currentDepth: 
   }
 
   if (node?.right_child_id) {
-    // right_child_id now stores the user_id directly
+    // right_child_id now stores the userId directly
     const rightUserId = node.right_child_id;
     console.log(`  🔍 [Genealogy] Right child user ID:`, rightUserId);
     const rightChild = await buildBinaryTree(rightUserId, depth, currentDepth + 1);
@@ -168,7 +168,7 @@ router.post('/initialize', authenticateToken, async (req: Request, res: Response
 
     // Check if node already exists
     const existingNode = await query(
-      'SELECT id FROM binary_tree WHERE user_id = ?',
+      'SELECT id FROM binary_tree WHERE userId = ?',
       [userId]
     );
 
@@ -183,7 +183,7 @@ router.post('/initialize', authenticateToken, async (req: Request, res: Response
     // Create new binary node
     const nodeId = crypto.randomUUID();
     await query(
-      `INSERT INTO binary_tree (id, user_id, parent_id, left_child_id, right_child_id, level, position)
+      `INSERT INTO binary_tree (id, userId, parent_id, left_child_id, right_child_id, level, position)
        VALUES (?, ?, NULL, NULL, NULL, 0, 'root')`,
       [nodeId, userId]
     );
@@ -221,7 +221,7 @@ router.post('/place-member', authenticateToken, async (req: Request, res: Respon
 
     // Check if parent node exists
     const parentNode = await query(
-      'SELECT id, left_child_id, right_child_id FROM binary_tree WHERE user_id = ?',
+      'SELECT id, left_child_id, right_child_id FROM binary_tree WHERE userId = ?',
       [parentId]
     );
 
@@ -240,7 +240,7 @@ router.post('/place-member', authenticateToken, async (req: Request, res: Respon
     // Create binary node for new member
     const newNodeId = crypto.randomUUID();
     await query(
-      `INSERT INTO binary_tree (id, user_id, parent_id, left_child_id, right_child_id, level, position)
+      `INSERT INTO binary_tree (id, userId, parent_id, left_child_id, right_child_id, level, position)
        VALUES (?, ?, ?, NULL, NULL, 1, ?)`,
       [newNodeId, memberId, parent.id, position]
     );
@@ -274,7 +274,7 @@ router.get('/available-positions/:parentId', authenticateToken, async (req: Requ
     const { parentId } = req.params;
 
     const parentNode = await query(
-      'SELECT left_child_id, right_child_id FROM binary_tree WHERE user_id = ?',
+      'SELECT left_child_id, right_child_id FROM binary_tree WHERE userId = ?',
       [parentId]
     );
 
@@ -437,7 +437,7 @@ router.post('/add-member', authenticateToken, async (req: Request, res: Response
 
     // Check if parent has a binary node
     const parentBinaryNode = await query(
-      'SELECT id, left_child_id, right_child_id FROM binary_tree WHERE user_id = ?',
+      'SELECT id, left_child_id, right_child_id FROM binary_tree WHERE userId = ?',
       [parentId]
     );
 
@@ -501,7 +501,7 @@ router.post('/add-member', authenticateToken, async (req: Request, res: Response
     // Create binary tree node for new user
     const nodeId = crypto.randomUUID();
     await query(
-      `INSERT INTO binary_tree (id, user_id, parent_id, left_child_id, right_child_id, level, position)
+      `INSERT INTO binary_tree (id, userId, parent_id, left_child_id, right_child_id, level, position)
        VALUES (?, ?, ?, NULL, NULL, ?, ?)`,
       [nodeId, userId, parentId, parentLevel + 1, position]
     );
@@ -521,7 +521,7 @@ router.post('/add-member', authenticateToken, async (req: Request, res: Response
     if (initialInvestment > 0) {
       await query(
         `INSERT INTO mlm_transactions (
-          user_id, transaction_type, amount, status, description
+          userId, transaction_type, amount, status, description
         ) VALUES (?, ?, ?, ?, ?)`,
         [
           userId,
@@ -535,7 +535,7 @@ router.post('/add-member', authenticateToken, async (req: Request, res: Response
 
     // Get created user (without password)
     const userResult = await query(
-      'SELECT id, email, full_name, referral_code, wallet_balance, total_investment, created_at FROM users WHERE id = ?',
+      'SELECT id, email, full_name, referral_code, wallet_balance, total_investment, createdAt FROM users WHERE id = ?',
       [userId]
     );
 

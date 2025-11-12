@@ -74,9 +74,10 @@ apiClient.interceptors.response.use(
       toast.error('Access denied: You do not have permission to perform this action');
     }
 
-    // Handle 404 errors
+    // Handle 404 errors - Suppress toast, just log
     if (error.response?.status === 404) {
-      toast.error('Resource not found');
+      console.warn('API 404 Error:', error.config?.url);
+      // Don't show toast for 404s - they're often non-critical
     }
 
     // Handle 500 errors

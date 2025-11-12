@@ -80,7 +80,7 @@ router.post('/:userId', async (req: Request, res: Response) => {
     // Log impersonation start
     await pool.query(
       `INSERT INTO audit_logs (
-        user_id, action, details, target_user_id, created_at
+        userId, action, details, target_user_id, createdAt
       ) VALUES (?, ?, ?, ?, NOW())`,
       [
         adminId,
@@ -93,7 +93,7 @@ router.post('/:userId', async (req: Request, res: Response) => {
     // Create impersonation session record
     await pool.query(
       `INSERT INTO impersonation_sessions (
-        admin_id, user_id, reason, started_at, expires_at, is_active
+        admin_id, userId, reason, started_at, expires_at, is_active
       ) VALUES (?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 2 HOUR), true)`,
       [adminId, userId, reason || 'Support']
     );
@@ -132,14 +132,14 @@ router.post('/stop', async (req: Request, res: Response) => {
       `UPDATE impersonation_sessions SET
         is_active = false,
         ended_at = NOW()
-      WHERE admin_id = ? AND user_id = ? AND is_active = true`,
+      WHERE admin_id = ? AND userId = ? AND is_active = true`,
       [adminId, userId]
     );
 
     // Log impersonation end
     await pool.query(
       `INSERT INTO audit_logs (
-        user_id, action, details, target_user_id, created_at
+        userId, action, details, target_user_id, createdAt
       ) VALUES (?, ?, ?, ?, NOW())`,
       [adminId, 'impersonation_stopped', `Stopped impersonating user`, userId]
     );
@@ -166,7 +166,7 @@ router.get('/sessions', async (req: Request, res: Response) => {
         u.email as user_email
       FROM impersonation_sessions i
       LEFT JOIN users a ON i.admin_id = a.id
-      LEFT JOIN users u ON i.user_id = u.id
+      LEFT JOIN users u ON i.userId = u.id
       WHERE 1=1
     `;
     const params: any[] = [];
@@ -201,7 +201,7 @@ router.get('/active', async (req: Request, res: Response) => {
         u.email as user_email
       FROM impersonation_sessions i
       LEFT JOIN users a ON i.admin_id = a.id
-      LEFT JOIN users u ON i.user_id = u.id
+      LEFT JOIN users u ON i.userId = u.id
       WHERE i.is_active = true AND i.expires_at > NOW()
       ORDER BY i.started_at DESC`
     );
@@ -227,7 +227,7 @@ router.get('/history/:userId', async (req: Request, res: Response) => {
         a.email as admin_email
       FROM impersonation_sessions i
       LEFT JOIN users a ON i.admin_id = a.id
-      WHERE i.user_id = ?
+      WHERE i.userId = ?
       ORDER BY i.started_at DESC
       LIMIT ?`,
       [userId, parseInt(limit as string)]

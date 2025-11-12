@@ -1,0 +1,9 @@
+{
+  "totalPages": 36,
+  "pagesAudited": 36,
+  "tablesFound": 129,
+  "tablesMissing": 4,
+  "tablesCreated": 4,
+  "apiEndpoints": {},
+  "errors": []
+}

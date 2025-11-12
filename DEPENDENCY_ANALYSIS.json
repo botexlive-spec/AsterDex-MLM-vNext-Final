@@ -1,0 +1,1787 @@
+{
+  "timestamp": "2025-11-12T15:37:43.153Z",
+  "filesAnalyzed": 52,
+  "issues": {
+    "missingImports": [],
+    "missingBackendRoutes": [],
+    "brokenApiCalls": [
+      {
+        "file": "app/pages/admin/PlanSettings.tsx",
+        "method": "get",
+        "endpoint": "/plan-settings/all",
+        "type": "admin"
+      }
+    ],
+    "unusedImports": []
+  },
+  "repairs": [],
+  "dependencyGraph": {
+    "app/pages/admin/AuditLogs.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "date-fns",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/admin/BinaryManagement.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "date-fns",
+          "resolved": "node_modules",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/admin/BinaryTreePlaceholder.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/admin/CommissionManagement.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "date-fns",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "recharts",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/admin/CommissionManagementPlaceholder.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/admin/CommunicationsAdmin.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-router-dom",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "date-fns",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../services/admin-communications.service",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\admin-communications.service.ts",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/admin/Dashboard.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-router-dom",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/DesignSystem",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\DesignSystem.tsx",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/admin/FinancialManagement.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "date-fns",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "recharts",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/admin/IncomeSimulator.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "lucide-react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/DesignSystem",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\DesignSystem.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../services/admin-package.service",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\admin-package.service.ts",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/admin/KYCManagement.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-router-dom",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/admin/PackageManagement.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "date-fns",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "recharts",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/admin/PackageManagementComplete.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hook-form",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "@hookform/resolvers/zod",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "zod",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/DesignSystem",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\DesignSystem.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/Modal",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\Modal.tsx",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/admin/PackageManagementNew.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hook-form",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "@hookform/resolvers/zod",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "zod",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/DesignSystem",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\DesignSystem.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/Modal",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\Modal.tsx",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/admin/PlanSettings.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../context/AuthContext",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\context\\AuthContext.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../api/axios",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\api\\axios.ts",
+          "exists": true
+        }
+      ],
+      "apiCalls": [
+        {
+          "method": "get",
+          "endpoint": "/plan-settings/all",
+          "hasBackend": false
+        }
+      ],
+      "routes": [],
+      "missingDeps": [],
+      "status": "needs_review"
+    },
+    "app/pages/admin/RankManagement.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "date-fns",
+          "resolved": "node_modules",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/admin/ReportsAdmin.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "date-fns",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../services/admin-reports.service",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\admin-reports.service.ts",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/admin/ReportsEnhanced.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../context/AuthContext",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\context\\AuthContext.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../api/axios",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\api\\axios.ts",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/admin/SettingsAdmin.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-router-dom",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../context/SettingsContext",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\context\\SettingsContext.tsx",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/admin/StabilityDashboard.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/admin/SupportManagement.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "date-fns",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/admin/SystemConfiguration.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-router-dom",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../services/admin-config.service",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\admin-config.service.ts",
+          "exists": true
+        },
+        {
+          "path": "../../services/mlm-client",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\mlm-client.ts",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/admin/UserManagement.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-router-dom",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../services/admin-user.service",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\admin-user.service.ts",
+          "exists": true
+        },
+        {
+          "path": "../../services/kyc.service",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\kyc.service.ts",
+          "exists": true
+        },
+        {
+          "path": "../../services/package.service",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\package.service.ts",
+          "exists": true
+        },
+        {
+          "path": "../../services/admin-impersonate.service",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\admin-impersonate.service.ts",
+          "exists": true
+        },
+        {
+          "path": "../../types/kyc.types",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\types\\kyc.types.ts",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/CustomModal",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\CustomModal.tsx",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/admin/WithdrawalApproval.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../context/AuthContext",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\context\\AuthContext.tsx",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/DesignSystem",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\DesignSystem.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../utils/httpClient",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\utils\\httpClient.ts",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/Dashboard.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../services/mlm-client",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\mlm-client.ts",
+          "exists": true
+        },
+        {
+          "path": "../../services/team.service",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\team.service.ts",
+          "exists": true
+        },
+        {
+          "path": "../../types/mlm.types",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\types\\mlm.types.ts",
+          "exists": true
+        },
+        {
+          "path": "../../components/dex/DEXTerminal",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\dex\\DEXTerminal.tsx",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/DashboardNew.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-router-dom",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "date-fns",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "recharts",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/DesignSystem",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\DesignSystem.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../services/mlm-client",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\mlm-client.ts",
+          "exists": true
+        },
+        {
+          "path": "../../services/team.service",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\team.service.ts",
+          "exists": true
+        },
+        {
+          "path": "../../context/AuthContext",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\context\\AuthContext.tsx",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/Deposit.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-router-dom",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "qrcode.react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/DesignSystem",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\DesignSystem.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/Modal",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\Modal.tsx",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/EarningsNew.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/DesignSystem",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\DesignSystem.tsx",
+          "exists": true
+        },
+        {
+          "path": "react-helmet-async",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-router-dom",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../services/mlm-client",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\mlm-client.ts",
+          "exists": true
+        },
+        {
+          "path": "../../context/AuthContext",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\context\\AuthContext.tsx",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/GenealogyNew.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/DesignSystem",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\DesignSystem.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/Modal",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\Modal.tsx",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../context/AuthContext",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\context\\AuthContext.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../services/genealogy.service",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\genealogy.service.ts",
+          "exists": true
+        },
+        {
+          "path": "d3",
+          "resolved": "node_modules",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/KYC.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-router-dom",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../utils/validation",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\utils\\validation.ts",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/KYCNew.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-router-dom",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hook-form",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "@hookform/resolvers/zod",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "zod",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "date-fns",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/DesignSystem",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\DesignSystem.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/Modal",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\Modal.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/DatePicker",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\DatePicker.tsx",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/Logout.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-router-dom",
+          "resolved": "node_modules",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/Packages.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-router-dom",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../services/package.service",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\package.service.ts",
+          "exists": true
+        },
+        {
+          "path": "../../types/package.types",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\types\\package.types.ts",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../utils/api-client",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\utils\\api-client.ts",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/PackagesNew.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-router-dom",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hook-form",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "@hookform/resolvers/zod",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "zod",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "date-fns",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/DesignSystem",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\DesignSystem.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/Modal",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\Modal.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/Tabs",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\Tabs.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../services/wallet.service",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\wallet.service.ts",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/Profile.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-router-dom",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../utils/validation",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\utils\\validation.ts",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/ProfileNew.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-router-dom",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hook-form",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "@hookform/resolvers/zod",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "zod",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "qrcode.react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/DesignSystem",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\DesignSystem.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/Tabs",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\Tabs.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/Modal",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\Modal.tsx",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/Ranks.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-router-dom",
+          "resolved": "node_modules",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/RanksNew.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/DesignSystem",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\DesignSystem.tsx",
+          "exists": true
+        },
+        {
+          "path": "react-helmet-async",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../services/admin-rank.service",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\admin-rank.service.ts",
+          "exists": true
+        },
+        {
+          "path": "../../services/mlm-client",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\mlm-client.ts",
+          "exists": true
+        },
+        {
+          "path": "../../context/AuthContext",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\context\\AuthContext.tsx",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/ReferralsNew.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/DesignSystem",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\DesignSystem.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/Modal",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\Modal.tsx",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "qrcode.react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "recharts",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../context/AuthContext",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\context\\AuthContext.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../services/team.service",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\team.service.ts",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/Reports.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-router-dom",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "recharts",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "date-fns",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/DesignSystem",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\DesignSystem.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../services/mlm-client",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\mlm-client.ts",
+          "exists": true
+        },
+        {
+          "path": "../../services/team.service",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\team.service.ts",
+          "exists": true
+        },
+        {
+          "path": "../../context/AuthContext",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\context\\AuthContext.tsx",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/Robot.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-router-dom",
+          "resolved": "node_modules",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/RobotNew.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-router-dom",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hook-form",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "@hookform/resolvers/zod",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "zod",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "date-fns",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/DesignSystem",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\DesignSystem.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/Modal",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\Modal.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../context/AuthContext",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\context\\AuthContext.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../services/mlm-client",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\mlm-client.ts",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/Settings.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-router-dom",
+          "resolved": "node_modules",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/SettingsNew.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/DesignSystem",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\DesignSystem.tsx",
+          "exists": true
+        },
+        {
+          "path": "react-helmet-async",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/Support.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/DesignSystem",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\DesignSystem.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/Modal",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\Modal.tsx",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "zod",
+          "resolved": "node_modules",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/TeamNew.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/DesignSystem",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\DesignSystem.tsx",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../context/AuthContext",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\context\\AuthContext.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../services/team.service",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\team.service.ts",
+          "exists": true
+        },
+        {
+          "path": "../../components/ResponsiveTable",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ResponsiveTable.tsx",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/TeamReport.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../components/TeamSummaryCards",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\TeamSummaryCards.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../components/TeamLevelChart",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\TeamLevelChart.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../components/LevelBreakdownTable",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\LevelBreakdownTable.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../services/team-report.service",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\team-report.service.ts",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/Transactions.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-router-dom",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../services/wallet.service",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\wallet.service.ts",
+          "exists": true
+        },
+        {
+          "path": "date-fns",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/TransactionsNew.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/DesignSystem",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\DesignSystem.tsx",
+          "exists": true
+        },
+        {
+          "path": "react-helmet-async",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../context/AuthContext",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\context\\AuthContext.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../services/mlm-client",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\mlm-client.ts",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/Wallet.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-router-dom",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../services/wallet.service",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\services\\wallet.service.ts",
+          "exists": true
+        },
+        {
+          "path": "date-fns",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/WalletNew.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-router-dom",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hook-form",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "@hookform/resolvers/zod",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "zod",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "qrcode.react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "date-fns",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/DesignSystem",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\DesignSystem.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/Tabs",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\Tabs.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/Modal",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\Modal.tsx",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/Withdraw.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-router-dom",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/DesignSystem",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\DesignSystem.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/Modal",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\Modal.tsx",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    },
+    "app/pages/user/WithdrawNew.tsx": {
+      "imports": [
+        {
+          "path": "react",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../context/AuthContext",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\context\\AuthContext.tsx",
+          "exists": true
+        },
+        {
+          "path": "react-hot-toast",
+          "resolved": "node_modules",
+          "exists": true
+        },
+        {
+          "path": "../../components/ui/DesignSystem",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\components\\ui\\DesignSystem.tsx",
+          "exists": true
+        },
+        {
+          "path": "../../utils/httpClient",
+          "resolved": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\utils\\httpClient.ts",
+          "exists": true
+        }
+      ],
+      "apiCalls": [],
+      "routes": [],
+      "missingDeps": [],
+      "status": "ok"
+    }
+  }
+}

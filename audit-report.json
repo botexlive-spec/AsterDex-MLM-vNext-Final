@@ -1,0 +1,1261 @@
+{
+  "timestamp": "2025-11-12T17:57:10.383Z",
+  "adminPages": [
+    {
+      "file": "AuditLogs.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\AuditLogs.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "database",
+        "yesterday",
+        "users"
+      ],
+      "size": 49284
+    },
+    {
+      "file": "BinaryManagement.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\BinaryManagement.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "database",
+        "root",
+        "current",
+        "users"
+      ],
+      "size": 49444
+    },
+    {
+      "file": "BinaryTreePlaceholder.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\BinaryTreePlaceholder.tsx",
+      "apiCalls": [],
+      "requiredTables": [],
+      "size": 2414
+    },
+    {
+      "file": "CommissionManagement.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\CommissionManagement.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "database",
+        "and",
+        "applied",
+        "existing",
+        "Rank",
+        "users",
+        "ranks",
+        "commissions",
+        "referrals"
+      ],
+      "size": 68964
+    },
+    {
+      "file": "CommissionManagementPlaceholder.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\CommissionManagementPlaceholder.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "commissions"
+      ],
+      "size": 2354
+    },
+    {
+      "file": "CommunicationsAdmin.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\CommunicationsAdmin.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "localStorage",
+        "database",
+        "users"
+      ],
+      "size": 53128
+    },
+    {
+      "file": "Dashboard.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\Dashboard.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "historical",
+        "users",
+        "packages",
+        "commissions",
+        "withdrawals",
+        "earnings"
+      ],
+      "size": 24910
+    },
+    {
+      "file": "FinancialManagement.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\FinancialManagement.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "database",
+        "localStorage",
+        "storage",
+        "local",
+        "the",
+        "commissions",
+        "transactions",
+        "withdrawals",
+        "wallet"
+      ],
+      "size": 70396
+    },
+    {
+      "file": "IncomeSimulator.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\IncomeSimulator.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "this",
+        "Commissions",
+        "the",
+        "packages",
+        "commissions",
+        "earnings"
+      ],
+      "size": 21398
+    },
+    {
+      "file": "KYCManagement.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\KYCManagement.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "database",
+        "localStorage",
+        "Date",
+        "local"
+      ],
+      "size": 51627
+    },
+    {
+      "file": "PackageManagement.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\PackageManagement.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "localStorage",
+        "storage",
+        "Package",
+        "users",
+        "packages"
+      ],
+      "size": 49978
+    },
+    {
+      "file": "PackageManagementComplete.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\PackageManagementComplete.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "either",
+        "Package",
+        "commissions",
+        "users",
+        "packages"
+      ],
+      "size": 40324
+    },
+    {
+      "file": "PackageManagementNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\PackageManagementNew.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "either",
+        "Package",
+        "commissions",
+        "users",
+        "packages"
+      ],
+      "size": 40324
+    },
+    {
+      "file": "PlanSettings.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\PlanSettings.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "local",
+        "users"
+      ],
+      "size": 8038
+    },
+    {
+      "file": "RankManagement.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\RankManagement.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "database",
+        "actual",
+        "Date",
+        "rank",
+        "user",
+        "users",
+        "ranks",
+        "referrals"
+      ],
+      "size": 55890
+    },
+    {
+      "file": "ReportsAdmin.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\ReportsAdmin.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "database",
+        "last",
+        "users",
+        "earnings",
+        "referrals"
+      ],
+      "size": 51101
+    },
+    {
+      "file": "ReportsEnhanced.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\ReportsEnhanced.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "User",
+        "withdrawals",
+        "wallet"
+      ],
+      "size": 19831
+    },
+    {
+      "file": "SettingsAdmin.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\SettingsAdmin.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "Email",
+        "Name",
+        "Number",
+        "all",
+        "withdrawal",
+        "accessing",
+        "global",
+        "users",
+        "commissions",
+        "withdrawals"
+      ],
+      "size": 71631
+    },
+    {
+      "file": "StabilityDashboard.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\StabilityDashboard.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "system"
+      ],
+      "size": 14904
+    },
+    {
+      "file": "SupportManagement.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\SupportManagement.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "yesterday",
+        "relative",
+        "counts",
+        "ticket",
+        "selected",
+        "chat"
+      ],
+      "size": 67836
+    },
+    {
+      "file": "SystemConfiguration.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\SystemConfiguration.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "await",
+        "level",
+        "matching",
+        "rank",
+        "binary",
+        "system",
+        "ranks",
+        "referrals"
+      ],
+      "size": 38346
+    },
+    {
+      "file": "UserManagement.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\UserManagement.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "database",
+        "wallet",
+        "user",
+        "date",
+        "Date",
+        "total",
+        "users",
+        "packages",
+        "ranks",
+        "transactions",
+        "withdrawals",
+        "earnings",
+        "referrals",
+        "roi_earnings"
+      ],
+      "size": 114327
+    },
+    {
+      "file": "WithdrawalApproval.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\WithdrawalApproval.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "withdrawals",
+        "wallet"
+      ],
+      "size": 14997
+    }
+  ],
+  "userPages": [
+    {
+      "file": "Dashboard.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\Dashboard.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "packages",
+        "transactions",
+        "withdrawals",
+        "earnings",
+        "referrals",
+        "notifications",
+        "wallet"
+      ],
+      "size": 17794
+    },
+    {
+      "file": "DashboardNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\DashboardNew.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "Platinum",
+        "MySQL",
+        "transaction",
+        "user",
+        "metrics",
+        "transactions",
+        "activity",
+        "packages",
+        "ranks",
+        "earnings",
+        "referrals",
+        "wallet"
+      ],
+      "size": 31140
+    },
+    {
+      "file": "Deposit.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\Deposit.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "transactions",
+        "wallet"
+      ],
+      "size": 24032
+    },
+    {
+      "file": "EarningsNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\EarningsNew.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "User",
+        "last",
+        "transactions",
+        "earnings",
+        "wallet"
+      ],
+      "size": 42517
+    },
+    {
+      "file": "GenealogyNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\GenealogyNew.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "the",
+        "root",
+        "D3",
+        "Date",
+        "date",
+        "maxNodesAtLevel",
+        "genealogy",
+        "earnings",
+        "wallet",
+        "roi_earnings"
+      ],
+      "size": 88075
+    },
+    {
+      "file": "KYC.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\KYC.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "form",
+        "withdrawals"
+      ],
+      "size": 11658
+    },
+    {
+      "file": "KYCNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\KYCNew.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "withdrawals",
+        "wallet"
+      ],
+      "size": 48887
+    },
+    {
+      "file": "Logout.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\Logout.tsx",
+      "apiCalls": [],
+      "requiredTables": [],
+      "size": 2566
+    },
+    {
+      "file": "Packages.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\Packages.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "30",
+        "packages",
+        "commissions",
+        "wallet"
+      ],
+      "size": 23440
+    },
+    {
+      "file": "PackagesNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\PackagesNew.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "API",
+        "packages",
+        "wallet"
+      ],
+      "size": 56304
+    },
+    {
+      "file": "Profile.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\Profile.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "functionality",
+        "form"
+      ],
+      "size": 12264
+    },
+    {
+      "file": "ProfileNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\ProfileNew.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "localStorage",
+        "your",
+        "profile",
+        "packages",
+        "withdrawals",
+        "earnings",
+        "referrals",
+        "notifications",
+        "wallet"
+      ],
+      "size": 57472
+    },
+    {
+      "file": "Ranks.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\Ranks.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "ranks"
+      ],
+      "size": 8144
+    },
+    {
+      "file": "RanksNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\RanksNew.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "database",
+        "dashboard",
+        "ranks",
+        "commissions",
+        "earnings",
+        "referrals"
+      ],
+      "size": 45315
+    },
+    {
+      "file": "ReferralsNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\ReferralsNew.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "MySQL",
+        "real",
+        "Direct",
+        "Finaster",
+        "Date",
+        "earnings",
+        "referrals"
+      ],
+      "size": 26472
+    },
+    {
+      "file": "Reports.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\Reports.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "last",
+        "your",
+        "commissions",
+        "transactions",
+        "earnings",
+        "referrals"
+      ],
+      "size": 24934
+    },
+    {
+      "file": "Robot.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\Robot.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "earnings"
+      ],
+      "size": 3696
+    },
+    {
+      "file": "RobotNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\RobotNew.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "up",
+        "now",
+        "my",
+        "10",
+        "thousands",
+        "subscription",
+        "packages",
+        "commissions",
+        "wallet"
+      ],
+      "size": 31753
+    },
+    {
+      "file": "Settings.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\Settings.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "users",
+        "earnings",
+        "notifications"
+      ],
+      "size": 11248
+    },
+    {
+      "file": "SettingsNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\SettingsNew.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "localStorage",
+        "your",
+        "Password",
+        "earnings",
+        "notifications",
+        "wallet"
+      ],
+      "size": 56292
+    },
+    {
+      "file": "Support.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\Support.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "an",
+        "a",
+        "our",
+        "within",
+        "unread",
+        "packages",
+        "ranks",
+        "earnings",
+        "referrals",
+        "notifications"
+      ],
+      "size": 58352
+    },
+    {
+      "file": "TeamNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\TeamNew.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "the",
+        "Date"
+      ],
+      "size": 34281
+    },
+    {
+      "file": "TeamReport.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\TeamReport.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "Total",
+        "Level",
+        "referrals"
+      ],
+      "size": 9270
+    },
+    {
+      "file": "Transactions.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\Transactions.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "transactions",
+        "wallet"
+      ],
+      "size": 13217
+    },
+    {
+      "file": "TransactionsNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\TransactionsNew.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "API",
+        "transactions",
+        "withdrawals",
+        "earnings"
+      ],
+      "size": 45620
+    },
+    {
+      "file": "Wallet.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\Wallet.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "packages",
+        "commissions",
+        "transactions",
+        "withdrawals",
+        "wallet"
+      ],
+      "size": 9478
+    },
+    {
+      "file": "WalletNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\WalletNew.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "your",
+        "Date",
+        "transactions",
+        "withdrawals",
+        "wallet"
+      ],
+      "size": 59706
+    },
+    {
+      "file": "Withdraw.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\Withdraw.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "your",
+        "transactions",
+        "withdrawals",
+        "wallet"
+      ],
+      "size": 28928
+    },
+    {
+      "file": "WithdrawNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\WithdrawNew.tsx",
+      "apiCalls": [],
+      "requiredTables": [
+        "withdrawals",
+        "wallet"
+      ],
+      "size": 15726
+    }
+  ],
+  "apiRoutes": [
+    {
+      "file": "admin.ts",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\server\\routes\\admin.ts",
+      "endpoints": [
+        "GET /users",
+        "GET /users/:id",
+        "POST /users",
+        "PUT /users/:id",
+        "DELETE /users/:id",
+        "POST /users/:id/reset-password",
+        "GET /packages",
+        "POST /packages",
+        "PUT /packages/:id",
+        "DELETE /packages/:id",
+        "GET /transactions",
+        "GET /commissions",
+        "GET /analytics/overview",
+        "GET /analytics/revenue",
+        "POST /distribute-roi"
+      ],
+      "tablesUsed": [
+        "users",
+        "user_packages",
+        "commissions",
+        "mlm_transactions",
+        "mlm_binary_node",
+        "packages",
+        "withdrawals",
+        "kyc",
+        "parent",
+        "sponsor",
+        "level",
+        "fails",
+        "user",
+        "package",
+        "transactions",
+        "earnings",
+        "referrals",
+        "wallet",
+        "roi_earnings"
+      ]
+    },
+    {
+      "file": "audit.ts",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\server\\routes\\audit.ts",
+      "endpoints": [
+        "GET /logs",
+        "GET /logs/:userId",
+        "GET /stats",
+        "GET /actions",
+        "POST /log"
+      ],
+      "tablesUsed": [
+        "audit_logs",
+        "users"
+      ]
+    },
+    {
+      "file": "auth-enhanced.ts",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\server\\routes\\auth-enhanced.ts",
+      "endpoints": [
+        "POST /login",
+        "POST /refresh",
+        "POST /logout",
+        "GET /me"
+      ],
+      "tablesUsed": [
+        "users",
+        "response",
+        "refresh_tokens",
+        "failed_login_attempts"
+      ]
+    },
+    {
+      "file": "auth.ts",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\server\\routes\\auth.ts",
+      "endpoints": [
+        "POST /login",
+        "GET /me",
+        "POST /logout"
+      ],
+      "tablesUsed": [
+        "users",
+        "response",
+        "token"
+      ]
+    },
+    {
+      "file": "binary.ts",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\server\\routes\\binary.ts",
+      "endpoints": [
+        "GET /stats",
+        "GET /matches",
+        "GET /tree"
+      ],
+      "tablesUsed": [
+        "binary_tree",
+        "binary_matches",
+        "binary",
+        "users"
+      ]
+    },
+    {
+      "file": "booster.ts",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\server\\routes\\booster.ts",
+      "endpoints": [
+        "GET /status",
+        "GET /all",
+        "POST /refresh",
+        "GET /countdown"
+      ],
+      "tablesUsed": []
+    },
+    {
+      "file": "config.ts",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\server\\routes\\config.ts",
+      "endpoints": [
+        "GET /",
+        "GET /:key",
+        "PUT /:key",
+        "POST /",
+        "DELETE /:key"
+      ],
+      "tablesUsed": [
+        "system_config",
+        "audit_logs",
+        "config",
+        "users"
+      ]
+    },
+    {
+      "file": "dashboard.ts",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\server\\routes\\dashboard.ts",
+      "endpoints": [
+        "GET /"
+      ],
+      "tablesUsed": [
+        "users",
+        "team_tree",
+        "user_packages",
+        "mlm_transactions",
+        "database",
+        "DB",
+        "packages",
+        "transactions",
+        "earnings",
+        "referrals",
+        "wallet",
+        "roi_earnings"
+      ]
+    },
+    {
+      "file": "genealogy.ts",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\server\\routes\\genealogy.ts",
+      "endpoints": [
+        "GET /tree",
+        "POST /initialize",
+        "POST /place-member",
+        "GET /available-positions/:parentId",
+        "GET /stats",
+        "POST /add-member"
+      ],
+      "tablesUsed": [
+        "users",
+        "binary_tree",
+        "downline",
+        "DB",
+        "team_tree",
+        "mlm_transactions",
+        "parent",
+        "transactions",
+        "genealogy",
+        "earnings",
+        "wallet"
+      ]
+    },
+    {
+      "file": "impersonate.ts",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\server\\routes\\impersonate.ts",
+      "endpoints": [
+        "POST /:userId",
+        "POST /stop",
+        "GET /sessions",
+        "GET /active",
+        "GET /history/:userId",
+        "POST /verify"
+      ],
+      "tablesUsed": [
+        "users",
+        "impersonation_sessions",
+        "audit_logs",
+        "impersonation"
+      ]
+    },
+    {
+      "file": "kyc.ts",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\server\\routes\\kyc.ts",
+      "endpoints": [
+        "GET /",
+        "GET /stats",
+        "GET /:id",
+        "POST /:id/approve",
+        "POST /:id/reject",
+        "POST /:id/resubmit"
+      ],
+      "tablesUsed": [
+        "kyc",
+        "users",
+        "audit_logs",
+        "user"
+      ]
+    },
+    {
+      "file": "levelUnlocks.ts",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\server\\routes\\levelUnlocks.ts",
+      "endpoints": [
+        "GET /status",
+        "GET /progress",
+        "GET /percentages",
+        "GET /my-levels"
+      ],
+      "tablesUsed": [
+        "plan_settings"
+      ]
+    },
+    {
+      "file": "packages.ts",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\server\\routes\\packages.ts",
+      "endpoints": [
+        "GET /",
+        "POST /purchase",
+        "GET /my-packages"
+      ],
+      "tablesUsed": [
+        "packages",
+        "users",
+        "wallet",
+        "user_packages",
+        "mlm_transactions",
+        "binary",
+        "failed",
+        "fails",
+        "booster",
+        "their",
+        "commissions",
+        "transactions",
+        "genealogy",
+        "earnings"
+      ]
+    },
+    {
+      "file": "planSettings.ts",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\server\\routes\\planSettings.ts",
+      "endpoints": [
+        "GET /",
+        "GET /all",
+        "GET /:feature_key",
+        "GET /:feature_key/status",
+        "PUT /:feature_key",
+        "POST /:feature_key/toggle",
+        "POST /validate-investment",
+        "GET /active-plans/summary"
+      ],
+      "tablesUsed": [
+        "plan",
+        "users"
+      ]
+    },
+    {
+      "file": "ranks.ts",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\server\\routes\\ranks.ts",
+      "endpoints": [
+        "GET /",
+        "POST /",
+        "PUT /:id",
+        "DELETE /:id",
+        "GET /distributions",
+        "POST /distribute",
+        "GET /qualification/:userId/:rankId",
+        "GET /achievements/:userId",
+        "GET /stats",
+        "GET /eligibility/:userId",
+        "POST /user/:userId"
+      ],
+      "tablesUsed": [
+        "rank_rewards",
+        "rank_distribution_history",
+        "wallets",
+        "users",
+        "user_packages",
+        "mlm_transactions",
+        "rank",
+        "query",
+        "user",
+        "packages",
+        "ranks",
+        "transactions",
+        "referrals",
+        "wallet"
+      ]
+    },
+    {
+      "file": "reports-enhanced.ts",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\server\\routes\\reports-enhanced.ts",
+      "endpoints": [
+        "GET /roi",
+        "GET /level-income",
+        "GET /binary",
+        "GET /boosters",
+        "GET /withdrawals",
+        "GET /export/:reportType"
+      ],
+      "tablesUsed": [
+        "payouts",
+        "boosters",
+        "withdrawals",
+        "Email",
+        "users",
+        "wallet"
+      ]
+    },
+    {
+      "file": "reports.ts",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\server\\routes\\reports.ts",
+      "endpoints": [
+        "GET /users",
+        "GET /transactions",
+        "GET /commissions",
+        "GET /revenue"
+      ],
+      "tablesUsed": [
+        "users",
+        "user_packages",
+        "mlm_transactions",
+        "commissions",
+        "packages",
+        "transactions"
+      ]
+    },
+    {
+      "file": "rewards.ts",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\server\\routes\\rewards.ts",
+      "endpoints": [
+        "GET /",
+        "GET /:id",
+        "GET /business-volume/my-volume",
+        "POST /business-volume/refresh",
+        "GET /my-rewards/history",
+        "GET /my-rewards/qualified",
+        "POST /claim",
+        "POST /admin/create",
+        "PUT /admin/:id",
+        "DELETE /admin/:id"
+      ],
+      "tablesUsed": [
+        "reward"
+      ]
+    },
+    {
+      "file": "stability.routes.ts",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\server\\routes\\stability.routes.ts",
+      "endpoints": [
+        "GET /qa-results",
+        "GET /system-map",
+        "GET /dependency-analysis",
+        "GET /orchestrator-state",
+        "GET /test-cycle-results"
+      ],
+      "tablesUsed": []
+    },
+    {
+      "file": "support.ts",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\server\\routes\\support.ts",
+      "endpoints": [
+        "GET /tickets",
+        "GET /tickets/:id",
+        "PUT /tickets/:id",
+        "POST /tickets/:id/reply",
+        "GET /stats"
+      ],
+      "tablesUsed": [
+        "support_ticket",
+        "support_ticket_replies",
+        "users",
+        "audit_logs",
+        "ticket"
+      ]
+    },
+    {
+      "file": "team.ts",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\server\\routes\\team.ts",
+      "endpoints": [
+        "GET /members",
+        "GET /direct",
+        "GET /stats",
+        "GET /level/:level"
+      ],
+      "tablesUsed": [
+        "users",
+        "team_tree",
+        "earnings",
+        "referrals",
+        "wallet"
+      ]
+    },
+    {
+      "file": "transactions.ts",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\server\\routes\\transactions.ts",
+      "endpoints": [
+        "GET /"
+      ],
+      "tablesUsed": [
+        "mlm_transactions",
+        "users",
+        "transactions"
+      ]
+    },
+    {
+      "file": "wallet.ts",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\server\\routes\\wallet.ts",
+      "endpoints": [
+        "GET /balance",
+        "POST /deposit/address",
+        "POST /deposit",
+        "GET /withdrawal/limits",
+        "POST /withdrawal",
+        "POST /transfer",
+        "GET /transactions/pending",
+        "GET /withdrawals",
+        "GET /withdrawals/pending",
+        "POST /withdrawals/:id/approve",
+        "POST /withdrawals/:id/reject"
+      ],
+      "tablesUsed": [
+        "users",
+        "pending",
+        "mlm_transactions",
+        "sender",
+        "transactions",
+        "withdrawals",
+        "earnings",
+        "wallet"
+      ]
+    }
+  ],
+  "databaseTables": [],
+  "missingTables": [
+    "database",
+    "yesterday",
+    "users",
+    "root",
+    "current",
+    "and",
+    "applied",
+    "existing",
+    "Rank",
+    "ranks",
+    "commissions",
+    "referrals",
+    "localStorage",
+    "historical",
+    "packages",
+    "withdrawals",
+    "earnings",
+    "storage",
+    "local",
+    "the",
+    "transactions",
+    "wallet",
+    "this",
+    "Commissions",
+    "Date",
+    "Package",
+    "either",
+    "actual",
+    "rank",
+    "user",
+    "last",
+    "User",
+    "Email",
+    "Name",
+    "Number",
+    "all",
+    "withdrawal",
+    "accessing",
+    "global",
+    "system",
+    "relative",
+    "counts",
+    "ticket",
+    "selected",
+    "chat",
+    "await",
+    "level",
+    "matching",
+    "binary",
+    "date",
+    "total",
+    "roi_earnings",
+    "notifications",
+    "Platinum",
+    "MySQL",
+    "transaction",
+    "metrics",
+    "activity",
+    "D3",
+    "maxNodesAtLevel",
+    "genealogy",
+    "form",
+    "30",
+    "API",
+    "functionality",
+    "your",
+    "profile",
+    "dashboard",
+    "real",
+    "Direct",
+    "Finaster",
+    "up",
+    "now",
+    "my",
+    "10",
+    "thousands",
+    "subscription",
+    "Password",
+    "an",
+    "a",
+    "our",
+    "within",
+    "unread",
+    "Total",
+    "Level",
+    "user_packages",
+    "mlm_transactions",
+    "mlm_binary_node",
+    "kyc",
+    "parent",
+    "sponsor",
+    "fails",
+    "package",
+    "audit_logs",
+    "response",
+    "refresh_tokens",
+    "failed_login_attempts",
+    "token",
+    "binary_tree",
+    "binary_matches",
+    "system_config",
+    "config",
+    "team_tree",
+    "DB",
+    "downline",
+    "impersonation_sessions",
+    "impersonation",
+    "plan_settings",
+    "failed",
+    "booster",
+    "their",
+    "plan",
+    "rank_rewards",
+    "rank_distribution_history",
+    "wallets",
+    "query",
+    "payouts",
+    "boosters",
+    "reward",
+    "support_ticket",
+    "support_ticket_replies",
+    "pending",
+    "sender"
+  ],
+  "brokenEndpoints": [],
+  "unlinkeddModels": [],
+  "frontendIssues": [],
+  "errors": [
+    "Database connection failed: Unknown database 'asterdex_mlm'"
+  ],
+  "summary": {
+    "adminPages": 23,
+    "userPages": 29,
+    "apiRoutes": 23,
+    "databaseTables": 0,
+    "missingTables": 123,
+    "brokenEndpoints": 0,
+    "errors": 1
+  }
+}

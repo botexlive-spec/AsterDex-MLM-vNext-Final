@@ -78,7 +78,7 @@ router.post('/', async (req: Request, res: Response) => {
         rank_name, reward_amount, rank_order, min_direct_referrals,
         min_team_volume, min_active_directs, min_personal_sales,
         terms_conditions, is_active, reward_type, bonus_percentage,
-        created_at, updated_at
+        createdAt, updatedAt
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
       [
         rank_name, reward_amount, rank_order, min_direct_referrals,
@@ -119,7 +119,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     const setClause = fields.map(field => `${field} = ?`).join(', ');
 
     await pool.query(
-      `UPDATE rank_rewards SET ${setClause}, updated_at = NOW() WHERE id = ?`,
+      `UPDATE rank_rewards SET ${setClause}, updatedAt = NOW() WHERE id = ?`,
       [...values, id]
     );
 
@@ -157,13 +157,13 @@ router.get('/distributions', async (req: Request, res: Response) => {
       `SELECT
         rdh.*,
         u.email as user_email,
-        u.raw_user_meta_data as user_meta,
+        u.full_name as user_meta,
         d.email as distributor_email,
-        d.raw_user_meta_data as distributor_meta
+        d.full_name as distributor_meta
       FROM rank_distribution_history rdh
-      LEFT JOIN users u ON rdh.user_id = u.id
+      LEFT JOIN users u ON rdh.userId = u.id
       LEFT JOIN users d ON rdh.distributed_by = d.id
-      ORDER BY rdh.created_at DESC
+      ORDER BY rdh.createdAt DESC
       LIMIT ?`,
       [limit]
     );
@@ -190,15 +190,15 @@ router.post('/distribute', async (req: Request, res: Response) => {
     // Create distribution record
     await connection.query(
       `INSERT INTO rank_distribution_history (
-        user_id, rank_name, reward_amount, distributed_by,
-        distribution_type, notes, created_at
+        userId, rank_name, reward_amount, distributed_by,
+        distribution_type, notes, createdAt
       ) VALUES (?, ?, ?, ?, ?, ?, NOW())`,
       [userId, rankName, rewardAmount, adminId, distributionType, notes || '']
     );
 
     // Update user's wallet
     const [wallets] = await connection.query<RowDataPacket[]>(
-      'SELECT available_balance, total_balance FROM wallets WHERE user_id = ?',
+      'SELECT available_balance, total_balance FROM wallets WHERE userId = ?',
       [userId]
     );
 
@@ -208,8 +208,8 @@ router.post('/distribute', async (req: Request, res: Response) => {
         `UPDATE wallets SET
           available_balance = ?,
           total_balance = ?,
-          updated_at = NOW()
-        WHERE user_id = ?`,
+          updatedAt = NOW()
+        WHERE userId = ?`,
         [
           wallet.available_balance + rewardAmount,
           wallet.total_balance + rewardAmount,
@@ -221,7 +221,7 @@ router.post('/distribute', async (req: Request, res: Response) => {
     // Create transaction record
     await connection.query(
       `INSERT INTO mlm_transactions (
-        user_id, transaction_type, amount, description, status, created_at
+        userId, transaction_type, amount, description, status, createdAt
       ) VALUES (?, ?, ?, ?, ?, NOW())`,
       [
         userId,
@@ -276,8 +276,8 @@ router.get('/qualification/:userId/:rankId', async (req: Request, res: Response)
     let activeDirects = 0;
     if (referralIds.length > 0) {
       const [activePackages] = await pool.query<RowDataPacket[]>(
-        `SELECT DISTINCT user_id FROM user_packages
-         WHERE user_id IN (?) AND status = 'active'`,
+        `SELECT DISTINCT userId FROM user_packages
+         WHERE userId IN (?) AND status = 'active'`,
         [referralIds]
       );
       activeDirects = activePackages.length;
@@ -287,7 +287,7 @@ router.get('/qualification/:userId/:rankId', async (req: Request, res: Response)
     let teamVolume = 0;
     if (referralIds.length > 0) {
       const [teamPurchases] = await pool.query<RowDataPacket[]>(
-        'SELECT price FROM user_packages WHERE user_id IN (?)',
+        'SELECT price FROM user_packages WHERE userId IN (?)',
         [referralIds]
       );
       teamVolume = teamPurchases.reduce((sum, p) => sum + (p.price || 0), 0);
@@ -295,7 +295,7 @@ router.get('/qualification/:userId/:rankId', async (req: Request, res: Response)
 
     // Calculate personal sales
     const [personalPurchases] = await pool.query<RowDataPacket[]>(
-      'SELECT price FROM user_packages WHERE user_id = ?',
+      'SELECT price FROM user_packages WHERE userId = ?',
       [userId]
     );
     const personalSales = personalPurchases.reduce((sum, p) => sum + (p.price || 0), 0);
@@ -347,19 +347,19 @@ router.get('/achievements/:userId', async (req: Request, res: Response) => {
       SELECT
         rdh.*,
         u.email as user_email,
-        u.raw_user_meta_data as user_meta
+        u.full_name as user_meta
       FROM rank_distribution_history rdh
-      LEFT JOIN users u ON rdh.user_id = u.id
+      LEFT JOIN users u ON rdh.userId = u.id
     `;
 
     const params: any[] = [];
 
     if (userId) {
-      query += ' WHERE rdh.user_id = ?';
+      query += ' WHERE rdh.userId = ?';
       params.push(userId);
     }
 
-    query += ' ORDER BY rdh.created_at DESC';
+    query += ' ORDER BY rdh.createdAt DESC';
 
     const [rows] = await pool.query<RowDataPacket[]>(query, params);
 
@@ -377,7 +377,7 @@ router.get('/stats', async (req: Request, res: Response) => {
   try {
     // Get all distribution history
     const [distributions] = await pool.query<RowDataPacket[]>(
-      'SELECT * FROM rank_distribution_history ORDER BY created_at DESC'
+      'SELECT * FROM rank_distribution_history ORDER BY createdAt DESC'
     );
 
     const totalAchievements = distributions.length;
@@ -422,8 +422,8 @@ router.get('/eligibility/:userId', async (req: Request, res: Response) => {
     // Get user's current achievements
     const [achievements] = await pool.query<RowDataPacket[]>(
       `SELECT * FROM rank_distribution_history
-       WHERE user_id = ?
-       ORDER BY created_at DESC
+       WHERE userId = ?
+       ORDER BY createdAt DESC
        LIMIT 1`,
       [userId]
     );
@@ -443,8 +443,8 @@ router.get('/eligibility/:userId', async (req: Request, res: Response) => {
     let activeDirects = 0;
     if (referralIds.length > 0) {
       const [activePackages] = await pool.query<RowDataPacket[]>(
-        `SELECT DISTINCT user_id FROM user_packages
-         WHERE user_id IN (?) AND status = 'active'`,
+        `SELECT DISTINCT userId FROM user_packages
+         WHERE userId IN (?) AND status = 'active'`,
         [referralIds]
       );
       activeDirects = activePackages.length;
@@ -454,7 +454,7 @@ router.get('/eligibility/:userId', async (req: Request, res: Response) => {
     let teamVolume = 0;
     if (referralIds.length > 0) {
       const [teamPurchases] = await pool.query<RowDataPacket[]>(
-        'SELECT price FROM user_packages WHERE user_id IN (?)',
+        'SELECT price FROM user_packages WHERE userId IN (?)',
         [referralIds]
       );
       teamVolume = teamPurchases.reduce((sum, p) => sum + (p.price || 0), 0);
@@ -462,7 +462,7 @@ router.get('/eligibility/:userId', async (req: Request, res: Response) => {
 
     // Calculate personal sales
     const [personalPurchases] = await pool.query<RowDataPacket[]>(
-      'SELECT price FROM user_packages WHERE user_id = ?',
+      'SELECT price FROM user_packages WHERE userId = ?',
       [userId]
     );
     const personalSales = personalPurchases.reduce((sum, p) => sum + (p.price || 0), 0);
@@ -551,15 +551,15 @@ router.post('/user/:userId', async (req: Request, res: Response) => {
       // Create distribution record
       await connection.query(
         `INSERT INTO rank_distribution_history (
-          user_id, rank_name, reward_amount, distributed_by,
-          distribution_type, notes, created_at
+          userId, rank_name, reward_amount, distributed_by,
+          distribution_type, notes, createdAt
         ) VALUES (?, ?, ?, ?, ?, ?, NOW())`,
         [userId, rank.rank_name, rank.reward_amount, adminId, 'manual', reason || 'Manual adjustment']
       );
 
       // Update user's wallet
       const [wallets] = await connection.query<RowDataPacket[]>(
-        'SELECT available_balance, total_balance FROM wallets WHERE user_id = ?',
+        'SELECT available_balance, total_balance FROM wallets WHERE userId = ?',
         [userId]
       );
 
@@ -569,8 +569,8 @@ router.post('/user/:userId', async (req: Request, res: Response) => {
           `UPDATE wallets SET
             available_balance = ?,
             total_balance = ?,
-            updated_at = NOW()
-          WHERE user_id = ?`,
+            updatedAt = NOW()
+          WHERE userId = ?`,
           [
             wallet.available_balance + rank.reward_amount,
             wallet.total_balance + rank.reward_amount,
@@ -582,7 +582,7 @@ router.post('/user/:userId', async (req: Request, res: Response) => {
       // Create transaction record
       await connection.query(
         `INSERT INTO mlm_transactions (
-          user_id, transaction_type, amount, description, status, created_at
+          userId, transaction_type, amount, description, status, createdAt
         ) VALUES (?, ?, ?, ?, ?, NOW())`,
         [
           userId,

@@ -98,7 +98,7 @@ router.get('/:key', async (req: Request, res: Response) => {
       value,
       description: row.description,
       category: row.category,
-      updatedAt: row.updated_at
+      updatedAt: row.updatedAt
     });
   } catch (error: any) {
     console.error('Error fetching config:', error);
@@ -137,7 +137,7 @@ router.put('/:key', async (req: Request, res: Response) => {
       `UPDATE system_config SET
         config_value = ?,
         description = COALESCE(?, description),
-        updated_at = NOW()
+        updatedAt = NOW()
       WHERE config_key = ?`,
       [configValue, description, key]
     );
@@ -145,7 +145,7 @@ router.put('/:key', async (req: Request, res: Response) => {
     // Log audit entry
     await pool.query(
       `INSERT INTO audit_logs (
-        user_id, action, details, created_at
+        userId, action, details, createdAt
       ) VALUES (?, ?, ?, NOW())`,
       [adminId, 'config_updated', `Updated config ${key} to ${configValue}`]
     );
@@ -185,7 +185,7 @@ router.post('/', async (req: Request, res: Response) => {
     // Create config
     await pool.query(
       `INSERT INTO system_config (
-        config_key, config_value, description, category, created_at, updated_at
+        config_key, config_value, description, category, createdAt, updatedAt
       ) VALUES (?, ?, ?, ?, NOW(), NOW())`,
       [key, configValue, description || '', category || 'general']
     );
@@ -193,7 +193,7 @@ router.post('/', async (req: Request, res: Response) => {
     // Log audit entry
     await pool.query(
       `INSERT INTO audit_logs (
-        user_id, action, details, created_at
+        userId, action, details, createdAt
       ) VALUES (?, ?, ?, NOW())`,
       [adminId, 'config_created', `Created config ${key} with value ${configValue}`]
     );
@@ -229,7 +229,7 @@ router.delete('/:key', async (req: Request, res: Response) => {
     // Log audit entry
     await pool.query(
       `INSERT INTO audit_logs (
-        user_id, action, details, created_at
+        userId, action, details, createdAt
       ) VALUES (?, ?, ?, NOW())`,
       [adminId, 'config_deleted', `Deleted config ${key}`]
     );

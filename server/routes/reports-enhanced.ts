@@ -55,12 +55,12 @@ router.get('/roi', async (req: Request, res: Response) => {
     const params: any[] = [];
 
     if (startDate && endDate) {
-      whereClause += ' AND p.created_at BETWEEN ? AND ?';
+      whereClause += ' AND p.createdAt BETWEEN ? AND ?';
       params.push(startDate, endDate);
     }
 
     if (userId) {
-      whereClause += ' AND p.user_id = ?';
+      whereClause += ' AND p.userId = ?';
       params.push(userId);
     }
 
@@ -75,7 +75,7 @@ router.get('/roi', async (req: Request, res: Response) => {
     const result = await query(
       `SELECT
         p.id,
-        p.user_id,
+        p.userId,
         u.email,
         u.full_name,
         p.payout_type,
@@ -83,12 +83,12 @@ router.get('/roi', async (req: Request, res: Response) => {
         p.status,
         p.reference_id,
         p.reference_type,
-        p.created_at
+        p.createdAt
       FROM payouts p
-      LEFT JOIN users u ON p.user_id = u.id
+      LEFT JOIN users u ON p.userId = u.id
       ${whereClause}
       AND p.payout_type = 'roi'
-      ORDER BY p.created_at DESC
+      ORDER BY p.createdAt DESC
       LIMIT ? OFFSET ?`,
       [...params, limit, offset]
     );
@@ -109,7 +109,7 @@ router.get('/roi', async (req: Request, res: Response) => {
       success: true,
       data: result.rows.map((row: any) => ({
         id: row.id,
-        user_id: row.user_id,
+        userId: row.userId,
         email: row.email,
         full_name: row.full_name || 'Unknown',
         payout_type: row.payout_type,
@@ -117,7 +117,7 @@ router.get('/roi', async (req: Request, res: Response) => {
         status: row.status,
         reference_id: row.reference_id,
         reference_type: row.reference_type,
-        created_at: row.created_at,
+        createdAt: row.createdAt,
       })),
       pagination: {
         page,
@@ -155,12 +155,12 @@ router.get('/level-income', async (req: Request, res: Response) => {
     const params: any[] = [];
 
     if (startDate && endDate) {
-      whereClause += ' AND p.created_at BETWEEN ? AND ?';
+      whereClause += ' AND p.createdAt BETWEEN ? AND ?';
       params.push(startDate, endDate);
     }
 
     if (userId) {
-      whereClause += ' AND p.user_id = ?';
+      whereClause += ' AND p.userId = ?';
       params.push(userId);
     }
 
@@ -180,7 +180,7 @@ router.get('/level-income', async (req: Request, res: Response) => {
     const result = await query(
       `SELECT
         p.id,
-        p.user_id,
+        p.userId,
         u.email as user_email,
         u.full_name as user_name,
         p.from_user_id,
@@ -190,13 +190,13 @@ router.get('/level-income', async (req: Request, res: Response) => {
         p.amount,
         p.status,
         p.reference_id,
-        p.created_at
+        p.createdAt
       FROM payouts p
-      LEFT JOIN users u ON p.user_id = u.id
+      LEFT JOIN users u ON p.userId = u.id
       LEFT JOIN users fu ON p.from_user_id = fu.id
       ${whereClause}
       AND p.payout_type = 'level_income'
-      ORDER BY p.created_at DESC
+      ORDER BY p.createdAt DESC
       LIMIT ? OFFSET ?`,
       [...params, limit, offset]
     );
@@ -219,7 +219,7 @@ router.get('/level-income', async (req: Request, res: Response) => {
       success: true,
       data: result.rows.map((row: any) => ({
         id: row.id,
-        user_id: row.user_id,
+        userId: row.userId,
         user_email: row.user_email,
         user_name: row.user_name || 'Unknown',
         from_user_id: row.from_user_id,
@@ -229,7 +229,7 @@ router.get('/level-income', async (req: Request, res: Response) => {
         amount: parseFloat(row.amount),
         status: row.status,
         reference_id: row.reference_id,
-        created_at: row.created_at,
+        createdAt: row.createdAt,
       })),
       pagination: {
         page,
@@ -268,12 +268,12 @@ router.get('/binary', async (req: Request, res: Response) => {
     const params: any[] = [];
 
     if (startDate && endDate) {
-      whereClause += ' AND p.created_at BETWEEN ? AND ?';
+      whereClause += ' AND p.createdAt BETWEEN ? AND ?';
       params.push(startDate, endDate);
     }
 
     if (userId) {
-      whereClause += ' AND p.user_id = ?';
+      whereClause += ' AND p.userId = ?';
       params.push(userId);
     }
 
@@ -288,19 +288,19 @@ router.get('/binary', async (req: Request, res: Response) => {
     const result = await query(
       `SELECT
         p.id,
-        p.user_id,
+        p.userId,
         u.email,
         u.full_name,
         u.left_volume,
         u.right_volume,
         p.amount,
         p.status,
-        p.created_at
+        p.createdAt
       FROM payouts p
-      LEFT JOIN users u ON p.user_id = u.id
+      LEFT JOIN users u ON p.userId = u.id
       ${whereClause}
       AND p.payout_type = 'binary_matching'
-      ORDER BY p.created_at DESC
+      ORDER BY p.createdAt DESC
       LIMIT ? OFFSET ?`,
       [...params, limit, offset]
     );
@@ -321,14 +321,14 @@ router.get('/binary', async (req: Request, res: Response) => {
       success: true,
       data: result.rows.map((row: any) => ({
         id: row.id,
-        user_id: row.user_id,
+        userId: row.userId,
         email: row.email,
         full_name: row.full_name || 'Unknown',
         left_volume: parseFloat(row.left_volume || 0),
         right_volume: parseFloat(row.right_volume || 0),
         amount: parseFloat(row.amount),
         status: row.status,
-        created_at: row.created_at,
+        createdAt: row.createdAt,
       })),
       pagination: {
         page,
@@ -378,7 +378,7 @@ router.get('/boosters', async (req: Request, res: Response) => {
     const result = await query(
       `SELECT
         b.id,
-        b.user_id,
+        b.userId,
         u.email,
         u.full_name,
         b.start_date,
@@ -387,11 +387,11 @@ router.get('/boosters', async (req: Request, res: Response) => {
         b.target_directs,
         b.bonus_roi_percentage,
         b.status,
-        b.created_at
+        b.createdAt
       FROM boosters b
-      LEFT JOIN users u ON b.user_id = u.id
+      LEFT JOIN users u ON b.userId = u.id
       ${whereClause}
-      ORDER BY b.created_at DESC
+      ORDER BY b.createdAt DESC
       LIMIT ? OFFSET ?`,
       [...params, limit, offset]
     );
@@ -412,7 +412,7 @@ router.get('/boosters', async (req: Request, res: Response) => {
       success: true,
       data: result.rows.map((row: any) => ({
         id: row.id,
-        user_id: row.user_id,
+        userId: row.userId,
         email: row.email,
         full_name: row.full_name || 'Unknown',
         start_date: row.start_date,
@@ -421,7 +421,7 @@ router.get('/boosters', async (req: Request, res: Response) => {
         target_directs: row.target_directs,
         bonus_roi_percentage: parseFloat(row.bonus_roi_percentage),
         status: row.status,
-        created_at: row.created_at,
+        createdAt: row.createdAt,
       })),
       pagination: {
         page,
@@ -460,7 +460,7 @@ router.get('/withdrawals', async (req: Request, res: Response) => {
     const params: any[] = [];
 
     if (startDate && endDate) {
-      whereClause += ' AND w.created_at BETWEEN ? AND ?';
+      whereClause += ' AND w.createdAt BETWEEN ? AND ?';
       params.push(startDate, endDate);
     }
 
@@ -480,7 +480,7 @@ router.get('/withdrawals', async (req: Request, res: Response) => {
     const result = await query(
       `SELECT
         w.id,
-        w.user_id,
+        w.userId,
         u.email,
         u.full_name,
         w.amount,
@@ -489,12 +489,12 @@ router.get('/withdrawals', async (req: Request, res: Response) => {
         w.wallet_address,
         w.status,
         w.rejection_reason,
-        w.created_at,
-        w.updated_at
+        w.createdAt,
+        w.updatedAt
       FROM withdrawals w
-      LEFT JOIN users u ON w.user_id = u.id
+      LEFT JOIN users u ON w.userId = u.id
       ${whereClause}
-      ORDER BY w.created_at DESC
+      ORDER BY w.createdAt DESC
       LIMIT ? OFFSET ?`,
       [...params, limit, offset]
     );
@@ -517,7 +517,7 @@ router.get('/withdrawals', async (req: Request, res: Response) => {
       success: true,
       data: result.rows.map((row: any) => ({
         id: row.id,
-        user_id: row.user_id,
+        userId: row.userId,
         email: row.email,
         full_name: row.full_name || 'Unknown',
         amount: parseFloat(row.amount),
@@ -526,8 +526,8 @@ router.get('/withdrawals', async (req: Request, res: Response) => {
         wallet_address: row.wallet_address,
         status: row.status,
         rejection_reason: row.rejection_reason,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
       })),
       pagination: {
         page,
@@ -576,12 +576,12 @@ router.get('/export/:reportType', async (req: Request, res: Response) => {
             u.full_name,
             p.amount,
             p.status,
-            p.created_at
+            p.createdAt
           FROM payouts p
-          LEFT JOIN users u ON p.user_id = u.id
+          LEFT JOIN users u ON p.userId = u.id
           WHERE p.payout_type = 'roi'
-          ${startDate && endDate ? 'AND p.created_at BETWEEN ? AND ?' : ''}
-          ORDER BY p.created_at DESC`,
+          ${startDate && endDate ? 'AND p.createdAt BETWEEN ? AND ?' : ''}
+          ORDER BY p.createdAt DESC`,
           startDate && endDate ? [startDate, endDate] : []
         );
         data = roiResult.rows;
@@ -598,13 +598,13 @@ router.get('/export/:reportType', async (req: Request, res: Response) => {
             p.level,
             p.amount,
             p.status,
-            p.created_at
+            p.createdAt
           FROM payouts p
-          LEFT JOIN users u ON p.user_id = u.id
+          LEFT JOIN users u ON p.userId = u.id
           LEFT JOIN users fu ON p.from_user_id = fu.id
           WHERE p.payout_type = 'level_income'
-          ${startDate && endDate ? 'AND p.created_at BETWEEN ? AND ?' : ''}
-          ORDER BY p.created_at DESC`,
+          ${startDate && endDate ? 'AND p.createdAt BETWEEN ? AND ?' : ''}
+          ORDER BY p.createdAt DESC`,
           startDate && endDate ? [startDate, endDate] : []
         );
         data = levelResult.rows;
@@ -621,12 +621,12 @@ router.get('/export/:reportType', async (req: Request, res: Response) => {
             u.right_volume,
             p.amount,
             p.status,
-            p.created_at
+            p.createdAt
           FROM payouts p
-          LEFT JOIN users u ON p.user_id = u.id
+          LEFT JOIN users u ON p.userId = u.id
           WHERE p.payout_type = 'binary_matching'
-          ${startDate && endDate ? 'AND p.created_at BETWEEN ? AND ?' : ''}
-          ORDER BY p.created_at DESC`,
+          ${startDate && endDate ? 'AND p.createdAt BETWEEN ? AND ?' : ''}
+          ORDER BY p.createdAt DESC`,
           startDate && endDate ? [startDate, endDate] : []
         );
         data = binaryResult.rows;
@@ -645,10 +645,10 @@ router.get('/export/:reportType', async (req: Request, res: Response) => {
             b.target_directs,
             b.bonus_roi_percentage,
             b.status,
-            b.created_at
+            b.createdAt
           FROM boosters b
-          LEFT JOIN users u ON b.user_id = u.id
-          ORDER BY b.created_at DESC`
+          LEFT JOIN users u ON b.userId = u.id
+          ORDER BY b.createdAt DESC`
         );
         data = boostersResult.rows;
         headers = ['ID', 'Email', 'Full Name', 'Start Date', 'End Date', 'Direct Count', 'Target', 'Bonus %', 'Status', 'Created At'];
@@ -665,11 +665,11 @@ router.get('/export/:reportType', async (req: Request, res: Response) => {
             w.net_amount,
             w.wallet_address,
             w.status,
-            w.created_at
+            w.createdAt
           FROM withdrawals w
-          LEFT JOIN users u ON w.user_id = u.id
-          ${startDate && endDate ? 'WHERE w.created_at BETWEEN ? AND ?' : ''}
-          ORDER BY w.created_at DESC`,
+          LEFT JOIN users u ON w.userId = u.id
+          ${startDate && endDate ? 'WHERE w.createdAt BETWEEN ? AND ?' : ''}
+          ORDER BY w.createdAt DESC`,
           startDate && endDate ? [startDate, endDate] : []
         );
         data = withdrawalsResult.rows;

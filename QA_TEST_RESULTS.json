@@ -1,0 +1,41 @@
+{
+  "timestamp": "2025-11-12T15:49:58.374Z",
+  "totalTests": 6,
+  "passed": 5,
+  "failed": 1,
+  "testScore": 83,
+  "tests": [
+    {
+      "name": "TypeScript Compilation",
+      "status": "failed",
+      "errors": 523
+    },
+    {
+      "name": "Build Process",
+      "status": "passed"
+    },
+    {
+      "name": "Environment Config",
+      "status": "passed"
+    },
+    {
+      "name": "API Server Health",
+      "status": "passed"
+    },
+    {
+      "name": "Database Connectivity",
+      "status": "passed"
+    },
+    {
+      "name": "Frontend Accessibility",
+      "status": "passed"
+    }
+  ],
+  "issues": [
+    {
+      "type": "typescript_errors",
+      "count": 523,
+      "severity": "high"
+    }
+  ]
+}

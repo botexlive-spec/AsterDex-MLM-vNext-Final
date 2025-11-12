@@ -5,7 +5,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import api from '../lib/api';
+import api from '../api/axios';
 
 interface LevelStatus {
   level: number;

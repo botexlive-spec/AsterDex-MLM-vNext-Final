@@ -5,6 +5,7 @@
  */
 
 import { requireAdmin } from '../middleware/admin.middleware';
+import { handleApiError, withErrorHandler } from '../utils/errorHandler';
 
 export interface DashboardStats {
   // User metrics
@@ -158,8 +159,8 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
       active_robot_subscriptions: data.active_robot_subscriptions || 0,
     };
   } catch (error: any) {
-    console.error('Error getting dashboard stats:', error);
-    throw new Error(error.message || 'Failed to get dashboard statistics');
+    handleApiError(error, 'Dashboard Stats');
+    throw error; // Re-throw so Dashboard component can handle it
   }
 };
 

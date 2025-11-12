@@ -40,9 +40,9 @@ router.get('/', async (req: Request, res: Response) => {
         package_id,
         description,
         status,
-        created_at
+        createdAt
       FROM mlm_transactions
-      WHERE user_id = ?
+      WHERE userId = ?
     `;
 
     const queryParams: any[] = [decoded.id];
@@ -52,13 +52,13 @@ router.get('/', async (req: Request, res: Response) => {
       queryParams.push(type);
     }
 
-    transactionQuery += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+    transactionQuery += ' ORDER BY createdAt DESC LIMIT ? OFFSET ?';
     queryParams.push(limit, offset);
 
     const transactionsResult = await query(transactionQuery, queryParams);
 
     // Get total count
-    let countQuery = 'SELECT COUNT(*) as total FROM mlm_transactions WHERE user_id = ?';
+    let countQuery = 'SELECT COUNT(*) as total FROM mlm_transactions WHERE userId = ?';
     const countParams: any[] = [decoded.id];
 
     if (type) {

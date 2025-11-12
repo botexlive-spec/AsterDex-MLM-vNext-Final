@@ -74,45 +74,24 @@ export const DEXTerminal: React.FC<DEXTerminalProps> = ({
       // MySQL backend handles auth
       if (!user) return;
 
-      // Record trade in database
-        // .from('dex_trades')
-        // .insert({
-          user_id: user.id,
-          trade_type: trade.side, // 'buy' or 'sell'
-          symbol: trade.symbol,
-          amount: trade.amount,
-          price: trade.price,
-          total_value: trade.total,
-          fee: trade.fee || 0,
-          status: 'completed',
-          trade_data: trade,
-        });
+      // TODO: Record trade in database via backend API
+      console.log('Trade executed:', trade);
 
-      if (error) {
-        console.error('Failed to record trade:', error);
-      } else {
-        // Create notification
-// TODO: Migrate to MySQL backend API -         await supabase
-          // .from('notifications')
-          // .insert({
-            user_id: user.id,
-            title: 'Trade Executed',
-            message: `${trade.side.toUpperCase()} ${trade.amount} ${trade.symbol} at $${trade.price}`,
-            notification_type: 'trade',
-          });
+      // Future implementation: Call backend API to record trade
+      /*
+      await api.post('/dex/trades', {
+        user_id: user.id,
+        trade_type: trade.side,
+        symbol: trade.symbol,
+        amount: trade.amount,
+        price: trade.price,
+        total_value: trade.total,
+        fee: trade.fee || 0,
+        status: 'completed',
+        trade_data: trade,
+      }, token);
+      */
 
-        // Create transaction record
-// TODO: Migrate to MySQL backend API -         await supabase
-          // .from('mlm_transactions')
-          // .insert({
-            user_id: user.id,
-            transaction_type: 'dex_trade',
-            amount: trade.total,
-            status: 'completed',
-            description: `DEX Trade: ${trade.side} ${trade.symbol}`,
-            metadata: trade,
-          });
-      }
     } catch (error) {
       console.error('Error handling trade execution:', error);
     }
@@ -126,20 +105,27 @@ export const DEXTerminal: React.FC<DEXTerminalProps> = ({
       // MySQL backend handles auth
       if (!user) return;
 
-      // Create notification for pending order
-// TODO: Migrate to MySQL backend API -       await supabase
-        // .from('notifications')
-        // .insert({
-          user_id: user.id,
-          title: 'Order Placed',
-          message: `${order.type.toUpperCase()} order placed: ${order.side} ${order.amount} ${order.symbol}`,
-          notification_type: 'order',
-        });
+      // TODO: Create notification via backend API
+      console.log('Order placed:', order);
+
+      // Future implementation: Call backend API
+      /*
+      await api.post('/notifications', {
+        user_id: user.id,
+        title: 'Order Placed',
+        message: `${order.type.toUpperCase()} order placed: ${order.side} ${order.amount} ${order.symbol}`,
+        notification_type: 'order',
+      }, token);
+      */
+
     } catch (error) {
       console.error('Error handling order placement:', error);
     }
   };
 
+  /**
+   * Handle position updates
+   */
   /**
    * Handle position updates
    */

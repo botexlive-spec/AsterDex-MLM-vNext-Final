@@ -1,122 +1,1405 @@
 {
-  "timestamp": "2025-11-03T05:43:45.659Z",
-  "passed": 9,
-  "failed": 2,
-  "warnings": 0,
-  "tests": [
+  "timestamp": "2025-11-12T18:03:41.444Z",
+  "apiEndpoints": [
     {
-      "name": "User Count",
-      "passed": true,
-      "message": "21 users in database",
-      "data": {
-        "count": 21
-      }
+      "method": "GET",
+      "path": "/api/admin/users",
+      "file": "admin.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
     },
     {
-      "name": "Level Distribution",
-      "passed": true,
-      "message": "Found 7 levels",
-      "data": {
-        "levelCounts": {
-          "1": 1,
-          "2": 2,
-          "3": 3,
-          "4": 7,
-          "5": 5,
-          "6": 2,
-          "7": 1
-        },
-        "orphans": 0,
-        "totalUsers": 21
-      }
+      "method": "GET",
+      "path": "/api/admin/users/:id",
+      "file": "admin.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
     },
     {
-      "name": "Binary Tree Structure",
-      "passed": true,
-      "message": "1 nodes validated",
-      "data": {
-        "totalNodes": 1,
-        "orphanNodes": 0,
-        "invalidPlacements": 0
-      }
+      "method": "POST",
+      "path": "/api/admin/users",
+      "file": "admin.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
     },
     {
-      "name": "Referral Codes",
-      "passed": true,
-      "message": "22 codes for 21 users",
-      "data": {
-        "userCount": 21,
-        "codeCount": 22,
-        "coverage": "104.76%"
-      }
+      "method": "PUT",
+      "path": "/api/admin/users/:id",
+      "file": "admin.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
     },
     {
-      "name": "Package Purchases",
-      "passed": false,
-      "message": "0 packages purchased",
-      "data": {
-        "userCount": 21,
-        "packageCount": 0,
-        "coverage": "0.00%"
-      }
+      "method": "DELETE",
+      "path": "/api/admin/users/:id",
+      "file": "admin.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
     },
     {
-      "name": "Investment Data",
-      "passed": true,
-      "message": "21 users with investments",
-      "data": null
+      "method": "POST",
+      "path": "/api/admin/users/:id/reset-password",
+      "file": "admin.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
     },
     {
-      "name": "Robot Subscriptions",
-      "passed": false,
-      "message": "0 active subscriptions",
-      "data": {
-        "userCount": 21,
-        "robotCount": 0,
-        "coverage": "0.00%"
-      }
+      "method": "GET",
+      "path": "/api/admin/packages",
+      "file": "admin.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
     },
     {
-      "name": "Team Counts",
-      "passed": true,
-      "message": "Verified 21 users",
-      "data": {
-        "totalUsers": 21,
-        "incorrectCounts": 0
-      }
+      "method": "POST",
+      "path": "/api/admin/packages",
+      "file": "admin.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
     },
     {
-      "name": "KYC Status Distribution",
-      "passed": true,
-      "message": "Verified KYC statuses",
-      "data": {
-        "approved": 9,
-        "pending": 12
-      }
+      "method": "PUT",
+      "path": "/api/admin/packages/:id",
+      "file": "admin.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
     },
     {
-      "name": "Email Uniqueness",
-      "passed": true,
-      "message": "0 duplicate emails found",
-      "data": {
-        "duplicates": 0
-      }
+      "method": "DELETE",
+      "path": "/api/admin/packages/:id",
+      "file": "admin.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
     },
     {
-      "name": "Referral Integrity",
-      "passed": true,
-      "message": "0 orphan referrals",
-      "data": {
-        "orphanReferrals": 0
-      }
+      "method": "GET",
+      "path": "/api/admin/transactions",
+      "file": "admin.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/commissions",
+      "file": "admin.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/analytics/overview",
+      "file": "admin.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/analytics/revenue",
+      "file": "admin.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/distribute-roi",
+      "file": "admin.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/audit/logs",
+      "file": "audit.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/audit/logs/:userId",
+      "file": "audit.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/audit/stats",
+      "file": "audit.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/audit/actions",
+      "file": "audit.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/audit/log",
+      "file": "audit.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth-enhanced/login",
+      "file": "auth-enhanced.ts",
+      "requiresAuth": false,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth-enhanced/refresh",
+      "file": "auth-enhanced.ts",
+      "requiresAuth": false,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth-enhanced/logout",
+      "file": "auth-enhanced.ts",
+      "requiresAuth": false,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth-enhanced/me",
+      "file": "auth-enhanced.ts",
+      "requiresAuth": false,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "file": "auth.ts",
+      "requiresAuth": false,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/me",
+      "file": "auth.ts",
+      "requiresAuth": false,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/logout",
+      "file": "auth.ts",
+      "requiresAuth": false,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/binary/stats",
+      "file": "binary.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/binary/matches",
+      "file": "binary.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/binary/tree",
+      "file": "binary.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/booster/status",
+      "file": "booster.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/booster/all",
+      "file": "booster.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/booster/refresh",
+      "file": "booster.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/booster/countdown",
+      "file": "booster.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/config/",
+      "file": "config.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/config/:key",
+      "file": "config.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "PUT",
+      "path": "/api/config/:key",
+      "file": "config.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/config/",
+      "file": "config.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/config/:key",
+      "file": "config.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/dashboard/",
+      "file": "dashboard.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/genealogy/tree",
+      "file": "genealogy.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/genealogy/initialize",
+      "file": "genealogy.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/genealogy/place-member",
+      "file": "genealogy.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/genealogy/available-positions/:parentId",
+      "file": "genealogy.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/genealogy/stats",
+      "file": "genealogy.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/genealogy/add-member",
+      "file": "genealogy.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/impersonate/:userId",
+      "file": "impersonate.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/impersonate/stop",
+      "file": "impersonate.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/impersonate/sessions",
+      "file": "impersonate.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/impersonate/active",
+      "file": "impersonate.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/impersonate/history/:userId",
+      "file": "impersonate.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/impersonate/verify",
+      "file": "impersonate.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/kyc/",
+      "file": "kyc.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/kyc/stats",
+      "file": "kyc.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/kyc/:id",
+      "file": "kyc.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/kyc/:id/approve",
+      "file": "kyc.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/kyc/:id/reject",
+      "file": "kyc.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/kyc/:id/resubmit",
+      "file": "kyc.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/levelUnlocks/status",
+      "file": "levelUnlocks.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/levelUnlocks/progress",
+      "file": "levelUnlocks.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/levelUnlocks/percentages",
+      "file": "levelUnlocks.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/levelUnlocks/my-levels",
+      "file": "levelUnlocks.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/packages/",
+      "file": "packages.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/packages/purchase",
+      "file": "packages.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/packages/my-packages",
+      "file": "packages.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/planSettings/",
+      "file": "planSettings.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/planSettings/all",
+      "file": "planSettings.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/planSettings/:feature_key",
+      "file": "planSettings.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/planSettings/:feature_key/status",
+      "file": "planSettings.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "PUT",
+      "path": "/api/planSettings/:feature_key",
+      "file": "planSettings.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/planSettings/:feature_key/toggle",
+      "file": "planSettings.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/planSettings/validate-investment",
+      "file": "planSettings.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/planSettings/active-plans/summary",
+      "file": "planSettings.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/ranks/",
+      "file": "ranks.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/ranks/",
+      "file": "ranks.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "PUT",
+      "path": "/api/ranks/:id",
+      "file": "ranks.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/ranks/:id",
+      "file": "ranks.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/ranks/distributions",
+      "file": "ranks.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/ranks/distribute",
+      "file": "ranks.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/ranks/qualification/:userId/:rankId",
+      "file": "ranks.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/ranks/achievements/:userId",
+      "file": "ranks.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/ranks/stats",
+      "file": "ranks.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/ranks/eligibility/:userId",
+      "file": "ranks.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/ranks/user/:userId",
+      "file": "ranks.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/reports-enhanced/roi",
+      "file": "reports-enhanced.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/reports-enhanced/level-income",
+      "file": "reports-enhanced.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/reports-enhanced/binary",
+      "file": "reports-enhanced.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/reports-enhanced/boosters",
+      "file": "reports-enhanced.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/reports-enhanced/withdrawals",
+      "file": "reports-enhanced.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/reports-enhanced/export/:reportType",
+      "file": "reports-enhanced.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/reports/users",
+      "file": "reports.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/reports/transactions",
+      "file": "reports.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/reports/commissions",
+      "file": "reports.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/reports/revenue",
+      "file": "reports.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/rewards/",
+      "file": "rewards.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/rewards/:id",
+      "file": "rewards.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/rewards/business-volume/my-volume",
+      "file": "rewards.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/rewards/business-volume/refresh",
+      "file": "rewards.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/rewards/my-rewards/history",
+      "file": "rewards.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/rewards/my-rewards/qualified",
+      "file": "rewards.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/rewards/claim",
+      "file": "rewards.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/rewards/admin/create",
+      "file": "rewards.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "PUT",
+      "path": "/api/rewards/admin/:id",
+      "file": "rewards.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/rewards/admin/:id",
+      "file": "rewards.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/stability.routes/qa-results",
+      "file": "stability.routes.ts",
+      "requiresAuth": false,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/stability.routes/system-map",
+      "file": "stability.routes.ts",
+      "requiresAuth": false,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/stability.routes/dependency-analysis",
+      "file": "stability.routes.ts",
+      "requiresAuth": false,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/stability.routes/orchestrator-state",
+      "file": "stability.routes.ts",
+      "requiresAuth": false,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/stability.routes/test-cycle-results",
+      "file": "stability.routes.ts",
+      "requiresAuth": false,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/support/tickets",
+      "file": "support.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/support/tickets/:id",
+      "file": "support.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "PUT",
+      "path": "/api/support/tickets/:id",
+      "file": "support.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/support/tickets/:id/reply",
+      "file": "support.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/support/stats",
+      "file": "support.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/team/members",
+      "file": "team.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/team/direct",
+      "file": "team.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/team/stats",
+      "file": "team.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/team/level/:level",
+      "file": "team.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/transactions/",
+      "file": "transactions.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallet/balance",
+      "file": "wallet.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/wallet/deposit/address",
+      "file": "wallet.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/wallet/deposit",
+      "file": "wallet.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallet/withdrawal/limits",
+      "file": "wallet.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/wallet/withdrawal",
+      "file": "wallet.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/wallet/transfer",
+      "file": "wallet.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallet/transactions/pending",
+      "file": "wallet.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallet/withdrawals",
+      "file": "wallet.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallet/withdrawals/pending",
+      "file": "wallet.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/wallet/withdrawals/:id/approve",
+      "file": "wallet.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/wallet/withdrawals/:id/reject",
+      "file": "wallet.ts",
+      "requiresAuth": true,
+      "requiresAdmin": false
     }
   ],
+  "adminPages": [
+    {
+      "file": "AuditLogs.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\AuditLogs.tsx",
+      "apiCalls": [],
+      "size": 49284,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": false
+    },
+    {
+      "file": "BinaryManagement.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\BinaryManagement.tsx",
+      "apiCalls": [],
+      "size": 49444,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": false
+    },
+    {
+      "file": "BinaryTreePlaceholder.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\BinaryTreePlaceholder.tsx",
+      "apiCalls": [],
+      "size": 2414,
+      "hasErrors": false,
+      "hasLoading": false,
+      "hasAuth": false
+    },
+    {
+      "file": "CommissionManagement.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\CommissionManagement.tsx",
+      "apiCalls": [],
+      "size": 68964,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": false
+    },
+    {
+      "file": "CommissionManagementPlaceholder.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\CommissionManagementPlaceholder.tsx",
+      "apiCalls": [],
+      "size": 2354,
+      "hasErrors": false,
+      "hasLoading": false,
+      "hasAuth": false
+    },
+    {
+      "file": "CommunicationsAdmin.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\CommunicationsAdmin.tsx",
+      "apiCalls": [],
+      "size": 53128,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": false
+    },
+    {
+      "file": "Dashboard.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\Dashboard.tsx",
+      "apiCalls": [],
+      "size": 24910,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": false
+    },
+    {
+      "file": "FinancialManagement.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\FinancialManagement.tsx",
+      "apiCalls": [],
+      "size": 70396,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": false
+    },
+    {
+      "file": "IncomeSimulator.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\IncomeSimulator.tsx",
+      "apiCalls": [],
+      "size": 21398,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": false
+    },
+    {
+      "file": "KYCManagement.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\KYCManagement.tsx",
+      "apiCalls": [],
+      "size": 51627,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": false
+    },
+    {
+      "file": "PackageManagement.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\PackageManagement.tsx",
+      "apiCalls": [],
+      "size": 49978,
+      "hasErrors": true,
+      "hasLoading": false,
+      "hasAuth": false
+    },
+    {
+      "file": "PackageManagementComplete.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\PackageManagementComplete.tsx",
+      "apiCalls": [],
+      "size": 40324,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": false
+    },
+    {
+      "file": "PackageManagementNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\PackageManagementNew.tsx",
+      "apiCalls": [],
+      "size": 40324,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": false
+    },
+    {
+      "file": "PlanSettings.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\PlanSettings.tsx",
+      "apiCalls": [],
+      "size": 8038,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": true
+    },
+    {
+      "file": "RankManagement.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\RankManagement.tsx",
+      "apiCalls": [],
+      "size": 55890,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": false
+    },
+    {
+      "file": "ReportsAdmin.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\ReportsAdmin.tsx",
+      "apiCalls": [],
+      "size": 51101,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": false
+    },
+    {
+      "file": "ReportsEnhanced.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\ReportsEnhanced.tsx",
+      "apiCalls": [],
+      "size": 19831,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": true
+    },
+    {
+      "file": "SettingsAdmin.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\SettingsAdmin.tsx",
+      "apiCalls": [],
+      "size": 71631,
+      "hasErrors": false,
+      "hasLoading": true,
+      "hasAuth": true
+    },
+    {
+      "file": "StabilityDashboard.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\StabilityDashboard.tsx",
+      "apiCalls": [],
+      "size": 14904,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": false
+    },
+    {
+      "file": "SupportManagement.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\SupportManagement.tsx",
+      "apiCalls": [],
+      "size": 67836,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": false
+    },
+    {
+      "file": "SystemConfiguration.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\SystemConfiguration.tsx",
+      "apiCalls": [],
+      "size": 38346,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": false
+    },
+    {
+      "file": "UserManagement.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\UserManagement.tsx",
+      "apiCalls": [],
+      "size": 114327,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": false
+    },
+    {
+      "file": "WithdrawalApproval.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\admin\\WithdrawalApproval.tsx",
+      "apiCalls": [],
+      "size": 14997,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": true
+    }
+  ],
+  "userPages": [
+    {
+      "file": "Dashboard.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\Dashboard.tsx",
+      "apiCalls": [],
+      "size": 17794,
+      "hasErrors": false,
+      "hasLoading": true,
+      "hasAuth": false
+    },
+    {
+      "file": "DashboardNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\DashboardNew.tsx",
+      "apiCalls": [],
+      "size": 31140,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": true
+    },
+    {
+      "file": "Deposit.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\Deposit.tsx",
+      "apiCalls": [],
+      "size": 24032,
+      "hasErrors": false,
+      "hasLoading": true,
+      "hasAuth": false
+    },
+    {
+      "file": "EarningsNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\EarningsNew.tsx",
+      "apiCalls": [],
+      "size": 42517,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": true
+    },
+    {
+      "file": "GenealogyNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\GenealogyNew.tsx",
+      "apiCalls": [],
+      "size": 88075,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": true
+    },
+    {
+      "file": "KYC.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\KYC.tsx",
+      "apiCalls": [],
+      "size": 11658,
+      "hasErrors": false,
+      "hasLoading": false,
+      "hasAuth": false
+    },
+    {
+      "file": "KYCNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\KYCNew.tsx",
+      "apiCalls": [],
+      "size": 48887,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": false
+    },
+    {
+      "file": "Logout.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\Logout.tsx",
+      "apiCalls": [],
+      "size": 2566,
+      "hasErrors": true,
+      "hasLoading": false,
+      "hasAuth": false
+    },
+    {
+      "file": "Packages.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\Packages.tsx",
+      "apiCalls": [],
+      "size": 23440,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": false
+    },
+    {
+      "file": "PackagesNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\PackagesNew.tsx",
+      "apiCalls": [],
+      "size": 56304,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": false
+    },
+    {
+      "file": "Profile.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\Profile.tsx",
+      "apiCalls": [],
+      "size": 12264,
+      "hasErrors": false,
+      "hasLoading": false,
+      "hasAuth": false
+    },
+    {
+      "file": "ProfileNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\ProfileNew.tsx",
+      "apiCalls": [],
+      "size": 57472,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": false
+    },
+    {
+      "file": "Ranks.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\Ranks.tsx",
+      "apiCalls": [],
+      "size": 8144,
+      "hasErrors": false,
+      "hasLoading": false,
+      "hasAuth": false
+    },
+    {
+      "file": "RanksNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\RanksNew.tsx",
+      "apiCalls": [],
+      "size": 45315,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": true
+    },
+    {
+      "file": "ReferralsNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\ReferralsNew.tsx",
+      "apiCalls": [],
+      "size": 26472,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": true
+    },
+    {
+      "file": "Reports.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\Reports.tsx",
+      "apiCalls": [],
+      "size": 24934,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": true
+    },
+    {
+      "file": "Robot.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\Robot.tsx",
+      "apiCalls": [],
+      "size": 3696,
+      "hasErrors": false,
+      "hasLoading": false,
+      "hasAuth": false
+    },
+    {
+      "file": "RobotNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\RobotNew.tsx",
+      "apiCalls": [],
+      "size": 31753,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": true
+    },
+    {
+      "file": "Settings.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\Settings.tsx",
+      "apiCalls": [],
+      "size": 11248,
+      "hasErrors": false,
+      "hasLoading": false,
+      "hasAuth": false
+    },
+    {
+      "file": "SettingsNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\SettingsNew.tsx",
+      "apiCalls": [],
+      "size": 56292,
+      "hasErrors": true,
+      "hasLoading": false,
+      "hasAuth": false
+    },
+    {
+      "file": "Support.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\Support.tsx",
+      "apiCalls": [],
+      "size": 58352,
+      "hasErrors": false,
+      "hasLoading": true,
+      "hasAuth": false
+    },
+    {
+      "file": "TeamNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\TeamNew.tsx",
+      "apiCalls": [],
+      "size": 34281,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": true
+    },
+    {
+      "file": "TeamReport.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\TeamReport.tsx",
+      "apiCalls": [],
+      "size": 9270,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": false
+    },
+    {
+      "file": "Transactions.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\Transactions.tsx",
+      "apiCalls": [],
+      "size": 13217,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": false
+    },
+    {
+      "file": "TransactionsNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\TransactionsNew.tsx",
+      "apiCalls": [],
+      "size": 45620,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": true
+    },
+    {
+      "file": "Wallet.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\Wallet.tsx",
+      "apiCalls": [],
+      "size": 9478,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": false
+    },
+    {
+      "file": "WalletNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\WalletNew.tsx",
+      "apiCalls": [],
+      "size": 59706,
+      "hasErrors": true,
+      "hasLoading": false,
+      "hasAuth": false
+    },
+    {
+      "file": "Withdraw.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\Withdraw.tsx",
+      "apiCalls": [],
+      "size": 28928,
+      "hasErrors": false,
+      "hasLoading": true,
+      "hasAuth": false
+    },
+    {
+      "file": "WithdrawNew.tsx",
+      "path": "C:\\Users\\dream\\AsterDex_MLM_vNext\\app\\pages\\user\\WithdrawNew.tsx",
+      "apiCalls": [],
+      "size": 15726,
+      "hasErrors": true,
+      "hasLoading": true,
+      "hasAuth": true
+    }
+  ],
+  "databaseHealth": null,
+  "errors": [],
+  "warnings": [
+    "API server is not running. Start it with: npm run dev:server"
+  ],
+  "passed": 0,
+  "failed": 0,
   "summary": {
-    "totalUsers": 21,
-    "totalPackages": 0,
-    "totalReferrals": 20,
-    "totalBinaryNodes": 1,
-    "totalInvestment": 402740,
-    "successRate": 81.82
+    "timestamp": "2025-11-12T18:03:41.444Z",
+    "totalEndpoints": 130,
+    "endpointsPassed": 0,
+    "endpointsFailed": 0,
+    "adminPages": 23,
+    "userPages": 29,
+    "totalErrors": 0,
+    "totalWarnings": 1,
+    "healthStatus": "HEALTHY"
   }
 }

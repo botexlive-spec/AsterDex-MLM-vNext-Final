@@ -68,7 +68,7 @@ router.get('/', async (req: Request, res: Response) => {
         const packagesResult = await query(
           `SELECT COUNT(*) as active_count,
           SUM(CASE WHEN DATEDIFF(expiry_date, NOW()) <= 7 AND DATEDIFF(expiry_date, NOW()) > 0 THEN 1 ELSE 0 END) as expiring_soon
-          FROM user_packages WHERE user_id = ? AND status = 'active'`,
+          FROM user_packages WHERE userId = ? AND status = 'active'`,
           [decoded.id]
         );
         const activePackages = packagesResult.rows[0] || { active_count: 0, expiring_soon: 0 };
@@ -77,7 +77,7 @@ router.get('/', async (req: Request, res: Response) => {
         const todayEarningsResult = await query(
           `SELECT COALESCE(SUM(amount), 0) as today_earnings
           FROM mlm_transactions
-          WHERE user_id = ? AND DATE(created_at) = CURDATE() AND status = 'completed'`,
+          WHERE userId = ? AND DATE(createdAt) = CURDATE() AND status = 'completed'`,
           [decoded.id]
         );
         const todayEarnings = parseFloat(todayEarningsResult.rows[0]?.today_earnings || 0);
@@ -86,7 +86,7 @@ router.get('/', async (req: Request, res: Response) => {
         const weekEarningsResult = await query(
           `SELECT COALESCE(SUM(amount), 0) as week_earnings
           FROM mlm_transactions
-          WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND status = 'completed'`,
+          WHERE userId = ? AND createdAt >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND status = 'completed'`,
           [decoded.id]
         );
         const weekEarnings = parseFloat(weekEarningsResult.rows[0]?.week_earnings || 0);

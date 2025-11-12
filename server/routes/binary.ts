@@ -51,7 +51,7 @@ router.get('/stats', async (req: Request, res: Response) => {
         position,
         level
        FROM binary_tree
-       WHERE user_id = ?
+       WHERE userId = ?
        LIMIT 1`,
       [userId]
     );
@@ -70,7 +70,7 @@ router.get('/stats', async (req: Request, res: Response) => {
     const todayMatchResult = await query(
       `SELECT COALESCE(SUM(matched_volume), 0) as today_matched
        FROM binary_matches
-       WHERE user_id = ? AND DATE(created_at) = ?`,
+       WHERE userId = ? AND DATE(createdAt) = ?`,
       [userId, today]
     );
 
@@ -78,7 +78,7 @@ router.get('/stats', async (req: Request, res: Response) => {
     const matchCountResult = await query(
       `SELECT COUNT(*) as total_matches
        FROM binary_matches
-       WHERE user_id = ?`,
+       WHERE userId = ?`,
       [userId]
     );
 
@@ -86,7 +86,7 @@ router.get('/stats', async (req: Request, res: Response) => {
     const payoutResult = await query(
       `SELECT COALESCE(SUM(payout_amount), 0) as total_payout
        FROM binary_matches
-       WHERE user_id = ?`,
+       WHERE userId = ?`,
       [userId]
     );
 
@@ -131,10 +131,10 @@ router.get('/matches', async (req: Request, res: Response) => {
         right_volume_after,
         payout_amount,
         payout_percentage,
-        created_at
+        createdAt
        FROM binary_matches
-       WHERE user_id = ?
-       ORDER BY created_at DESC
+       WHERE userId = ?
+       ORDER BY createdAt DESC
        LIMIT ? OFFSET ?`,
       [userId, limit, offset]
     );
@@ -149,7 +149,7 @@ router.get('/matches', async (req: Request, res: Response) => {
         right_volume_after: parseFloat(row.right_volume_after),
         payout_amount: parseFloat(row.payout_amount),
         payout_percentage: parseFloat(row.payout_percentage),
-        created_at: row.created_at
+        createdAt: row.createdAt
       })),
       total: result.rows.length
     });
@@ -178,7 +178,7 @@ router.get('/tree', async (req: Request, res: Response) => {
         position,
         level
        FROM binary_tree
-       WHERE user_id = ?
+       WHERE userId = ?
        LIMIT 1`,
       [userId]
     );
@@ -196,14 +196,14 @@ router.get('/tree', async (req: Request, res: Response) => {
     const childrenResult = await query(
       `SELECT
         bt.id,
-        bt.user_id,
+        bt.userId,
         bt.position,
         bt.left_volume,
         bt.right_volume,
         u.email,
         u.full_name
        FROM binary_tree bt
-       LEFT JOIN users u ON bt.user_id = u.id
+       LEFT JOIN users u ON bt.userId = u.id
        WHERE bt.id IN (?, ?)`,
       [node.left_child_id, node.right_child_id]
     );
@@ -219,14 +219,14 @@ router.get('/tree', async (req: Request, res: Response) => {
         position: node.position,
         level: node.level,
         left_child: leftChild ? {
-          user_id: leftChild.user_id,
+          userId: leftChild.userId,
           email: leftChild.email,
           full_name: leftChild.full_name,
           left_volume: parseFloat(leftChild.left_volume),
           right_volume: parseFloat(leftChild.right_volume)
         } : null,
         right_child: rightChild ? {
-          user_id: rightChild.user_id,
+          userId: rightChild.userId,
           email: rightChild.email,
           full_name: rightChild.full_name,
           left_volume: parseFloat(rightChild.left_volume),

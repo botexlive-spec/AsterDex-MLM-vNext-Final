@@ -1,0 +1,1173 @@
+{
+  "version": "3.0.0",
+  "timestamp": "2025-11-12T15:37:43.039Z",
+  "project": "AsterDex_MLM_vNext",
+  "audit": {
+    "totalFiles": 164,
+    "adminPages": 23,
+    "userPages": 32,
+    "components": 39,
+    "services": 38,
+    "routes": 24,
+    "serverServices": 8
+  },
+  "adminMenus": {
+    "total": 23,
+    "menus": [
+      {
+        "name": "AuditLogs",
+        "displayName": "Audit Logs",
+        "file": "AuditLogs.tsx",
+        "route": "/admin/auditlogs",
+        "imports": [
+          "react",
+          "date-fns",
+          "react-hot-toast"
+        ],
+        "size": 49319,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "BinaryManagement",
+        "displayName": "Binary Management",
+        "file": "BinaryManagement.tsx",
+        "route": "/admin/binarymanagement",
+        "imports": [
+          "react",
+          "react-hot-toast",
+          "date-fns"
+        ],
+        "size": 49486,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "BinaryTreePlaceholder",
+        "displayName": "Binary Tree Placeholder",
+        "file": "BinaryTreePlaceholder.tsx",
+        "route": "/admin/binarytreeplaceholder",
+        "imports": [
+          "react"
+        ],
+        "size": 2422,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "CommissionManagement",
+        "displayName": "Commission Management",
+        "file": "CommissionManagement.tsx",
+        "route": "/admin/commissionmanagement",
+        "imports": [
+          "react",
+          "date-fns",
+          "recharts",
+          "react-hot-toast"
+        ],
+        "size": 69012,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "CommissionManagementPlaceholder",
+        "displayName": "Commission Management Placeholder",
+        "file": "CommissionManagementPlaceholder.tsx",
+        "route": "/admin/commissionmanagementplaceholder",
+        "imports": [
+          "react"
+        ],
+        "size": 2358,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "CommunicationsAdmin",
+        "displayName": "Communications Admin",
+        "file": "CommunicationsAdmin.tsx",
+        "route": "/admin/communicationsadmin",
+        "imports": [
+          "react",
+          "react-router-dom",
+          "react-hot-toast",
+          "date-fns",
+          "../../services/admin-communications.service"
+        ],
+        "size": 53182,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "Dashboard",
+        "displayName": "Dashboard",
+        "file": "Dashboard.tsx",
+        "route": "/admin/dashboard",
+        "imports": [
+          "react",
+          "react-router-dom",
+          "../../components/ui/DesignSystem",
+          "react-hot-toast"
+        ],
+        "size": 24666,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "FinancialManagement",
+        "displayName": "Financial Management",
+        "file": "FinancialManagement.tsx",
+        "route": "/admin/financialmanagement",
+        "imports": [
+          "react",
+          "date-fns",
+          "recharts",
+          "react-hot-toast"
+        ],
+        "size": 70448,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "IncomeSimulator",
+        "displayName": "Income Simulator",
+        "file": "IncomeSimulator.tsx",
+        "route": "/admin/incomesimulator",
+        "imports": [
+          "react",
+          "lucide-react",
+          "../../components/ui/DesignSystem",
+          "../../services/admin-package.service",
+          "react-hot-toast"
+        ],
+        "size": 21402,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "KYCManagement",
+        "displayName": "K Y C Management",
+        "file": "KYCManagement.tsx",
+        "route": "/admin/kycmanagement",
+        "imports": [
+          "react",
+          "react-router-dom",
+          "react-hot-toast"
+        ],
+        "size": 51659,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "PackageManagement",
+        "displayName": "Package Management",
+        "file": "PackageManagement.tsx",
+        "route": "/admin/packagemanagement",
+        "imports": [
+          "react",
+          "date-fns",
+          "recharts",
+          "react-hot-toast"
+        ],
+        "size": 50046,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "PackageManagementComplete",
+        "displayName": "Package Management Complete",
+        "file": "PackageManagementComplete.tsx",
+        "route": "/admin/packagemanagementcomplete",
+        "imports": [
+          "react",
+          "react-hook-form",
+          "@hookform/resolvers/zod",
+          "zod",
+          "react-hot-toast",
+          "../../components/ui/DesignSystem",
+          "../../components/ui/Modal"
+        ],
+        "size": 40358,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "PackageManagementNew",
+        "displayName": "Package Management New",
+        "file": "PackageManagementNew.tsx",
+        "route": "/admin/packagemanagementnew",
+        "imports": [
+          "react",
+          "react-hook-form",
+          "@hookform/resolvers/zod",
+          "zod",
+          "react-hot-toast",
+          "../../components/ui/DesignSystem",
+          "../../components/ui/Modal"
+        ],
+        "size": 40358,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "PlanSettings",
+        "displayName": "Plan Settings",
+        "file": "PlanSettings.tsx",
+        "route": "/admin/plansettings",
+        "imports": [
+          "react",
+          "../../context/AuthContext",
+          "../../api/axios"
+        ],
+        "apis": [
+          {
+            "method": "get",
+            "endpoint": "/plan-settings/all"
+          }
+        ],
+        "size": 8044,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "RankManagement",
+        "displayName": "Rank Management",
+        "file": "RankManagement.tsx",
+        "route": "/admin/rankmanagement",
+        "imports": [
+          "react",
+          "react-hot-toast",
+          "date-fns"
+        ],
+        "size": 55948,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "ReportsAdmin",
+        "displayName": "Reports Admin",
+        "file": "ReportsAdmin.tsx",
+        "route": "/admin/reportsadmin",
+        "imports": [
+          "react",
+          "react-hot-toast",
+          "date-fns",
+          "../../services/admin-reports.service"
+        ],
+        "size": 51189,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "ReportsEnhanced",
+        "displayName": "Reports Enhanced",
+        "file": "ReportsEnhanced.tsx",
+        "route": "/admin/reportsenhanced",
+        "imports": [
+          "react",
+          "../../context/AuthContext",
+          "../../api/axios",
+          "react-hot-toast"
+        ],
+        "size": 19843,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "SettingsAdmin",
+        "displayName": "Settings Admin",
+        "file": "SettingsAdmin.tsx",
+        "route": "/admin/settingsadmin",
+        "imports": [
+          "react",
+          "react-router-dom",
+          "react-hot-toast",
+          "../../context/SettingsContext"
+        ],
+        "size": 71713,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "StabilityDashboard",
+        "displayName": "Stability Dashboard",
+        "file": "StabilityDashboard.tsx",
+        "route": "/admin/stabilitydashboard",
+        "imports": [
+          "react"
+        ],
+        "size": 14944,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "SupportManagement",
+        "displayName": "Support Management",
+        "file": "SupportManagement.tsx",
+        "route": "/admin/supportmanagement",
+        "imports": [
+          "react",
+          "date-fns",
+          "react-hot-toast"
+        ],
+        "size": 67936,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "SystemConfiguration",
+        "displayName": "System Configuration",
+        "file": "SystemConfiguration.tsx",
+        "route": "/admin/systemconfiguration",
+        "imports": [
+          "react",
+          "react-router-dom",
+          "react-hot-toast",
+          "../../services/admin-config.service",
+          "../../services/mlm-client"
+        ],
+        "size": 38370,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "UserManagement",
+        "displayName": "User Management",
+        "file": "UserManagement.tsx",
+        "route": "/admin/usermanagement",
+        "imports": [
+          "react",
+          "react-router-dom",
+          "react-hot-toast",
+          "../../services/admin-user.service",
+          "../../services/kyc.service",
+          "../../services/package.service",
+          "../../services/admin-impersonate.service",
+          "../../types/kyc.types",
+          "../../components/ui/CustomModal"
+        ],
+        "size": 114471,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "WithdrawalApproval",
+        "displayName": "Withdrawal Approval",
+        "file": "WithdrawalApproval.tsx",
+        "route": "/admin/withdrawalapproval",
+        "imports": [
+          "react",
+          "../../context/AuthContext",
+          "react-hot-toast",
+          "../../components/ui/DesignSystem",
+          "../../utils/httpClient"
+        ],
+        "size": 15011,
+        "hasIssues": false,
+        "scanned": true
+      }
+    ],
+    "withIssues": 0
+  },
+  "userMenus": {
+    "total": 29,
+    "menus": [
+      {
+        "name": "Dashboard",
+        "displayName": "Dashboard",
+        "file": "Dashboard.tsx",
+        "route": "/user/dashboard",
+        "imports": [
+          "react",
+          "../../services/mlm-client",
+          "../../services/team.service",
+          "../../types/mlm.types",
+          "../../components/dex/DEXTerminal"
+        ],
+        "size": 17858,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "DashboardNew",
+        "displayName": "Dashboard New",
+        "file": "DashboardNew.tsx",
+        "route": "/user/dashboardnew",
+        "imports": [
+          "react",
+          "react-router-dom",
+          "date-fns",
+          "recharts",
+          "react-hot-toast",
+          "../../components/ui/DesignSystem",
+          "../../services/mlm-client",
+          "../../services/team.service",
+          "../../context/AuthContext"
+        ],
+        "size": 31228,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "Deposit",
+        "displayName": "Deposit",
+        "file": "Deposit.tsx",
+        "route": "/user/deposit",
+        "imports": [
+          "react",
+          "react-router-dom",
+          "qrcode.react",
+          "react-hot-toast",
+          "../../components/ui/DesignSystem",
+          "../../components/ui/Modal"
+        ],
+        "size": 24060,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "EarningsNew",
+        "displayName": "Earnings New",
+        "file": "EarningsNew.tsx",
+        "route": "/user/earningsnew",
+        "imports": [
+          "react",
+          "../../components/ui/DesignSystem",
+          "react-helmet-async",
+          "react-hot-toast",
+          "react-router-dom",
+          "../../services/mlm-client",
+          "../../context/AuthContext"
+        ],
+        "size": 42539,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "GenealogyNew",
+        "displayName": "Genealogy New",
+        "file": "GenealogyNew.tsx",
+        "route": "/user/genealogynew",
+        "imports": [
+          "react",
+          "../../components/ui/DesignSystem",
+          "../../components/ui/Modal",
+          "react-hot-toast",
+          "../../context/AuthContext",
+          "../../services/genealogy.service",
+          "d3"
+        ],
+        "size": 88177,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "KYC",
+        "displayName": "K Y C",
+        "file": "KYC.tsx",
+        "route": "/user/kyc",
+        "imports": [
+          "react",
+          "react-router-dom",
+          "../../utils/validation"
+        ],
+        "size": 11666,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "KYCNew",
+        "displayName": "K Y C New",
+        "file": "KYCNew.tsx",
+        "route": "/user/kycnew",
+        "imports": [
+          "react",
+          "react-router-dom",
+          "react-hook-form",
+          "@hookform/resolvers/zod",
+          "zod",
+          "react-hot-toast",
+          "date-fns",
+          "../../components/ui/DesignSystem",
+          "../../components/ui/Modal",
+          "../../components/ui/DatePicker"
+        ],
+        "size": 48921,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "Logout",
+        "displayName": "Logout",
+        "file": "Logout.tsx",
+        "route": "/user/logout",
+        "imports": [
+          "react",
+          "react-router-dom"
+        ],
+        "size": 2568,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "Packages",
+        "displayName": "Packages",
+        "file": "Packages.tsx",
+        "route": "/user/packages",
+        "imports": [
+          "react",
+          "react-router-dom",
+          "../../services/package.service",
+          "../../types/package.types",
+          "react-hot-toast",
+          "../../utils/api-client"
+        ],
+        "size": 23499,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "PackagesNew",
+        "displayName": "Packages New",
+        "file": "PackagesNew.tsx",
+        "route": "/user/packagesnew",
+        "imports": [
+          "react",
+          "react-router-dom",
+          "react-hook-form",
+          "@hookform/resolvers/zod",
+          "zod",
+          "react-hot-toast",
+          "date-fns",
+          "../../components/ui/DesignSystem",
+          "../../components/ui/Modal",
+          "../../components/ui/Tabs",
+          "../../services/wallet.service"
+        ],
+        "size": 56346,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "Profile",
+        "displayName": "Profile",
+        "file": "Profile.tsx",
+        "route": "/user/profile",
+        "imports": [
+          "react",
+          "react-router-dom",
+          "../../utils/validation"
+        ],
+        "size": 12282,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "ProfileNew",
+        "displayName": "Profile New",
+        "file": "ProfileNew.tsx",
+        "route": "/user/profilenew",
+        "imports": [
+          "react",
+          "react-router-dom",
+          "react-hook-form",
+          "@hookform/resolvers/zod",
+          "zod",
+          "react-hot-toast",
+          "qrcode.react",
+          "../../components/ui/DesignSystem",
+          "../../components/ui/Tabs",
+          "../../components/ui/Modal"
+        ],
+        "size": 57562,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "Ranks",
+        "displayName": "Ranks",
+        "file": "Ranks.tsx",
+        "route": "/user/ranks",
+        "imports": [
+          "react",
+          "react-router-dom"
+        ],
+        "size": 8164,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "RanksNew",
+        "displayName": "Ranks New",
+        "file": "RanksNew.tsx",
+        "route": "/user/ranksnew",
+        "imports": [
+          "react",
+          "../../components/ui/DesignSystem",
+          "react-helmet-async",
+          "react-hot-toast",
+          "../../services/admin-rank.service",
+          "../../services/mlm-client",
+          "../../context/AuthContext"
+        ],
+        "size": 45584,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "ReferralsNew",
+        "displayName": "Referrals New",
+        "file": "ReferralsNew.tsx",
+        "route": "/user/referralsnew",
+        "imports": [
+          "react",
+          "../../components/ui/DesignSystem",
+          "../../components/ui/Modal",
+          "react-hot-toast",
+          "qrcode.react",
+          "recharts",
+          "../../context/AuthContext",
+          "../../services/team.service"
+        ],
+        "size": 26514,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "Reports",
+        "displayName": "Reports",
+        "file": "Reports.tsx",
+        "route": "/user/reports",
+        "imports": [
+          "react",
+          "react-router-dom",
+          "recharts",
+          "date-fns",
+          "react-hot-toast",
+          "../../components/ui/DesignSystem",
+          "../../services/mlm-client",
+          "../../services/team.service",
+          "../../context/AuthContext"
+        ],
+        "size": 24986,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "Robot",
+        "displayName": "Robot",
+        "file": "Robot.tsx",
+        "route": "/user/robot",
+        "imports": [
+          "react",
+          "react-router-dom"
+        ],
+        "size": 3700,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "RobotNew",
+        "displayName": "Robot New",
+        "file": "RobotNew.tsx",
+        "route": "/user/robotnew",
+        "imports": [
+          "react",
+          "react-router-dom",
+          "react-hook-form",
+          "@hookform/resolvers/zod",
+          "zod",
+          "react-hot-toast",
+          "date-fns",
+          "../../components/ui/DesignSystem",
+          "../../components/ui/Modal",
+          "../../context/AuthContext",
+          "../../services/mlm-client"
+        ],
+        "size": 31869,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "Settings",
+        "displayName": "Settings",
+        "file": "Settings.tsx",
+        "route": "/user/settings",
+        "imports": [
+          "react",
+          "react-router-dom"
+        ],
+        "size": 11271,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "SettingsNew",
+        "displayName": "Settings New",
+        "file": "SettingsNew.tsx",
+        "route": "/user/settingsnew",
+        "imports": [
+          "react",
+          "../../components/ui/DesignSystem",
+          "react-helmet-async",
+          "react-hot-toast"
+        ],
+        "size": 56345,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "Support",
+        "displayName": "Support",
+        "file": "Support.tsx",
+        "route": "/user/support",
+        "imports": [
+          "react",
+          "../../components/ui/DesignSystem",
+          "../../components/ui/Modal",
+          "react-hot-toast",
+          "zod"
+        ],
+        "size": 58442,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "TeamNew",
+        "displayName": "Team New",
+        "file": "TeamNew.tsx",
+        "route": "/user/teamnew",
+        "imports": [
+          "react",
+          "../../components/ui/DesignSystem",
+          "react-hot-toast",
+          "../../context/AuthContext",
+          "../../services/team.service",
+          "../../components/ResponsiveTable"
+        ],
+        "size": 34329,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "TeamReport",
+        "displayName": "Team Report",
+        "file": "TeamReport.tsx",
+        "route": "/user/teamreport",
+        "imports": [
+          "react",
+          "../../components/TeamSummaryCards",
+          "../../components/TeamLevelChart",
+          "../../components/LevelBreakdownTable",
+          "../../services/team-report.service"
+        ],
+        "size": 9272,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "Transactions",
+        "displayName": "Transactions",
+        "file": "Transactions.tsx",
+        "route": "/user/transactions",
+        "imports": [
+          "react",
+          "react-router-dom",
+          "../../services/wallet.service",
+          "date-fns",
+          "react-hot-toast"
+        ],
+        "size": 13223,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "TransactionsNew",
+        "displayName": "Transactions New",
+        "file": "TransactionsNew.tsx",
+        "route": "/user/transactionsnew",
+        "imports": [
+          "react",
+          "../../components/ui/DesignSystem",
+          "react-helmet-async",
+          "react-hot-toast",
+          "../../context/AuthContext",
+          "../../services/mlm-client"
+        ],
+        "size": 45687,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "Wallet",
+        "displayName": "Wallet",
+        "file": "Wallet.tsx",
+        "route": "/user/wallet",
+        "imports": [
+          "react",
+          "react-router-dom",
+          "../../services/wallet.service",
+          "date-fns",
+          "react-hot-toast"
+        ],
+        "size": 9488,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "WalletNew",
+        "displayName": "Wallet New",
+        "file": "WalletNew.tsx",
+        "route": "/user/walletnew",
+        "imports": [
+          "react",
+          "react-router-dom",
+          "react-hook-form",
+          "@hookform/resolvers/zod",
+          "zod",
+          "react-hot-toast",
+          "qrcode.react",
+          "date-fns",
+          "../../components/ui/DesignSystem",
+          "../../components/ui/Tabs",
+          "../../components/ui/Modal"
+        ],
+        "size": 59818,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "Withdraw",
+        "displayName": "Withdraw",
+        "file": "Withdraw.tsx",
+        "route": "/user/withdraw",
+        "imports": [
+          "react",
+          "react-router-dom",
+          "react-hot-toast",
+          "../../components/ui/DesignSystem",
+          "../../components/ui/Modal"
+        ],
+        "size": 28962,
+        "hasIssues": false,
+        "scanned": true
+      },
+      {
+        "name": "WithdrawNew",
+        "displayName": "Withdraw New",
+        "file": "WithdrawNew.tsx",
+        "route": "/user/withdrawnew",
+        "imports": [
+          "react",
+          "../../context/AuthContext",
+          "react-hot-toast",
+          "../../components/ui/DesignSystem",
+          "../../utils/httpClient"
+        ],
+        "size": 15736,
+        "hasIssues": false,
+        "scanned": true
+      }
+    ],
+    "withIssues": 0
+  },
+  "components": [
+    {
+      "name": "ProtectedRoute.tsx",
+      "path": "auth/ProtectedRoute.tsx",
+      "size": 2932
+    },
+    {
+      "name": "BoosterCountdownTimer.tsx",
+      "path": "BoosterCountdownTimer.tsx",
+      "size": 9263
+    },
+    {
+      "name": "CustomLeftNav.tsx",
+      "path": "CustomLeftNav.tsx",
+      "size": 4270
+    },
+    {
+      "name": "DemoGraduationChecker.tsx",
+      "path": "DemoGraduationChecker.tsx",
+      "size": 212
+    },
+    {
+      "name": "DemoGraduationDialog.tsx",
+      "path": "DemoGraduationDialog.tsx",
+      "size": 2842
+    },
+    {
+      "name": "DEXTerminal.tsx",
+      "path": "dex/DEXTerminal.tsx",
+      "size": 9049
+    },
+    {
+      "name": "HttpsRequiredWarning.tsx",
+      "path": "HttpsRequiredWarning.tsx",
+      "size": 3114
+    },
+    {
+      "name": "orderly.tsx",
+      "path": "icons/orderly.tsx",
+      "size": 5980
+    },
+    {
+      "name": "ImpersonationBanner.tsx",
+      "path": "ImpersonationBanner.tsx",
+      "size": 2533
+    },
+    {
+      "name": "Breadcrumbs.tsx",
+      "path": "layout/Breadcrumbs.tsx",
+      "size": 4070
+    },
+    {
+      "name": "UserLayout.tsx",
+      "path": "layout/UserLayout.tsx",
+      "size": 1391
+    },
+    {
+      "name": "UserSidebar.tsx",
+      "path": "layout/UserSidebar.tsx",
+      "size": 16622
+    },
+    {
+      "name": "LevelBreakdownTable.tsx",
+      "path": "LevelBreakdownTable.tsx",
+      "size": 9506
+    },
+    {
+      "name": "LevelMembersList.tsx",
+      "path": "LevelMembersList.tsx",
+      "size": 7887
+    },
+    {
+      "name": "LevelUnlockBadges.tsx",
+      "path": "LevelUnlockBadges.tsx",
+      "size": 8304
+    },
+    {
+      "name": "LoadingSpinner.tsx",
+      "path": "LoadingSpinner.tsx",
+      "size": 2065
+    },
+    {
+      "name": "MobileBottomNav.tsx",
+      "path": "MobileBottomNav.tsx",
+      "size": 3350
+    },
+    {
+      "name": "index.tsx",
+      "path": "orderlyProvider/index.tsx",
+      "size": 6983
+    },
+    {
+      "name": "privyConnector.tsx",
+      "path": "orderlyProvider/privyConnector.tsx",
+      "size": 2327
+    },
+    {
+      "name": "ServiceRestrictionsDialog.tsx",
+      "path": "orderlyProvider/ServiceRestrictionsDialog.tsx",
+      "size": 3579
+    },
+    {
+      "name": "walletConnector.tsx",
+      "path": "orderlyProvider/walletConnector.tsx",
+      "size": 1234
+    },
+    {
+      "name": "ResponsiveCard.tsx",
+      "path": "ResponsiveCard.tsx",
+      "size": 4104
+    },
+    {
+      "name": "ResponsiveForm.tsx",
+      "path": "ResponsiveForm.tsx",
+      "size": 9057
+    },
+    {
+      "name": "ResponsiveModal.tsx",
+      "path": "ResponsiveModal.tsx",
+      "size": 7124
+    },
+    {
+      "name": "ResponsiveTable.tsx",
+      "path": "ResponsiveTable.tsx",
+      "size": 3872
+    },
+    {
+      "name": "SettingsExample.tsx",
+      "path": "SettingsExample.tsx",
+      "size": 2091
+    },
+    {
+      "name": "TeamLevelChart.tsx",
+      "path": "TeamLevelChart.tsx",
+      "size": 3754
+    },
+    {
+      "name": "TeamSummaryCards.tsx",
+      "path": "TeamSummaryCards.tsx",
+      "size": 5270
+    },
+    {
+      "name": "TradingHeader.tsx",
+      "path": "TradingHeader.tsx",
+      "size": 1223
+    },
+    {
+      "name": "CustomModal.tsx",
+      "path": "ui/CustomModal.tsx",
+      "size": 5834
+    },
+    {
+      "name": "DatePicker.tsx",
+      "path": "ui/DatePicker.tsx",
+      "size": 6889
+    },
+    {
+      "name": "DesignSystem.tsx",
+      "path": "ui/DesignSystem.tsx",
+      "size": 9091
+    },
+    {
+      "name": "Dropdown.tsx",
+      "path": "ui/Dropdown.tsx",
+      "size": 3668
+    },
+    {
+      "name": "MemoizedChart.tsx",
+      "path": "ui/MemoizedChart.tsx",
+      "size": 9733
+    },
+    {
+      "name": "Modal.tsx",
+      "path": "ui/Modal.tsx",
+      "size": 3985
+    },
+    {
+      "name": "OptimizedImage.tsx",
+      "path": "ui/OptimizedImage.tsx",
+      "size": 8582
+    },
+    {
+      "name": "Pagination.tsx",
+      "path": "ui/Pagination.tsx",
+      "size": 5458
+    },
+    {
+      "name": "Tabs.tsx",
+      "path": "ui/Tabs.tsx",
+      "size": 1409
+    },
+    {
+      "name": "WooFiWidget.tsx",
+      "path": "WooFiWidget.tsx",
+      "size": 940
+    }
+  ],
+  "apiEndpoints": {
+    "total": 6,
+    "endpoints": [
+      "/plan-settings/all",
+      "/booster/status",
+      "/dex/trades",
+      "/notifications",
+      "/level-unlocks/status",
+      "/level-unlocks/progress"
+    ]
+  },
+  "dependencies": {
+    "totalImports": 269,
+    "brokenImports": [],
+    "missingApis": []
+  },
+  "frontendServices": [
+    "admin-audit.service.ts",
+    "admin-audit.service.ts.pre-mysql-migration",
+    "admin-binary.service.ts",
+    "admin-binary.service.ts.pre-mysql-migration",
+    "admin-commission.service.ts",
+    "admin-commission.service.ts.pre-mysql-migration",
+    "admin-communications.service.ts",
+    "admin-config.service.ts",
+    "admin-config.service.ts.pre-mysql-migration",
+    "admin-dashboard.service.ts",
+    "admin-financial.service.ts",
+    "admin-impersonate.service.ts",
+    "admin-impersonate.service.ts.pre-mysql-migration",
+    "admin-kyc.service.ts",
+    "admin-kyc.service.ts.pre-mysql-migration",
+    "admin-package.service.ts",
+    "admin-rank.service.ts",
+    "admin-rank.service.ts.bak-mysql",
+    "admin-reports.service.ts",
+    "admin-reports.service.ts.pre-mysql-migration",
+    "admin-support.service.ts",
+    "admin-support.service.ts.pre-mysql-migration",
+    "admin-user.service.ts",
+    "admin.service.ts",
+    "auth.service.postgres.backup.ts",
+    "auth.service.ts",
+    "auth.service.ts.backup2",
+    "db.client.ts",
+    "fix-supabase.sh",
+    "genealogy.service.ts",
+    "kyc.service.ts",
+    "mlm-client.ts",
+    "mlm.service.ts.SUPABASE_OLD",
+    "package.service.ts",
+    "referral.service.ts",
+    "team-report.service.ts",
+    "team.service.ts",
+    "wallet.service.ts"
+  ],
+  "backendRoutes": [
+    "admin.ts",
+    "audit.ts",
+    "auth-enhanced.ts",
+    "auth.ts",
+    "binary.ts",
+    "booster.ts",
+    "config.ts",
+    "dashboard.ts",
+    "genealogy.ts",
+    "impersonate.ts",
+    "kyc.ts",
+    "levelUnlocks.ts",
+    "packages.ts",
+    "planSettings.ts",
+    "ranks.ts",
+    "reports-enhanced.ts",
+    "reports.ts",
+    "rewards.ts",
+    "stability.routes.ts",
+    "support.ts",
+    "team.ts",
+    "TEAM_API_DOCUMENTATION.md",
+    "transactions.ts",
+    "wallet.ts"
+  ],
+  "backendServices": [
+    "binary-matching.service.ts",
+    "booster.service.ts",
+    "cache.service.ts",
+    "generation-plan.service.ts",
+    "level-income.service.ts",
+    "planSettings.service.ts",
+    "rewards.service.ts",
+    "withdrawal.service.ts"
+  ],
+  "testing": {
+    "coverage": 0,
+    "passing": 0,
+    "failing": 0,
+    "lastRun": null
+  },
+  "stability": {
+    "score": 100,
+    "issues": 0,
+    "autoFixable": 0
+  }
+}
