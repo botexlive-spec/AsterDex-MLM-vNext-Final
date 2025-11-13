@@ -9,28 +9,44 @@ import pool from '../db';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
+const JWT_SECRET = process.env.JWT_SECRET || 'finaster_jwt_secret_key_change_in_production_2024';
 
 // Middleware: Authenticate admin users
 function authenticateAdmin(req: Request, res: Response, next: any) {
   try {
+    console.log('[Auth Middleware] Checking authentication for:', req.method, req.path);
     const authHeader = req.headers.authorization;
+    console.log('[Auth Middleware] Auth header:', authHeader ? 'present' : 'missing');
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('[Auth Middleware] No bearer token found');
       return res.status(401).json({ error: 'No token provided' });
     }
 
     const token = authHeader.substring(7);
+    console.log('[Auth Middleware] Token length:', token.length);
+    console.log('[Auth Middleware] JWT_SECRET:', JWT_SECRET.substring(0, 20) + '...');
+    console.log('[Auth Middleware] Verifying token...');
+
     const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string; role?: string };
+    console.log('[Auth Middleware] Token decoded successfully');
+    console.log('[Auth Middleware] User ID:', decoded.id);
+    console.log('[Auth Middleware] User email:', decoded.email);
+    console.log('[Auth Middleware] User role:', decoded.role);
 
     // Check if user is admin
     if (decoded.role !== 'admin') {
+      console.log('[Auth Middleware] User is not admin, access denied');
       return res.status(403).json({ error: 'Admin access required' });
     }
 
+    console.log('[Auth Middleware] Authentication successful, proceeding to route handler');
     (req as any).user = decoded;
     next();
   } catch (error: any) {
-    console.error('Authentication error:', error);
+    console.error('[Auth Middleware] Authentication error:', error.message);
+    console.error('[Auth Middleware] Error type:', error.name);
+    console.error('[Auth Middleware] Stack:', error.stack);
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
 }
@@ -43,14 +59,17 @@ router.use(authenticateAdmin);
  */
 router.get('/', async (req: Request, res: Response) => {
   try {
+    console.log('[Ranks API] Fetching all rank rewards...');
     const [rows] = await pool.query<RowDataPacket[]>(
       `SELECT * FROM rank_rewards ORDER BY rank_order ASC`
     );
+    console.log(`[Ranks API] Found ${Array.isArray(rows) ? rows.length : 0} ranks`);
 
     res.json({ data: rows });
   } catch (error: any) {
-    console.error('Error fetching rank rewards:', error);
-    res.status(500).json({ error: 'Failed to fetch rank rewards' });
+    console.error('[Ranks API] Error fetching rank rewards:', error.message || error);
+    console.error('[Ranks API] Stack:', error.stack);
+    res.status(500).json({ error: 'Failed to fetch rank rewards', details: error.message });
   }
 });
 
