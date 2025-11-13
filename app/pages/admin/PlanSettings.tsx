@@ -26,18 +26,35 @@ export default function PlanSettings() {
   }, [token]);
 
   const fetchSettings = async () => {
-    if (!token) return;
+    if (!token) {
+      console.warn('No token available, skipping fetch');
+      setLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
+      console.log('Fetching plan settings with token...');
+
       // Token is automatically added by axios interceptor
       const res = await api.get('/plan-settings/all');
 
       if (res.data?.settings) {
         setSettings(res.data.settings);
+        console.log('✓ Plan settings loaded:', res.data.settings.length, 'settings');
       }
-    } catch (error) {
-      console.error('Error fetching plan settings:', error);
+    } catch (error: any) {
+      console.error('❌ Error fetching plan settings:', error);
+
+      // Don't let this error crash the page
+      if (error.response?.status === 401) {
+        console.error('Authentication failed - token may be invalid');
+      } else if (error.response?.status === 403) {
+        console.error('Access denied - admin privileges required');
+      }
+
+      // Keep empty settings on error instead of crashing
+      setSettings([]);
     } finally {
       setLoading(false);
     }
