@@ -5,11 +5,11 @@
 
 import express, { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import pool from '../db';
+import { pool } from '../db';
 import { RowDataPacket } from 'mysql2';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
+const JWT_SECRET = process.env.JWT_SECRET || 'finaster_jwt_secret_key_change_in_production_2024';
 
 // Middleware: Authenticate admin users
 function authenticateAdmin(req: Request, res: Response, next: any) {
@@ -80,7 +80,7 @@ router.post('/:userId', async (req: Request, res: Response) => {
     // Log impersonation start
     await pool.query(
       `INSERT INTO audit_logs (
-        userId, action, details, target_user_id, createdAt
+        user_id, action, details, target_user_id, created_at
       ) VALUES (?, ?, ?, ?, NOW())`,
       [
         adminId,
@@ -139,7 +139,7 @@ router.post('/stop', async (req: Request, res: Response) => {
     // Log impersonation end
     await pool.query(
       `INSERT INTO audit_logs (
-        userId, action, details, target_user_id, createdAt
+        user_id, action, details, target_user_id, created_at
       ) VALUES (?, ?, ?, ?, NOW())`,
       [adminId, 'impersonation_stopped', `Stopped impersonating user`, userId]
     );
