@@ -475,10 +475,13 @@ const UserManagement: React.FC = () => {
       if (result.success) {
         toast.success('Successfully impersonating user! Redirecting...', { id: toastId });
 
-        // Redirect to user dashboard using window.location to force full reload with new context
+        // Redirect to user dashboard with absolute URL to force full page reload
         setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 500);
+          console.log('🔄 Redirecting to user dashboard...');
+          console.log('Current URL:', window.location.href);
+          window.location.href = 'http://localhost:5173/dashboard';
+          console.log('Redirect initiated to:', 'http://localhost:5173/dashboard');
+        }, 800);
       } else {
         toast.error(result.error || 'Failed to impersonate user', { id: toastId });
       }

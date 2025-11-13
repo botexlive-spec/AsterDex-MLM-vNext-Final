@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Check Auth State</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #1e293b; color: #fff; }
+    .container { max-width: 900px; margin: 0 auto; }
+    pre { background: #334155; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    .success { color: #10b981; }
+    .error { color: #ef4444; }
+    .warning { color: #f59e0b; }
+    button { padding: 10px 20px; margin: 10px 5px 0 0; background: #00C7D1; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #00a5b0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 Current Auth State Checker</h1>
+    <p>This shows what's currently in your browser's localStorage</p>
+
+    <button onclick="checkState()">Check Current State</button>
+    <button onclick="clearAndRedirect()">Clear Auth & Reload</button>
+    <button onclick="fixAndRedirect()">Fix Impersonation & Go to User Dashboard</button>
+
+    <div id="output"></div>
+  </div>
+
+  <script>
+    function checkState() {
+      const output = document.getElementById('output');
+      let html = '<h2>Current LocalStorage State:</h2>';
+
+      // Check auth_token
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        html += `<div class="success">✅ auth_token exists: ${token.substring(0, 50)}...</div>`;
+      } else {
+        html += `<div class="error">❌ No auth_token found</div>`;
+      }
+
+      // Check user
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          html += `<div class="success">✅ user data:</div>`;
+          html += `<pre>${JSON.stringify(user, null, 2)}</pre>`;
+          html += `<div><strong>Current Role: ${user.role}</strong></div>`;
+        } catch (e) {
+          html += `<div class="error">❌ user data corrupted</div>`;
+        }
+      } else {
+        html += `<div class="error">❌ No user data found</div>`;
+      }
+
+      // Check impersonation
+      const impersonationStr = localStorage.getItem('impersonation');
+      if (impersonationStr) {
+        try {
+          const impData = JSON.parse(impersonationStr);
+          html += `<div class="warning">⚠️ impersonation data exists:</div>`;
+          html += `<pre>${JSON.stringify(impData, null, 2)}</pre>`;
+
+          if (impData.isImpersonating) {
+            html += `<div class="warning"><strong>IS IMPERSONATING!</strong></div>`;
+            html += `<div>Admin: ${impData.actualUser?.email || 'Unknown'}</div>`;
+            html += `<div>Target: ${impData.targetUserEmail || 'Unknown'}</div>`;
+          }
+        } catch (e) {
+          html += `<div class="error">❌ impersonation data corrupted</div>`;
+        }
+      } else {
+        html += `<div>ℹ️ No impersonation data</div>`;
+      }
+
+      // Analysis
+      html += '<h2>Analysis:</h2>';
+      if (impersonationStr && userStr) {
+        try {
+          const impData = JSON.parse(impersonationStr);
+          const user = JSON.parse(userStr);
+
+          if (impData.isImpersonating) {
+            if (user.role === 'user') {
+              html += '<div class="success">✅ Impersonation set up correctly</div>';
+              html += '<div class="success">✅ User role is "user"</div>';
+              html += '<div class="warning">⚠️ You should see USER dashboard, not admin dashboard</div>';
+              html += '<div>If you see admin dashboard, browser cache issue</div>';
+            } else if (user.role === 'admin') {
+              html += '<div class="error">❌ PROBLEM: Impersonation data exists but user role is still "admin"</div>';
+              html += '<div class="error">This means impersonation service didnt replace user data properly</div>';
+            }
+          }
+        } catch (e) {}
+      }
+
+      html += '<h2>Current Page:</h2>';
+      html += `<div>URL: ${window.location.href}</div>`;
+      html += `<div>Path: ${window.location.pathname}</div>`;
+
+      output.innerHTML = html;
+    }
+
+    function clearAndRedirect() {
+      if (confirm('Clear all auth data and reload?')) {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.reload();
+      }
+    }
+
+    function fixAndRedirect() {
+      const impersonationStr = localStorage.getItem('impersonation');
+      if (!impersonationStr) {
+        alert('No impersonation data found. Please impersonate a user first.');
+        return;
+      }
+
+      try {
+        const impData = JSON.parse(impersonationStr);
+        if (!impData.isImpersonating) {
+          alert('Impersonation not active');
+          return;
+        }
+
+        // Make sure user data in localStorage matches the impersonated user
+        console.log('Fixing impersonation state...');
+        console.log('Target user:', impData.targetUserEmail);
+
+        // For now, just redirect
+        alert('Redirecting to user dashboard...');
+        window.location.href = 'http://localhost:5173/dashboard';
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    // Auto-check on load
+    window.onload = checkState;
+  </script>
+</body>
+</html>
