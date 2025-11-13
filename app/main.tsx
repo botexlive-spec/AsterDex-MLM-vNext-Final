@@ -47,10 +47,9 @@ const UserDashboard = lazy(() => import('./pages/user/DashboardNew'));
 const Packages = lazy(() => import('./pages/user/Packages')); // Changed from PackagesEnhanced (broken)
 const Robot = lazy(() => import('./pages/user/RobotNew'));
 const KYC = lazy(() => import('./pages/user/KYCNew'));
-const Wallet = lazy(() => import('./pages/user/WalletNew'));
+const Wallet = lazy(() => import('./pages/user/WalletSimple'));
 const Deposit = lazy(() => import('./pages/user/Deposit'));
-const Withdraw = lazy(() => import('./pages/user/Withdraw'));
-const WithdrawNew = lazy(() => import('./pages/user/WithdrawNew'));
+const WithdrawSimple = lazy(() => import('./pages/user/WithdrawSimple'));
 const Team = lazy(() => import('./pages/user/TeamNew'));
 const TeamReport = lazy(() => import('./pages/user/TeamReport'));
 const Referrals = lazy(() => import('./pages/user/ReferralsNew'));
@@ -240,7 +239,7 @@ const router = createBrowserRouter([
         children: [
           { index: true, element: <Wallet /> },
           { path: 'deposit', element: <Deposit /> },
-          { path: 'withdraw', element: <WithdrawNew /> },
+          { path: 'withdraw', element: <WithdrawSimple /> },
         ],
       },
       {

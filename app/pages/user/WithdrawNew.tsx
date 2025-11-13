@@ -32,6 +32,49 @@ interface WalletBalance {
   pending: number;
 }
 
+// Helper function to safely convert values to numbers
+const toNumber = (value: any): number => {
+  if (value === null || value === undefined) return 0;
+  const num = Number(value);
+  return isNaN(num) ? 0 : num;
+};
+
+// Helper function to safely extract and convert limits data
+const parseLimitsData = (data: any): WithdrawalLimits => {
+  return {
+    minimum_withdrawal: toNumber(data?.minimum_withdrawal ?? 50),
+    deduction_before_30_days: toNumber(data?.deduction_before_30_days ?? 15),
+    deduction_after_30_days: toNumber(data?.deduction_after_30_days ?? 5),
+  };
+};
+
+// Helper function to safely extract and convert balance data
+const parseBalanceData = (data: any): WalletBalance => {
+  return {
+    total: toNumber(data?.total ?? 0),
+    available: toNumber(data?.available ?? 0),
+    locked: toNumber(data?.locked ?? 0),
+    pending: toNumber(data?.pending ?? 0),
+  };
+};
+
+// Helper function to safely extract withdrawals array
+const parseWithdrawalsData = (data: any): WithdrawalRecord[] => {
+  const withdrawals = Array.isArray(data) ? data : (data?.withdrawals || []);
+  return withdrawals.map((w: any) => ({
+    id: String(w.id || ''),
+    withdrawal_type: w.withdrawal_type || 'roi',
+    requested_amount: toNumber(w.requested_amount),
+    deduction_percentage: toNumber(w.deduction_percentage),
+    deduction_amount: toNumber(w.deduction_amount),
+    final_amount: toNumber(w.final_amount),
+    status: w.status || 'pending',
+    rejection_reason: w.rejection_reason,
+    days_held: toNumber(w.days_held),
+    created_at: w.created_at || new Date().toISOString(),
+  }));
+};
+
 export const WithdrawNew: React.FC = () => {
   const { user } = useAuth();
 
@@ -50,18 +93,24 @@ export const WithdrawNew: React.FC = () => {
     const fetchData = async () => {
       try {
         setLoadingData(true);
-        const [balanceData, limitsData, withdrawalsData] = await Promise.all([
-          get<WalletBalance>('/api/wallet/balance'),
-          get<WithdrawalLimits>('/api/wallet/withdrawal/limits'),
-          get<WithdrawalRecord[]>('/api/wallet/withdrawals')
+        const [balanceResponse, limitsResponse, withdrawalsResponse] = await Promise.all([
+          get<any>('/api/wallet-simple/balance'),
+          get<any>('/api/wallet-simple/withdrawal/limits'),
+          get<any>('/api/wallet-simple/withdrawals')
         ]);
 
-        setBalance(balanceData);
-        setLimits(limitsData);
-        setWithdrawals(withdrawalsData);
+        // Parse and set data with type safety
+        setBalance(parseBalanceData(balanceResponse));
+        setLimits(parseLimitsData(limitsResponse));
+        setWithdrawals(parseWithdrawalsData(withdrawalsResponse));
       } catch (error: any) {
         console.error('Failed to load withdrawal data:', error);
         toast.error(error.message || 'Failed to load data');
+
+        // Set defaults on error
+        setBalance({ total: 0, available: 0, locked: 0, pending: 0 });
+        setLimits({ minimum_withdrawal: 50, deduction_before_30_days: 15, deduction_after_30_days: 5 });
+        setWithdrawals([]);
       } finally {
         setLoadingData(false);
       }
@@ -106,7 +155,7 @@ export const WithdrawNew: React.FC = () => {
     }
 
     if (numAmount < limits.minimum_withdrawal) {
-      toast.error(`Minimum withdrawal is $${limits.minimum_withdrawal}`);
+      toast.error(`Minimum withdrawal is $${limits.minimum_withdrawal.toFixed(2)}`);
       return;
     }
 
@@ -123,7 +172,7 @@ export const WithdrawNew: React.FC = () => {
     try {
       setLoading(true);
       const response = await post<{ success: boolean; withdrawal_id?: string; message: string }>(
-        '/api/wallet/withdrawal',
+        '/api/wallet-simple/withdrawal',
         {
           amount: numAmount,
           withdrawal_type: withdrawalType,
@@ -139,12 +188,13 @@ export const WithdrawNew: React.FC = () => {
         setWalletAddress('');
 
         // Reload data
-        const [newBalance, newWithdrawals] = await Promise.all([
-          get<WalletBalance>('/api/wallet/balance'),
-          get<WithdrawalRecord[]>('/api/wallet/withdrawals')
+        const [newBalanceResponse, newWithdrawalsResponse] = await Promise.all([
+          get<any>('/api/wallet-simple/balance'),
+          get<any>('/api/wallet-simple/withdrawals')
         ]);
-        setBalance(newBalance);
-        setWithdrawals(newWithdrawals);
+
+        setBalance(parseBalanceData(newBalanceResponse));
+        setWithdrawals(parseWithdrawalsData(newWithdrawalsResponse));
       } else {
         toast.error(response.message || 'Withdrawal failed');
       }
@@ -236,9 +286,9 @@ export const WithdrawNew: React.FC = () => {
                   >
                     <div className="text-center">
                       <div className="text-[#f8fafc] font-medium">{getTypeLabel(type)}</div>
-                      {type === 'principal' && (
+                      {type === 'principal' && limits && (
                         <div className="text-xs text-[#94a3b8] mt-1">
-                          {limits && `${limits.deduction_before_30_days}% deduction if &lt;30 days`}
+                          {limits.deduction_before_30_days.toFixed(0)}% deduction if &lt;30 days
                         </div>
                       )}
                     </div>
@@ -254,13 +304,13 @@ export const WithdrawNew: React.FC = () => {
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                placeholder={limits ? `Min: $${limits.minimum_withdrawal}` : "Enter amount"}
+                placeholder={limits ? `Min: $${limits.minimum_withdrawal.toFixed(2)}` : "Enter amount"}
                 className="w-full"
                 step="0.01"
               />
               {limits && (
                 <p className="text-sm text-[#94a3b8] mt-1">
-                  Minimum: ${limits.minimum_withdrawal}
+                  Minimum: ${limits.minimum_withdrawal.toFixed(2)}
                 </p>
               )}
             </div>
@@ -286,7 +336,7 @@ export const WithdrawNew: React.FC = () => {
                     <span className="font-bold">${parseFloat(amount).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-red-400">
-                    <span>Deduction ({percentage}%):</span>
+                    <span>Deduction ({percentage.toFixed(0)}%):</span>
                     <span className="font-bold">- ${deduction.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between border-t border-yellow-600/30 pt-2">
@@ -324,13 +374,13 @@ export const WithdrawNew: React.FC = () => {
               </div>
               <div>
                 <p className="text-[#94a3b8]">Min. Withdrawal</p>
-                <p className="text-[#f8fafc] font-medium">${limits?.minimum_withdrawal || 50}</p>
+                <p className="text-[#f8fafc] font-medium">${limits?.minimum_withdrawal.toFixed(2) || '50.00'}</p>
               </div>
               <div>
                 <p className="text-[#94a3b8]">Principal Deduction</p>
                 <p className="text-[#f8fafc] font-medium">
-                  {limits && `${limits.deduction_before_30_days}% (&lt;30 days)`}<br />
-                  {limits && `${limits.deduction_after_30_days}% (>=30 days)`}
+                  {limits && `${limits.deduction_before_30_days.toFixed(0)}% (<30 days)`}<br />
+                  {limits && `${limits.deduction_after_30_days.toFixed(0)}% (>=30 days)`}
                 </p>
               </div>
             </div>
@@ -381,7 +431,7 @@ export const WithdrawNew: React.FC = () => {
                     </td>
                     <td className="py-3 px-4 text-right text-red-400">
                       {withdrawal.deduction_percentage > 0 ? (
-                        <>-${withdrawal.deduction_amount.toFixed(2)} ({withdrawal.deduction_percentage}%)</>
+                        <>-${withdrawal.deduction_amount.toFixed(2)} ({withdrawal.deduction_percentage.toFixed(0)}%)</>
                       ) : (
                         '$0.00'
                       )}
