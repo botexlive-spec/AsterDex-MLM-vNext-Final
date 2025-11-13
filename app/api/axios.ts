@@ -41,31 +41,41 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (!refreshToken) {
-          throw new Error('No refresh token available');
+      // Don't auto-logout on first 401 - might be a temporary issue
+      const refreshToken = localStorage.getItem('refreshToken');
+
+      // Only try to refresh if we have a refresh token
+      if (refreshToken) {
+        try {
+          // Try to refresh token
+          const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+            refreshToken,
+          });
+
+          const { token } = response.data;
+          localStorage.setItem('token', token);
+
+          // Retry original request with new token
+          if (originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+          }
+          return apiClient(originalRequest);
+        } catch (refreshError) {
+          // Refresh failed - only logout if this is an auth endpoint
+          if (originalRequest.url?.includes('/auth/') || originalRequest.url?.includes('/login')) {
+            localStorage.clear();
+            window.location.href = '/login';
+            toast.error('Session expired. Please login again.');
+          } else {
+            // For other endpoints, just log the error and continue
+            console.error('Token refresh failed, but not forcing logout:', refreshError);
+            toast.error('Authentication error. Please refresh the page.');
+          }
+          return Promise.reject(refreshError);
         }
-
-        // Try to refresh token
-        const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-          refreshToken,
-        });
-
-        const { token } = response.data;
-        localStorage.setItem('token', token);
-
-        // Retry original request with new token
-        if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${token}`;
-        }
-        return apiClient(originalRequest);
-      } catch (refreshError) {
-        // Refresh failed, logout user
-        localStorage.clear();
-        window.location.href = '/login';
-        toast.error('Session expired. Please login again.');
-        return Promise.reject(refreshError);
+      } else {
+        // No refresh token - this is expected on first load or after logout
+        console.warn('No refresh token available for 401 retry');
       }
     }
 
