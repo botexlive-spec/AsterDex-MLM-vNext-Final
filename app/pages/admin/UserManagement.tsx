@@ -475,12 +475,10 @@ const UserManagement: React.FC = () => {
       if (result.success) {
         toast.success('Successfully impersonating user! Redirecting...', { id: toastId });
 
-        // Redirect to user dashboard after a short delay
+        // Redirect to user dashboard using window.location to force full reload with new context
         setTimeout(() => {
-          navigate('/dashboard');
-          // Reload to apply impersonation context
-          window.location.reload();
-        }, 1000);
+          window.location.href = '/dashboard';
+        }, 500);
       } else {
         toast.error(result.error || 'Failed to impersonate user', { id: toastId });
       }

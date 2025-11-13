@@ -28,10 +28,9 @@ const ImpersonationBanner: React.FC = () => {
       if (result.success) {
         toast.success('Returned to admin view', { id: toastId });
 
-        // Redirect back to admin panel
+        // Redirect back to admin panel with full reload
         setTimeout(() => {
-          navigate('/admin/users');
-          window.location.reload();
+          window.location.href = '/admin/users';
         }, 500);
       } else {
         toast.error('Failed to stop impersonation', { id: toastId });

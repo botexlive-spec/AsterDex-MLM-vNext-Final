@@ -68,19 +68,39 @@ export const impersonateUser = async (userId: string, reason?: string): Promise<
     });
 
     if (result.token) {
-      // Store impersonation data in localStorage
-      const impersonationData = {
-        token: result.token,
-        adminId: result.impersonatedBy,
-        targetUserId: result.user.id,
-        targetUserEmail: result.user.email,
-        timestamp: new Date().toISOString(),
-        expiresIn: result.expiresIn,
-      };
+      // Save current admin auth BEFORE overwriting
+      const currentToken = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+      const currentUserStr = localStorage.getItem('user') || sessionStorage.getItem('user');
 
-      localStorage.setItem('impersonation', JSON.stringify(impersonationData));
+      if (currentToken && currentUserStr) {
+        const currentUser = JSON.parse(currentUserStr);
 
-      return { success: true, token: result.token };
+        // Store impersonation data with actual admin user
+        const impersonationData = {
+          isImpersonating: true,
+          actualUser: currentUser,
+          actualToken: currentToken,
+          targetUserId: result.user.id,
+          targetUserEmail: result.user.email,
+          timestamp: new Date().toISOString(),
+          expiresIn: result.expiresIn,
+        };
+
+        localStorage.setItem('impersonation', JSON.stringify(impersonationData));
+
+        // Replace auth with impersonation token and user
+        localStorage.setItem('auth_token', result.token);
+        localStorage.setItem('user', JSON.stringify(result.user));
+
+        console.log('✅ Impersonation setup complete', {
+          impersonating: result.user.email,
+          actualAdmin: currentUser.email
+        });
+
+        return { success: true, token: result.token };
+      } else {
+        return { success: false, error: 'No admin auth found to save' };
+      }
     }
 
     return { success: false, error: 'No token received' };
@@ -101,10 +121,22 @@ export const stopImpersonation = async (): Promise<{ success: boolean }> => {
       const data = JSON.parse(impersonationData);
 
       // Call backend to stop impersonation
-      await apiRequest('/api/impersonate/stop', {
-        method: 'POST',
-        body: JSON.stringify({ userId: data.targetUserId }),
-      });
+      try {
+        await apiRequest('/api/impersonate/stop', {
+          method: 'POST',
+          body: JSON.stringify({ userId: data.targetUserId }),
+        });
+      } catch (apiError) {
+        console.warn('Failed to notify backend about impersonation stop:', apiError);
+      }
+
+      // Restore admin auth
+      if (data.actualToken && data.actualUser) {
+        localStorage.setItem('auth_token', data.actualToken);
+        localStorage.setItem('user', JSON.stringify(data.actualUser));
+
+        console.log('✅ Admin auth restored', { admin: data.actualUser.email });
+      }
     }
 
     // Clear impersonation data
