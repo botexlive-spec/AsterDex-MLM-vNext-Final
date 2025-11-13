@@ -20,7 +20,7 @@ export const apiClient: AxiosInstance = axios.create({
 // Request interceptor - Add auth token to all requests
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -42,7 +42,7 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       // Don't auto-logout on first 401 - might be a temporary issue
-      const refreshToken = localStorage.getItem('refreshToken');
+      const refreshToken = localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token');
 
       // Only try to refresh if we have a refresh token
       if (refreshToken) {
@@ -53,7 +53,7 @@ apiClient.interceptors.response.use(
           });
 
           const { token } = response.data;
-          localStorage.setItem('token', token);
+          localStorage.setItem('auth_token', token);
 
           // Retry original request with new token
           if (originalRequest.headers) {
@@ -119,7 +119,7 @@ export const adminAPI = axios.create({
 // Apply same interceptors to user API
 userAPI.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -146,7 +146,7 @@ userAPI.interceptors.response.use(
 // Apply same interceptors to admin API
 adminAPI.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
