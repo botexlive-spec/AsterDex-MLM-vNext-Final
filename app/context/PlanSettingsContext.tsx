@@ -43,14 +43,17 @@ export function PlanSettingsProvider({ children }: { children: ReactNode }) {
   const fetchSettings = async () => {
     try {
       setIsLoading(true);
+      // Public endpoint - no auth required
       const res = await api.get('/plan-settings/active-plans/summary');
 
       if (res.data?.active_plans) {
         setSettings(res.data.active_plans);
+        console.log('✅ Plan settings loaded:', res.data.active_plans);
       }
-    } catch (error) {
-      console.error('❌ Error fetching plan settings:', error);
-      // Keep default settings on error
+    } catch (error: any) {
+      console.error('❌ Error fetching plan settings:', error.message || error);
+      // Keep default settings on error - all plans enabled by default
+      console.log('⚠️  Using default plan settings (all enabled)');
     } finally {
       setIsLoading(false);
     }
@@ -85,7 +88,14 @@ export function PlanSettingsProvider({ children }: { children: ReactNode }) {
 export function usePlanSettings() {
   const context = useContext(PlanSettingsContext);
   if (context === undefined) {
-    throw new Error('usePlanSettings must be used within a PlanSettingsProvider');
+    // Return default values instead of throwing error for better UX
+    console.warn('usePlanSettings called outside of provider, using defaults');
+    return {
+      settings: defaultSettings,
+      isLoading: false,
+      isPlanActive: () => true,
+      refreshSettings: async () => {},
+    };
   }
   return context;
 }
