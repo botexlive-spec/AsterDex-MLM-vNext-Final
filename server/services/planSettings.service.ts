@@ -150,10 +150,116 @@ export async function updatePlanSetting(
 }
 
 /**
- * Toggle plan active status
+ * Validate plan activation dependencies
+ */
+export async function validatePlanActivation(
+  feature_key: string,
+  is_active: boolean
+): Promise<{ valid: boolean; message?: string }> {
+  try {
+    // If deactivating, check if other plans depend on this one
+    if (!is_active) {
+      const dependentPlans = await getPlansDependentOn(feature_key);
+      if (dependentPlans.length > 0) {
+        const activeDependents = dependentPlans.filter(p => p.is_active);
+        if (activeDependents.length > 0) {
+          const planNames = activeDependents.map(p => p.feature_name).join(', ');
+          return {
+            valid: false,
+            message: `Cannot deactivate ${feature_key}. The following active plans depend on it: ${planNames}`
+          };
+        }
+      }
+    }
+
+    // If activating, check if required dependencies are active
+    if (is_active) {
+      const dependencies = getPlanDependencies(feature_key);
+      if (dependencies.length > 0) {
+        for (const dep of dependencies) {
+          const isActive = await isPlanActive(dep);
+          if (!isActive) {
+            const depSetting = await getPlanSetting(dep);
+            return {
+              valid: false,
+              message: `Cannot activate ${feature_key}. Required dependency '${depSetting?.feature_name || dep}' must be active first.`
+            };
+          }
+        }
+      }
+    }
+
+    return { valid: true };
+  } catch (error) {
+    console.error('Error validating plan activation:', error);
+    return { valid: false, message: 'Validation error occurred' };
+  }
+}
+
+/**
+ * Get plan dependencies
+ * Returns array of feature_keys that must be active for this plan to work
+ */
+function getPlanDependencies(feature_key: string): string[] {
+  const dependencies: Record<string, string[]> = {
+    // Generation Plan requires Investment Plan
+    'generation_plan': ['investment_plan'],
+    'level_income_30': ['investment_plan'],
+
+    // Booster Income requires Investment Plan
+    'booster_income': ['investment_plan'],
+
+    // Principal Withdrawal requires Investment Plan
+    'principal_withdrawal': ['investment_plan'],
+
+    // Binary Plan can work with Investment Plan
+    'binary_plan': [],
+    'binary_matching': [],
+
+    // Monthly Rewards can work independently
+    'monthly_rewards': [],
+
+    // Robot Plan can work independently
+    'robot_plan': [],
+
+    // Investment Plan is the foundation - no dependencies
+    'investment_plan': []
+  };
+
+  return dependencies[feature_key] || [];
+}
+
+/**
+ * Get plans that depend on a specific plan
+ */
+async function getPlansDependentOn(feature_key: string): Promise<PlanSetting[]> {
+  try {
+    const allSettings = await getAllPlanSettings();
+
+    // Find all plans that list this feature_key as a dependency
+    const dependentPlans = allSettings.filter(setting => {
+      const deps = getPlanDependencies(setting.feature_key);
+      return deps.includes(feature_key);
+    });
+
+    return dependentPlans;
+  } catch (error) {
+    console.error('Error getting dependent plans:', error);
+    return [];
+  }
+}
+
+/**
+ * Toggle plan active status with validation
  */
 export async function togglePlan(feature_key: string, is_active: boolean): Promise<void> {
   try {
+    // Validate activation dependencies
+    const validation = await validatePlanActivation(feature_key, is_active);
+    if (!validation.valid) {
+      throw new Error(validation.message || 'Plan activation validation failed');
+    }
+
     await query(
       'UPDATE plan_settings SET is_active = ?, updated_at = NOW() WHERE feature_key = ?',
       [is_active, feature_key]

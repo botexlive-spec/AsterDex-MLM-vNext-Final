@@ -85,10 +85,20 @@ export default function PlanSettings() {
         );
 
         console.log(`✅ ${featureKey} ${newStatus ? 'activated' : 'deactivated'}`);
+
+        // Show success message
+        const setting = settings.find(s => s.feature_key === featureKey);
+        const message = newStatus
+          ? `✅ ${setting?.feature_name || featureKey} has been activated`
+          : `⚠️ ${setting?.feature_name || featureKey} has been deactivated`;
+        alert(message);
       }
     } catch (error: any) {
       console.error('Error toggling plan:', error);
-      alert(`Failed to toggle plan: ${error.response?.data?.error || error.message}`);
+      const errorMessage = error.response?.data?.error || error.message || 'Unknown error';
+
+      // Show detailed error message with validation failures
+      alert(`❌ Failed to toggle plan:\n\n${errorMessage}`);
     } finally {
       setSaving(null);
     }
@@ -228,17 +238,63 @@ export default function PlanSettings() {
         })}
       </div>
 
-      {/* Info Section */}
+      {/* Info Section - Plan Dependencies */}
       <div className="mt-8 card p-6">
-        <h3 className="text-lg font-semibold text-white mb-3">Feature Descriptions</h3>
-        <div className="space-y-2 text-sm text-text-secondary">
-          <p><strong className="text-white">Binary Plan:</strong> Binary tree structure and matching bonuses</p>
-          <p><strong className="text-white">Generation Plan:</strong> Level income and ROI-on-ROI distribution (30 levels)</p>
-          <p><strong className="text-white">Robot Plan:</strong> Automated trading/robot subscription features</p>
-          <p><strong className="text-white">Investment Plan:</strong> Package purchases and ROI distribution</p>
-          <p><strong className="text-white">Booster Income:</strong> 30-day booster challenges for extra ROI</p>
-          <p><strong className="text-white">Principal Withdrawal:</strong> Ability to withdraw principal investment</p>
-          <p><strong className="text-white">Monthly Rewards:</strong> 3-leg business volume rewards (40:40:20 ratio)</p>
+        <h3 className="text-lg font-semibold text-white mb-4">📋 Plan Dependencies & Activation Logic</h3>
+
+        <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-6">
+          <div className="flex items-start space-x-3">
+            <div className="text-2xl">ℹ️</div>
+            <div>
+              <div className="font-semibold text-blue-400 mb-1">How Plan Dependencies Work</div>
+              <p className="text-sm text-text-secondary">
+                Some plans require other plans to be active first. You cannot activate a dependent plan
+                until its required dependency is active. Similarly, you cannot deactivate a plan that
+                other active plans depend on.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Foundation Plans - No Dependencies */}
+          <div className="bg-green-500/5 border border-green-500/20 rounded-lg p-4">
+            <h4 className="font-semibold text-green-400 mb-3 flex items-center">
+              <span className="mr-2">🟢</span> Independent Plans
+            </h4>
+            <div className="space-y-2 text-sm text-text-secondary">
+              <p><strong className="text-white">Investment Plan:</strong> Foundation plan - no dependencies</p>
+              <p><strong className="text-white">Binary Plan:</strong> Can work independently</p>
+              <p><strong className="text-white">Monthly Rewards:</strong> Based on team volume only</p>
+              <p><strong className="text-white">Robot Plan:</strong> Optional, standalone feature</p>
+            </div>
+          </div>
+
+          {/* Dependent Plans */}
+          <div className="bg-orange-500/5 border border-orange-500/20 rounded-lg p-4">
+            <h4 className="font-semibold text-orange-400 mb-3 flex items-center">
+              <span className="mr-2">🔗</span> Plans with Dependencies
+            </h4>
+            <div className="space-y-2 text-sm text-text-secondary">
+              <p><strong className="text-white">Generation Plan:</strong> Requires Investment Plan ✅</p>
+              <p><strong className="text-white">Level Income (30):</strong> Requires Investment Plan ✅</p>
+              <p><strong className="text-white">Booster Income:</strong> Requires Investment Plan ✅</p>
+              <p><strong className="text-white">Principal Withdrawal:</strong> Requires Investment Plan ✅</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 pt-6 border-t border-surface-light">
+          <h4 className="font-semibold text-white mb-3">📖 Feature Descriptions</h4>
+          <div className="space-y-2 text-sm text-text-secondary">
+            <p><strong className="text-white">Binary Plan:</strong> Binary tree structure and matching bonuses</p>
+            <p><strong className="text-white">Generation Plan:</strong> Level income and ROI-on-ROI distribution (30 levels)</p>
+            <p><strong className="text-white">Robot Plan:</strong> Automated trading/robot subscription features</p>
+            <p><strong className="text-white">Investment Plan:</strong> Package purchases and ROI distribution</p>
+            <p><strong className="text-white">Booster Income:</strong> 30-day booster challenges for extra ROI</p>
+            <p><strong className="text-white">Principal Withdrawal:</strong> Ability to withdraw principal investment</p>
+            <p><strong className="text-white">Monthly Rewards:</strong> 3-leg business volume rewards (40:40:20 ratio)</p>
+          </div>
         </div>
       </div>
     </div>
