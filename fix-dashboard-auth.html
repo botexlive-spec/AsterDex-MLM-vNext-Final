@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Fix Dashboard Authentication</title>
+  <meta http-equiv="refresh" content="0;url=http://localhost:5173/auth/login">
+  <script>
+    // Clear all authentication data
+    localStorage.clear();
+    sessionStorage.clear();
+
+    // Redirect to login
+    alert('✅ Authentication cleared! You will be redirected to login page.\n\nPlease log in fresh to fix the dashboard issue.');
+    window.location.href = 'http://localhost:5173/auth/login';
+  </script>
+</head>
+<body>
+  <p>Clearing authentication and redirecting...</p>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard API Test</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #1e293b; color: #fff; }
+    .container { max-width: 800px; margin: 0 auto; }
+    button { padding: 10px 20px; margin: 5px; background: #00C7D1; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #00a5b0; }
+    .result { margin-top: 20px; padding: 15px; background: #334155; border-radius: 5px; white-space: pre-wrap; }
+    input { padding: 10px; width: 300px; margin: 5px; border-radius: 5px; border: 1px solid #475569; }
+    .error { color: #ef4444; }
+    .success { color: #10b981; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 Dashboard API Test</h1>
+
+    <h3>Step 1: Login</h3>
+    <input type="email" id="email" placeholder="Email" value="user@finaster.com">
+    <input type="password" id="password" placeholder="Password" value="password123">
+    <br>
+    <button onclick="testLogin()">Test Login</button>
+
+    <h3>Step 2: Test Dashboard API</h3>
+    <button onclick="testDashboard()">Test Dashboard API</button>
+    <button onclick="clearAuth()">Clear Auth & Reload</button>
+
+    <div class="result" id="result">Results will appear here...</div>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:3001';
+    let authToken = localStorage.getItem('auth_token');
+
+    async function testLogin() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const result = document.getElementById('result');
+
+      result.innerHTML = '⏳ Testing login...';
+
+      try {
+        const response = await fetch(`${API_URL}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          authToken = data.token;
+          localStorage.setItem('auth_token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+
+          result.innerHTML = `<div class="success">✅ Login Successful!</div>\n\n` +
+            `User: ${data.user.email}\n` +
+            `Role: ${data.user.role}\n` +
+            `Token: ${data.token.substring(0, 50)}...\n\n` +
+            `Token saved to localStorage. Now test Dashboard API.`;
+        } else {
+          result.innerHTML = `<div class="error">❌ Login Failed</div>\n\n${JSON.stringify(data, null, 2)}`;
+        }
+      } catch (error) {
+        result.innerHTML = `<div class="error">❌ Error:</div>\n\n${error.message}`;
+      }
+    }
+
+    async function testDashboard() {
+      const result = document.getElementById('result');
+
+      if (!authToken) {
+        result.innerHTML = '<div class="error">❌ No auth token found. Please login first.</div>';
+        return;
+      }
+
+      result.innerHTML = '⏳ Testing dashboard API...';
+
+      try {
+        const response = await fetch(`${API_URL}/api/dashboard`, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          result.innerHTML = `<div class="success">✅ Dashboard API Works!</div>\n\n` +
+            `User: ${data.user.email}\n` +
+            `Wallet Balance: $${data.user.wallet_balance}\n` +
+            `Total Earnings: $${data.user.total_earnings}\n` +
+            `Current Rank: ${data.user.current_rank}\n\n` +
+            `Statistics:\n` +
+            `- Today's Earnings: $${data.statistics.today_earnings}\n` +
+            `- Direct Referrals: ${data.statistics.direct_referrals}\n` +
+            `- Total Team: ${data.statistics.total_team}\n\n` +
+            `Full Response:\n${JSON.stringify(data, null, 2)}`;
+        } else {
+          result.innerHTML = `<div class="error">❌ Dashboard API Failed</div>\n\n` +
+            `Status: ${response.status}\n` +
+            `Error: ${JSON.stringify(data, null, 2)}\n\n` +
+            `This usually means JWT token is invalid. Try logging in again.`;
+        }
+      } catch (error) {
+        result.innerHTML = `<div class="error">❌ Error:</div>\n\n${error.message}`;
+      }
+    }
+
+    function clearAuth() {
+      localStorage.clear();
+      sessionStorage.clear();
+      authToken = null;
+      alert('Authentication cleared! Page will reload.');
+      window.location.reload();
+    }
+
+    // Check for existing token on load
+    if (authToken) {
+      document.getElementById('result').innerHTML =
+        `<div class="success">✓ Found existing token in localStorage</div>\n` +
+        `Token: ${authToken.substring(0, 50)}...\n\n` +
+        `Click "Test Dashboard API" to verify it works.`;
+    }
+  </script>
+</body>
+</html>
