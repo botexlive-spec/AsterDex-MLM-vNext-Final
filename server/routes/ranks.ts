@@ -337,31 +337,45 @@ router.get('/qualification/:userId/:rankId', async (req: Request, res: Response)
 
 /**
  * GET /api/ranks/achievements - Get all rank achievements
+ */
+router.get('/achievements', async (req: Request, res: Response) => {
+  try {
+    const [rows] = await pool.query<RowDataPacket[]>(
+      `SELECT
+        rdh.*,
+        u.email as user_email,
+        u.full_name as user_meta
+      FROM rank_distribution_history rdh
+      LEFT JOIN users u ON rdh.userId = u.id
+      ORDER BY rdh.createdAt DESC
+      LIMIT 100`
+    );
+
+    res.json({ data: rows });
+  } catch (error: any) {
+    console.error('Error fetching rank achievements:', error);
+    res.status(500).json({ error: 'Failed to fetch rank achievements' });
+  }
+});
+
+/**
  * GET /api/ranks/achievements/:userId - Get specific user's rank achievements
  */
 router.get('/achievements/:userId', async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
 
-    let query = `
-      SELECT
+    const [rows] = await pool.query<RowDataPacket[]>(
+      `SELECT
         rdh.*,
         u.email as user_email,
         u.full_name as user_meta
       FROM rank_distribution_history rdh
       LEFT JOIN users u ON rdh.userId = u.id
-    `;
-
-    const params: any[] = [];
-
-    if (userId) {
-      query += ' WHERE rdh.userId = ?';
-      params.push(userId);
-    }
-
-    query += ' ORDER BY rdh.createdAt DESC';
-
-    const [rows] = await pool.query<RowDataPacket[]>(query, params);
+      WHERE rdh.userId = ?
+      ORDER BY rdh.createdAt DESC`,
+      [userId]
+    );
 
     res.json({ data: rows });
   } catch (error: any) {
