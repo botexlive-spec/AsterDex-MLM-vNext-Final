@@ -30,7 +30,8 @@ export default function PlanSettings() {
 
     try {
       setLoading(true);
-      const res = await api.get('/plan-settings/all', token);
+      // Token is automatically added by axios interceptor
+      const res = await api.get('/plan-settings/all');
 
       if (res.data?.settings) {
         setSettings(res.data.settings);
@@ -50,10 +51,10 @@ export default function PlanSettings() {
 
       const newStatus = !currentStatus;
 
+      // Token is automatically added by axios interceptor
       const res = await api.post(
         `/plan-settings/${featureKey}/toggle`,
-        { is_active: newStatus },
-        token
+        { is_active: newStatus }
       );
 
       if (res.data?.success) {
