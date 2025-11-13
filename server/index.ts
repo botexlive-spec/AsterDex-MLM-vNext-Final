@@ -49,6 +49,12 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Request logger middleware
+app.use((req, res, next) => {
+  console.log(`📨 [Request] ${req.method} ${req.path}`);
+  next();
+});
+
 // Request logging
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
