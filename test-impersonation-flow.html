@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Impersonation Flow Test</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #1e293b; color: #fff; }
+    .container { max-width: 1000px; margin: 0 auto; }
+    button { padding: 10px 20px; margin: 5px; background: #00C7D1; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #00a5b0; }
+    .result { margin-top: 20px; padding: 15px; background: #334155; border-radius: 5px; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
+    input { padding: 10px; width: 300px; margin: 5px; border-radius: 5px; border: 1px solid #475569; }
+    .error { color: #ef4444; }
+    .success { color: #10b981; }
+    .warning { color: #f59e0b; }
+    .step { margin: 20px 0; padding: 15px; background: #1e293b; border-left: 4px solid #00C7D1; }
+    h3 { color: #00C7D1; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 Complete Impersonation Flow Test</h1>
+    <p>This tests the ENTIRE flow from admin login → impersonate → user dashboard</p>
+
+    <div class="step">
+      <h3>Step 1: Admin Login</h3>
+      <input type="email" id="adminEmail" placeholder="Admin Email" value="admin@finaster.com">
+      <input type="password" id="adminPassword" placeholder="Admin Password" value="password123">
+      <br>
+      <button onclick="testAdminLogin()">1. Login as Admin</button>
+    </div>
+
+    <div class="step">
+      <h3>Step 2: Get User List</h3>
+      <button onclick="getUserList()">2. Get User List</button>
+    </div>
+
+    <div class="step">
+      <h3>Step 3: Impersonate User</h3>
+      <input type="text" id="targetUserId" placeholder="User ID" value="">
+      <br>
+      <button onclick="impersonateUser()">3. Impersonate User</button>
+    </div>
+
+    <div class="step">
+      <h3>Step 4: Check Auth Context</h3>
+      <button onclick="checkAuthContext()">4. Check LocalStorage Auth</button>
+    </div>
+
+    <div class="step">
+      <h3>Step 5: Test Dashboard API</h3>
+      <button onclick="testDashboardAPI()">5. Test Dashboard API</button>
+    </div>
+
+    <div class="step">
+      <h3>Step 6: Navigate to Dashboard</h3>
+      <button onclick="navigateToDashboard()">6. Open Dashboard in New Tab</button>
+    </div>
+
+    <div class="result" id="result">Test results will appear here...</div>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:3001';
+    let adminToken = null;
+    let impersonationToken = null;
+    let result = document.getElementById('result');
+
+    function log(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString();
+      const className = type;
+      result.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>\n`;
+      result.scrollTop = result.scrollHeight;
+    }
+
+    async function testAdminLogin() {
+      const email = document.getElementById('adminEmail').value;
+      const password = document.getElementById('adminPassword').value;
+
+      log('⏳ Step 1: Logging in as admin...', 'info');
+
+      try {
+        const response = await fetch(`${API_URL}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          adminToken = data.token;
+          localStorage.setItem('auth_token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+
+          log(`✅ Admin login successful!`, 'success');
+          log(`   Email: ${data.user.email}`, 'success');
+          log(`   Role: ${data.user.role}`, 'success');
+          log(`   Token: ${data.token.substring(0, 40)}...`, 'success');
+        } else {
+          log(`❌ Admin login failed: ${JSON.stringify(data)}`, 'error');
+        }
+      } catch (error) {
+        log(`❌ Error: ${error.message}`, 'error');
+      }
+    }
+
+    async function getUserList() {
+      if (!adminToken) {
+        log('❌ Please login as admin first!', 'error');
+        return;
+      }
+
+      log('⏳ Step 2: Getting user list...', 'info');
+
+      try {
+        const response = await fetch(`${API_URL}/api/admin/users?limit=5`, {
+          headers: {
+            'Authorization': `Bearer ${adminToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.users) {
+          log(`✅ Found ${data.users.length} users:`, 'success');
+          data.users.forEach((user, idx) => {
+            log(`   ${idx + 1}. ${user.email} (ID: ${user.id})`, 'success');
+            if (idx === 0) {
+              document.getElementById('targetUserId').value = user.id;
+              log(`   👆 First user set as target`, 'success');
+            }
+          });
+        } else {
+          log(`❌ Failed to get users: ${JSON.stringify(data)}`, 'error');
+        }
+      } catch (error) {
+        log(`❌ Error: ${error.message}`, 'error');
+      }
+    }
+
+    async function impersonateUser() {
+      if (!adminToken) {
+        log('❌ Please login as admin first!', 'error');
+        return;
+      }
+
+      const userId = document.getElementById('targetUserId').value;
+      if (!userId) {
+        log('❌ Please provide a user ID!', 'error');
+        return;
+      }
+
+      log(`⏳ Step 3: Impersonating user ${userId}...`, 'info');
+
+      try {
+        const response = await fetch(`${API_URL}/api/impersonate/${userId}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${adminToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ reason: 'Testing impersonation flow' })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.token) {
+          impersonationToken = data.token;
+
+          // Save admin auth
+          const impersonationData = {
+            isImpersonating: true,
+            actualUser: JSON.parse(localStorage.getItem('user')),
+            actualToken: adminToken,
+            targetUserId: data.user.id,
+            targetUserEmail: data.user.email,
+            timestamp: new Date().toISOString()
+          };
+
+          // Replace with user auth
+          localStorage.setItem('impersonation', JSON.stringify(impersonationData));
+          localStorage.setItem('auth_token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+
+          log(`✅ Impersonation successful!`, 'success');
+          log(`   Target: ${data.user.email}`, 'success');
+          log(`   Role: ${data.user.role}`, 'success');
+          log(`   Token: ${data.token.substring(0, 40)}...`, 'success');
+          log(`   Impersonation data saved to localStorage`, 'success');
+        } else {
+          log(`❌ Impersonation failed: ${JSON.stringify(data)}`, 'error');
+        }
+      } catch (error) {
+        log(`❌ Error: ${error.message}`, 'error');
+      }
+    }
+
+    async function checkAuthContext() {
+      log('⏳ Step 4: Checking localStorage auth context...', 'info');
+
+      const authToken = localStorage.getItem('auth_token');
+      const userStr = localStorage.getItem('user');
+      const impersonationStr = localStorage.getItem('impersonation');
+
+      if (authToken) {
+        log(`✅ auth_token: ${authToken.substring(0, 40)}...`, 'success');
+      } else {
+        log(`❌ No auth_token found!`, 'error');
+      }
+
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        log(`✅ user: ${user.email} (${user.role})`, 'success');
+      } else {
+        log(`❌ No user data found!`, 'error');
+      }
+
+      if (impersonationStr) {
+        const impData = JSON.parse(impersonationStr);
+        log(`✅ impersonation data found:`, 'success');
+        log(`   isImpersonating: ${impData.isImpersonating}`, 'success');
+        log(`   actualUser: ${impData.actualUser?.email}`, 'success');
+        log(`   targetUser: ${impData.targetUserEmail}`, 'success');
+      } else {
+        log(`⚠️ No impersonation data found`, 'warning');
+      }
+    }
+
+    async function testDashboardAPI() {
+      const token = localStorage.getItem('auth_token');
+
+      if (!token) {
+        log('❌ No auth token! Please complete previous steps first.', 'error');
+        return;
+      }
+
+      log('⏳ Step 5: Testing dashboard API...', 'info');
+
+      try {
+        const response = await fetch(`${API_URL}/api/dashboard`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          log(`✅ Dashboard API works!`, 'success');
+          log(`   User: ${data.user.email}`, 'success');
+          log(`   Wallet: $${data.user.wallet_balance}`, 'success');
+          log(`   Earnings: $${data.user.total_earnings}`, 'success');
+          log(`   Team: ${data.statistics.total_team} members`, 'success');
+        } else {
+          log(`❌ Dashboard API failed: ${JSON.stringify(data)}`, 'error');
+        }
+      } catch (error) {
+        log(`❌ Error: ${error.message}`, 'error');
+      }
+    }
+
+    function navigateToDashboard() {
+      const token = localStorage.getItem('auth_token');
+
+      if (!token) {
+        log('❌ No auth token! Please complete previous steps first.', 'error');
+        return;
+      }
+
+      log('⏳ Step 6: Opening dashboard in new tab...', 'info');
+      log('✅ Dashboard will open. You should see:', 'success');
+      log('   1. Orange impersonation banner at top', 'success');
+      log('   2. User sidebar (Home, Dashboard, Packages...)', 'success');
+      log('   3. User dashboard with stats and charts', 'success');
+
+      window.open('http://localhost:5173/dashboard', '_blank');
+    }
+
+    // Check initial state on load
+    window.onload = () => {
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        log('ℹ️ Found existing auth token', 'info');
+        adminToken = token;
+        checkAuthContext();
+      } else {
+        log('ℹ️ No existing auth. Start with Step 1.', 'info');
+      }
+    };
+  </script>
+</body>
+</html>
