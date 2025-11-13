@@ -5,7 +5,7 @@
 
 import express, { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import pool from '../db';
+import { pool } from '../db';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 
 const router = express.Router();
