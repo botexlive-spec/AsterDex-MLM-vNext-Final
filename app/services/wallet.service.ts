@@ -536,20 +536,28 @@ export const transferFunds = async (request: TransferRequest): Promise<{ transac
  */
 export const getTransactionHistory = async (limit: number = 50, offset: number = 0): Promise<Transaction[]> => {
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError) throw authError;
-    if (!user) throw new Error('User not authenticated');
+    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+    if (!token) {
+      throw new Error('User not authenticated');
+    }
 
-    const { data: transactions, error: txError } = await supabase
-      .from('mlm_transactions')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+    const response = await fetch(`http://localhost:3001/api/transactions?limit=${limit}&offset=${offset}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
 
-    if (txError) throw txError;
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to fetch transactions');
+    }
 
-    return (transactions || []) as Transaction[];
+    const data = await response.json();
+    console.log(`✅ Loaded ${data.transactions?.length || 0} transactions`);
+
+    return (data.transactions || []) as Transaction[];
   } catch (error: any) {
     console.error('Get transaction history error:', error);
     throw new Error(error.message || 'Failed to fetch transaction history');

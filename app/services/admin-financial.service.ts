@@ -103,10 +103,17 @@ export const getAllDeposits = async (filters?: {
   try {
     await requireAdmin();
 
-    // TODO: Create backend endpoint for deposits
-    // For now, return empty array as deposits table doesn't exist
-    console.warn('getAllDeposits not implemented - deposits table does not exist');
-    return [];
+    const params = new URLSearchParams();
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.date_from) params.append('date_from', filters.date_from);
+    if (filters?.date_to) params.append('date_to', filters.date_to);
+
+    const response = await apiRequest<{ success: boolean; data: Deposit[] }>(
+      `/api/admin/financial/deposits?${params.toString()}`
+    );
+
+    return response.data || [];
   } catch (error: any) {
     console.error('Error getting deposits:', error);
     return [];
@@ -125,10 +132,17 @@ export const getAllWithdrawals = async (filters?: {
   try {
     await requireAdmin();
 
-    // TODO: Create backend endpoint for withdrawals
-    // For now, return empty array as withdrawals table doesn't exist
-    console.warn('getAllWithdrawals not implemented - withdrawals table does not exist');
-    return [];
+    const params = new URLSearchParams();
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.date_from) params.append('date_from', filters.date_from);
+    if (filters?.date_to) params.append('date_to', filters.date_to);
+
+    const response = await apiRequest<{ success: boolean; data: Withdrawal[] }>(
+      `/api/admin/financial/withdrawals?${params.toString()}`
+    );
+
+    return response.data || [];
   } catch (error: any) {
     console.error('Error getting withdrawals:', error);
     return [];
@@ -145,9 +159,15 @@ export const approveDeposit = async (
   try {
     await requireAdmin();
 
-    // TODO: Create backend endpoint for deposit approval
-    console.warn('approveDeposit not implemented yet');
-    return { success: false, message: 'Deposits feature not implemented' };
+    const response = await apiRequest<{ success: boolean; message: string }>(
+      `/api/admin/financial/deposits/${depositId}/approve`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ notes }),
+      }
+    );
+
+    return response;
   } catch (error: any) {
     console.error('Error approving deposit:', error);
     throw error;
@@ -164,9 +184,15 @@ export const rejectDeposit = async (
   try {
     await requireAdmin();
 
-    // TODO: Create backend endpoint for deposit rejection
-    console.warn('rejectDeposit not implemented yet');
-    return { success: false, message: 'Deposits feature not implemented' };
+    const response = await apiRequest<{ success: boolean; message: string }>(
+      `/api/admin/financial/deposits/${depositId}/reject`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ reason }),
+      }
+    );
+
+    return response;
   } catch (error: any) {
     console.error('Error rejecting deposit:', error);
     throw error;
@@ -183,9 +209,15 @@ export const approveWithdrawal = async (
   try {
     await requireAdmin();
 
-    // TODO: Create backend endpoint for withdrawal approval
-    console.warn('approveWithdrawal not implemented yet');
-    return { success: false, message: 'Withdrawals feature not implemented' };
+    const response = await apiRequest<{ success: boolean; message: string }>(
+      `/api/admin/withdrawals/approve/${withdrawalId}`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ notes }),
+      }
+    );
+
+    return response;
   } catch (error: any) {
     console.error('Error approving withdrawal:', error);
     throw error;
@@ -202,9 +234,15 @@ export const rejectWithdrawal = async (
   try {
     await requireAdmin();
 
-    // TODO: Create backend endpoint for withdrawal rejection
-    console.warn('rejectWithdrawal not implemented yet');
-    return { success: false, message: 'Withdrawals feature not implemented' };
+    const response = await apiRequest<{ success: boolean; message: string }>(
+      `/api/admin/withdrawals/reject/${withdrawalId}`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ reason }),
+      }
+    );
+
+    return response;
   } catch (error: any) {
     console.error('Error rejecting withdrawal:', error);
     throw error;
@@ -218,16 +256,20 @@ export const getFinancialStats = async (): Promise<FinancialStats> => {
   try {
     await requireAdmin();
 
-    const data = await apiRequest<any>('/api/admin/analytics/overview');
+    const response = await apiRequest<{ success: boolean; data: any }>(
+      '/api/admin/financial/stats'
+    );
+
+    const data = response.data || {};
 
     return {
-      total_deposits: 0, // TODO: Calculate from deposits table when it exists
-      total_withdrawals: 0,
-      pending_deposits: 0,
+      total_deposits: data.total_deposits || 0,
+      total_withdrawals: data.total_withdrawals || 0,
+      pending_deposits: data.pending_deposits || 0,
       pending_withdrawals: data.pending_withdrawals || 0,
-      total_deposits_amount: 0,
-      total_withdrawals_amount: data.total_withdrawals || 0,
-      pending_deposits_amount: 0,
+      total_deposits_amount: data.total_deposits_amount || 0,
+      total_withdrawals_amount: data.total_withdrawals_amount || 0,
+      pending_deposits_amount: data.pending_deposits_amount || 0,
       pending_withdrawals_amount: data.pending_withdrawals_amount || 0,
     };
   } catch (error: any) {
@@ -242,5 +284,51 @@ export const getFinancialStats = async (): Promise<FinancialStats> => {
       pending_deposits_amount: 0,
       pending_withdrawals_amount: 0,
     };
+  }
+};
+
+export interface Transaction {
+  id: string;
+  user_id: string;
+  user_email?: string;
+  user_name?: string;
+  transaction_type: string;
+  amount: number;
+  description?: string;
+  status: string;
+  reference_id?: string;
+  reference_type?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+/**
+ * Get all transactions with filters
+ */
+export const getAllTransactions = async (filters?: {
+  type?: string;
+  status?: string;
+  search?: string;
+  date_from?: string;
+  date_to?: string;
+}): Promise<Transaction[]> => {
+  try {
+    await requireAdmin();
+
+    const params = new URLSearchParams();
+    if (filters?.type) params.append('type', filters.type);
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.date_from) params.append('date_from', filters.date_from);
+    if (filters?.date_to) params.append('date_to', filters.date_to);
+
+    const response = await apiRequest<{ success: boolean; data: Transaction[] }>(
+      `/api/admin/financial/transactions?${params.toString()}`
+    );
+
+    return response.data || [];
+  } catch (error: any) {
+    console.error('Error getting transactions:', error);
+    return [];
   }
 };

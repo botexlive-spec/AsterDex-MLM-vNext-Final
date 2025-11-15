@@ -124,7 +124,7 @@ const EarningsNew: React.FC = () => {
         );
 
         // Fetch dashboard data and transaction history in parallel
-        const [dashboardData, transactions] = await Promise.race([
+        const [dashboardData, transactionResponse] = await Promise.race([
           Promise.all([
             getUserDashboard(user.id),
             getTransactionHistory(1000, 0) // Get last 1000 transactions
@@ -133,30 +133,56 @@ const EarningsNew: React.FC = () => {
         ]) as any[];
 
         console.log('✅ Dashboard data:', dashboardData);
-        console.log('✅ Transactions:', transactions?.length || 0);
+        console.log('✅ Transaction response:', transactionResponse);
+
+        // Extract transactions array from response object
+        const transactions = Array.isArray(transactionResponse)
+          ? transactionResponse
+          : (transactionResponse?.transactions || []);
+
+        console.log('✅ Transactions array:', transactions?.length || 0);
+
+        // Define which transaction types are actual earnings (exclude deposits, withdrawals, transfers)
+        const isEarningType = (txType: string): boolean => {
+          const earningTypes = [
+            'direct_commission',
+            'level_income',
+            'matching_bonus',
+            'binary_bonus',
+            'roi_income',
+            'roi_distribution',
+            'rank_reward',
+            'booster_income'
+          ];
+          return earningTypes.includes(txType);
+        };
 
         // Map transaction types to our display types
-        const mapTransactionType = (txType: string): 'direct' | 'level' | 'binary' | 'roi' | 'rank' | 'booster' => {
+        const mapTransactionType = (txType: string): 'direct' | 'level' | 'binary' | 'roi' | 'rank' | 'booster' | null => {
           if (txType === 'direct_commission') return 'direct';
           if (txType === 'level_income') return 'level';
           if (txType === 'matching_bonus' || txType === 'binary_bonus') return 'binary';
-          if (txType === 'roi_income') return 'roi';
+          if (txType === 'roi_income' || txType === 'roi_distribution') return 'roi';
           if (txType === 'rank_reward') return 'rank';
           if (txType === 'booster_income') return 'booster';
-          return 'roi'; // default
+          return null; // Not an earning type
         };
 
-        // Transform transactions to earnings records
-        const earningsRecords: EarningRecord[] = (transactions || []).map((tx: any) => ({
-          id: tx.id,
-          date: tx.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
-          type: mapTransactionType(tx.transaction_type),
-          description: tx.description || tx.transaction_type.replace('_', ' '),
-          amount: parseFloat(tx.amount) || 0,
-          fromUser: tx.from_user_email || undefined,
-          status: tx.status || 'completed',
-          level: tx.level || undefined
-        }));
+        // Transform transactions to earnings records - FILTER OUT non-earnings first
+        const earningsRecords: EarningRecord[] = (transactions || [])
+          .filter((tx: any) => isEarningType(tx.transaction_type)) // Only include actual earnings
+          .map((tx: any) => ({
+            id: tx.id,
+            date: tx.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+            type: mapTransactionType(tx.transaction_type) as 'direct' | 'level' | 'binary' | 'roi' | 'rank' | 'booster',
+            description: tx.description || tx.transaction_type.replace('_', ' '),
+            amount: Math.abs(parseFloat(tx.amount)) || 0, // Use absolute value for earnings
+            fromUser: tx.from_user_email || undefined,
+            status: tx.status || 'completed',
+            level: tx.level || undefined
+          }));
+
+        console.log(`✅ Filtered ${earningsRecords.length} earning transactions from ${transactions.length} total transactions`);
 
         setAllEarnings(earningsRecords);
 

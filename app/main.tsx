@@ -50,6 +50,7 @@ const KYC = lazy(() => import('./pages/user/KYCNew'));
 const Wallet = lazy(() => import('./pages/user/WalletSimple'));
 const Deposit = lazy(() => import('./pages/user/Deposit'));
 const WithdrawSimple = lazy(() => import('./pages/user/WithdrawSimple'));
+const Transfer = lazy(() => import('./pages/user/Transfer'));
 const Team = lazy(() => import('./pages/user/TeamNew'));
 const TeamReport = lazy(() => import('./pages/user/TeamReport'));
 const Referrals = lazy(() => import('./pages/user/ReferralsNew'));
@@ -62,12 +63,13 @@ const Earnings = lazy(() => import('./pages/user/EarningsNew'));
 const Genealogy = lazy(() => import('./pages/user/GenealogyNew'));
 const Support = lazy(() => import('./pages/user/Support'));
 const Logout = lazy(() => import('./pages/user/Logout'));
+const MyInvestments = lazy(() => import('./pages/user/MyInvestments'));
 
 // Admin Pages
 const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'));
 const UserManagement = lazy(() => import('./pages/admin/UserManagement'));
 const KYCManagement = lazy(() => import('./pages/admin/KYCManagement'));
-const PackageManagement = lazy(() => import('./pages/admin/PackageManagementComplete'));
+const PackageManagement = lazy(() => import('./pages/admin/PackageEditor'));
 const FinancialManagement = lazy(() => import('./pages/admin/FinancialManagement'));
 const CommissionManagement = lazy(() => import('./pages/admin/CommissionManagement'));
 const CommissionManagementPlaceholder = lazy(() => import('./pages/admin/CommissionManagementPlaceholder'));
@@ -85,6 +87,7 @@ const WithdrawalApproval = lazy(() => import('./pages/admin/WithdrawalApproval')
 const PlanSettings = lazy(() => import('./pages/admin/PlanSettings'));
 const ReportsEnhanced = lazy(() => import('./pages/admin/ReportsEnhanced'));
 const StabilityDashboard = lazy(() => import('./pages/admin/StabilityDashboard'));
+const InvestmentReports = lazy(() => import('./pages/admin/InvestmentReports'));
 
 async function loadRuntimeConfig() {
   return new Promise<void>((resolve) => {
@@ -240,6 +243,7 @@ const router = createBrowserRouter([
           { index: true, element: <Wallet /> },
           { path: 'deposit', element: <Deposit /> },
           { path: 'withdraw', element: <WithdrawSimple /> },
+          { path: 'transfer', element: <Transfer /> },
         ],
       },
       {
@@ -363,6 +367,17 @@ const router = createBrowserRouter([
           { index: true, element: <Support /> },
         ],
       },
+      {
+        path: 'my-investments',
+        element: (
+          <ProtectedRoute allowedRoles={[UserRole.USER, 'user']}>
+            <UserLayoutComponent />
+          </ProtectedRoute>
+        ),
+        children: [
+          { index: true, element: <MyInvestments /> },
+        ],
+      },
       // Admin Routes (with Admin Sidebar Navigation)
       {
         path: 'admin',
@@ -395,6 +410,7 @@ const router = createBrowserRouter([
           { path: 'configuration', element: <SystemConfiguration /> },
           { path: 'plan-settings', element: <PlanSettings /> },
           { path: 'reports-enhanced', element: <ReportsEnhanced /> },
+          { path: 'investment-reports', element: <InvestmentReports /> },
           { path: 'debug', element: <StabilityDashboard /> },
         ],
       },

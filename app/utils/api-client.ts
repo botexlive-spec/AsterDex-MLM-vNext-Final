@@ -3,7 +3,7 @@
  * Replaces Supabase calls with direct MySQL backend API calls
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
 
 interface ApiResponse<T = any> {
   data?: T;
@@ -12,12 +12,17 @@ interface ApiResponse<T = any> {
 }
 
 /**
- * Get auth token from localStorage
+ * Get auth token from localStorage or sessionStorage
  */
 function getAuthToken(): string | null {
   try {
-    const token = localStorage.getItem('auth_token');
-    return token;
+    // Check localStorage first (for "Remember me" logins)
+    const localToken = localStorage.getItem('auth_token');
+    if (localToken) return localToken;
+
+    // Fall back to sessionStorage (for non-persistent logins)
+    const sessionToken = sessionStorage.getItem('auth_token');
+    return sessionToken;
   } catch {
     return null;
   }

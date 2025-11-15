@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { User, UserRole, AuthState, LoginCredentials, AuthResponse } from '../types/auth.types';
 import toast from 'react-hot-toast';
 import * as authService from '../services/auth.service';
@@ -189,7 +189,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isUser = authState.user?.role === UserRole.USER || authState.user?.role === 'user';
 
-  const hasPermission = (permission: string): boolean => {
+  const hasPermission = useCallback((permission: string): boolean => {
     if (!authState.user) return false;
     // When impersonating, check actual admin user for permissions
     if (isImpersonating && actualUser) {
@@ -201,10 +201,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Example: if (permission === 'create:package' && isUser) return true;
 
     return false;
-  };
+  }, [authState.user, isImpersonating, actualUser, isAdmin]);
 
-  // Build the context value
-  const contextValue: AuthContextType = {
+  // Build the context value - memoized to prevent infinite re-renders
+  const contextValue: AuthContextType = useMemo(() => ({
     ...authState,
     login,
     logout,
@@ -214,18 +214,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkAuth,
     isImpersonating,
     actualUser,
-  };
+  }), [authState, login, logout, isAdmin, isUser, hasPermission, checkAuth, isImpersonating, actualUser]);
 
   // Update the ref and notify middleware whenever context value changes
   useEffect(() => {
     contextValueRef.current = contextValue;
     setAuthContextRef(contextValue);
     console.log('🔄 [AuthContext] Context updated:', {
-      isAuthenticated: contextValue.isAuthenticated,
-      userEmail: contextValue.user?.email,
-      userRole: contextValue.user?.role
+      isAuthenticated: authState.isAuthenticated,
+      userEmail: authState.user?.email,
+      userRole: authState.user?.role
     });
-  }, [contextValue.isAuthenticated, contextValue.user]);
+    // Note: contextValue is intentionally NOT in deps - we track its constituent parts instead
+  }, [authState.isAuthenticated, authState.user?.id, authState.user?.email]);
 
   return (
     <AuthContext.Provider value={contextValue}>

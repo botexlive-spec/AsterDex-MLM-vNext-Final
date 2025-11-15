@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import React, { ReactNode } from 'react';
 import { WalletConnectorPrivyProvider, Network } from '@orderly.network/wallet-connector-privy';
 import type { NetworkId } from "@orderly.network/types";
 import { QueryClient } from "@tanstack/query-core";

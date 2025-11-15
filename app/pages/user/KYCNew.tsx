@@ -553,7 +553,7 @@ export const KYCNew: React.FC = () => {
                 </Button>
                 <Button
                   variant="primary"
-                  onClick={() => toast.info('Support will contact you via email')}
+                  onClick={() => toast('Support will contact you via email')}
                 >
                   Contact Support
                 </Button>
@@ -601,7 +601,7 @@ export const KYCNew: React.FC = () => {
                     setKycStatus('not_started');
                     setCurrentStep(1);
                     setKycSubmission(null);
-                    toast.info('Please re-submit your KYC with correct documents');
+                    toast('Please re-submit your KYC with correct documents');
                   }}
                 >
                   Re-submit KYC
@@ -714,11 +714,15 @@ export const KYCNew: React.FC = () => {
                       }}
                       placeholder="Select your date of birth"
                       maxDate={new Date()}
-                      dateFormat="MMMM d, yyyy"
+                      minDate={new Date(1900, 0, 1)}
+                      dateFormat="dd/MM/yyyy"
                       showYearDropdown
                       showMonthDropdown
+                      scrollableYearDropdown
+                      yearDropdownItemNumber={100}
                       dropdownMode="select"
                       error={!!errorsStep1.dateOfBirth}
+                      className="w-full"
                     />
                     <input
                       {...registerStep1('dateOfBirth')}

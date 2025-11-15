@@ -3,6 +3,7 @@ import { Button, Card, Badge } from '../../components/ui/DesignSystem';
 import { Modal } from '../../components/ui/Modal';
 import toast from 'react-hot-toast';
 import { z } from 'zod';
+import apiClient from '../../utils/api-client';
 
 // Interfaces
 interface SupportTicket {
@@ -41,6 +42,16 @@ interface FAQItem {
   answer: string;
   helpful?: number;
   notHelpful?: number;
+  videoUrl?: string;
+}
+
+interface HelpDoc {
+  id: string;
+  category: string;
+  title: string;
+  description: string;
+  icon: string;
+  duration: string;
 }
 
 // Validation Schema
@@ -52,6 +63,16 @@ const ticketSchema = z.object({
 });
 
 const Support: React.FC = () => {
+  // API Loading States
+  const [isLoadingTickets, setIsLoadingTickets] = useState(true);
+  const [isLoadingFaqs, setIsLoadingFaqs] = useState(true);
+  const [isLoadingDocs, setIsLoadingDocs] = useState(true);
+
+  // Data State
+  const [allTickets, setAllTickets] = useState<SupportTicket[]>([]);
+  const [allFAQs, setAllFAQs] = useState<FAQItem[]>([]);
+  const [helpDocuments, setHelpDocuments] = useState<HelpDoc[]>([]);
+
   // Ticket System State
   const [showCreateTicket, setShowCreateTicket] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
@@ -104,308 +125,62 @@ const Support: React.FC = () => {
   const [replyMessage, setReplyMessage] = useState('');
   const [replyAttachments, setReplyAttachments] = useState<string[]>([]);
 
-  // Mock Data
-  const allTickets: SupportTicket[] = [
-    {
-      id: 'TKT-10001',
-      subject: 'Unable to withdraw funds',
-      category: 'Wallet & Transactions',
-      status: 'open',
-      priority: 'high',
-      createdDate: '2025-10-30T10:30:00',
-      lastUpdate: '2025-10-30T10:30:00',
-      description: 'I am trying to withdraw my earnings but keep getting an error message. Please help!',
-      messages: [
-        {
-          id: 'm1',
-          sender: 'user',
-          senderName: 'You',
-          message: 'I am trying to withdraw my earnings but keep getting an error message. Please help!',
-          timestamp: '2025-10-30T10:30:00'
-        }
-      ]
-    },
-    {
-      id: 'TKT-10002',
-      subject: 'KYC verification status',
-      category: 'Account & Verification',
-      status: 'in_progress',
-      priority: 'medium',
-      createdDate: '2025-10-29T14:20:00',
-      lastUpdate: '2025-10-30T09:15:00',
-      description: 'I submitted my KYC documents 3 days ago. When will they be verified?',
-      messages: [
-        {
-          id: 'm1',
-          sender: 'user',
-          senderName: 'You',
-          message: 'I submitted my KYC documents 3 days ago. When will they be verified?',
-          timestamp: '2025-10-29T14:20:00'
-        },
-        {
-          id: 'm2',
-          sender: 'support',
-          senderName: 'Agent Sarah',
-          message: 'Thank you for contacting us. Our team is reviewing your documents. You should receive an update within 24 hours.',
-          timestamp: '2025-10-30T09:15:00'
-        }
-      ]
-    },
-    {
-      id: 'TKT-10003',
-      subject: 'Question about binary matching bonus',
-      category: 'Earnings & Commissions',
-      status: 'resolved',
-      priority: 'low',
-      createdDate: '2025-10-28T16:45:00',
-      lastUpdate: '2025-10-29T11:30:00',
-      description: 'How is the binary matching bonus calculated?',
-      messages: [
-        {
-          id: 'm1',
-          sender: 'user',
-          senderName: 'You',
-          message: 'How is the binary matching bonus calculated?',
-          timestamp: '2025-10-28T16:45:00'
-        },
-        {
-          id: 'm2',
-          sender: 'support',
-          senderName: 'Agent Mike',
-          message: 'The binary matching bonus is calculated based on the weaker leg volume. You earn 10% of the weaker leg sales volume each week.',
-          timestamp: '2025-10-29T11:30:00',
-          attachments: ['binary-bonus-guide.pdf']
-        }
-      ]
-    },
-    {
-      id: 'TKT-10004',
-      subject: 'Cannot access dashboard',
-      category: 'Technical Issues',
-      status: 'closed',
-      priority: 'urgent',
-      createdDate: '2025-10-27T08:00:00',
-      lastUpdate: '2025-10-27T12:45:00',
-      description: 'Getting a 500 error when trying to access my dashboard.',
-      messages: [
-        {
-          id: 'm1',
-          sender: 'user',
-          senderName: 'You',
-          message: 'Getting a 500 error when trying to access my dashboard.',
-          timestamp: '2025-10-27T08:00:00'
-        },
-        {
-          id: 'm2',
-          sender: 'support',
-          senderName: 'Agent John',
-          message: 'We identified a server issue that has now been resolved. Please try clearing your cache and logging in again.',
-          timestamp: '2025-10-27T12:45:00'
-        }
-      ]
-    },
-    {
-      id: 'TKT-10005',
-      subject: 'Referral link not working',
-      category: 'Referrals & Team',
-      status: 'open',
-      priority: 'medium',
-      createdDate: '2025-10-31T07:15:00',
-      lastUpdate: '2025-10-31T07:15:00',
-      description: 'My referral link is showing as invalid when I share it with others.',
-      messages: [
-        {
-          id: 'm1',
-          sender: 'user',
-          senderName: 'You',
-          message: 'My referral link is showing as invalid when I share it with others.',
-          timestamp: '2025-10-31T07:15:00'
-        }
-      ]
-    }
-  ];
+  // Load data from API on mount
+  useEffect(() => {
+    loadTickets();
+    loadFAQs();
+    loadHelpDocs();
+  }, []);
 
-  const allFAQs: FAQItem[] = [
-    {
-      id: 'faq1',
-      category: 'Getting Started',
-      question: 'How do I create an account?',
-      answer: 'To create an account, click on the "Register" button on the homepage. You will need a referral code from an existing member. Fill in your details including email, password, and personal information. After registration, verify your email address to activate your account.',
-      helpful: 45,
-      notHelpful: 2
-    },
-    {
-      id: 'faq2',
-      category: 'Getting Started',
-      question: 'What documents do I need for KYC verification?',
-      answer: 'For KYC verification, you need: 1) A government-issued ID (passport, driver\'s license, or national ID card), 2) Proof of address (utility bill, bank statement, or rental agreement dated within the last 3 months), and 3) A selfie with your ID document. All documents must be clear and readable.',
-      helpful: 67,
-      notHelpful: 3
-    },
-    {
-      id: 'faq3',
-      category: 'Packages & Investment',
-      question: 'What investment packages are available?',
-      answer: 'We offer 6 investment packages: Starter ($100-$499), Bronze ($500-$999), Silver ($1,000-$2,499), Gold ($2,500-$4,999), Platinum ($5,000-$9,999), and Diamond ($10,000+). Each package offers different ROI rates and benefits.',
-      helpful: 89,
-      notHelpful: 5
-    },
-    {
-      id: 'faq4',
-      category: 'Packages & Investment',
-      question: 'Can I upgrade my package later?',
-      answer: 'Yes, you can upgrade your package at any time. Simply purchase a higher tier package and your benefits will be upgraded immediately. Your previous package investment will count towards your new package tier.',
-      helpful: 34,
-      notHelpful: 1
-    },
-    {
-      id: 'faq5',
-      category: 'Earnings & Withdrawals',
-      question: 'How do I withdraw my earnings?',
-      answer: 'To withdraw earnings: 1) Navigate to Wallet > Withdraw, 2) Select your preferred withdrawal method (Bank Transfer or Cryptocurrency), 3) Enter the amount (minimum $50), 4) Confirm the transaction. Withdrawals are processed within 24-48 hours on business days.',
-      helpful: 123,
-      notHelpful: 8
-    },
-    {
-      id: 'faq6',
-      category: 'Earnings & Withdrawals',
-      question: 'What are the different types of earnings?',
-      answer: 'You can earn through: 1) Direct Referral Bonus (10% of referral\'s investment), 2) Level Commissions (1-30 levels deep), 3) Binary Matching Bonus (10% of weaker leg), 4) ROI (Daily returns on your investment), 5) Rank Achievement Bonuses, and 6) Leadership Bonuses.',
-      helpful: 156,
-      notHelpful: 12
-    },
-    {
-      id: 'faq7',
-      category: 'Referrals & Team',
-      question: 'How does the binary system work?',
-      answer: 'In the binary system, you have two legs: Left and Right. When you refer someone, they are placed in either leg. You earn binary matching bonus based on the weaker leg\'s volume. The system encourages balanced team building for maximum earnings.',
-      helpful: 78,
-      notHelpful: 15
-    },
-    {
-      id: 'faq8',
-      category: 'Referrals & Team',
-      question: 'What is spillover?',
-      answer: 'Spillover occurs when your upline places new referrals under you in the binary tree. This helps you build your team even if you don\'t personally recruit. However, your own recruiting efforts will always give you better placement control and higher earnings.',
-      helpful: 92,
-      notHelpful: 6
-    },
-    {
-      id: 'faq9',
-      category: 'Account & Security',
-      question: 'How do I enable two-factor authentication?',
-      answer: 'To enable 2FA: 1) Go to Settings > Security, 2) Click "Enable 2FA", 3) Scan the QR code with Google Authenticator or Authy, 4) Enter the 6-digit code to verify, 5) Save your backup codes in a secure location. 2FA adds an extra layer of security to your account.',
-      helpful: 67,
-      notHelpful: 2
-    },
-    {
-      id: 'faq10',
-      category: 'Account & Security',
-      question: 'What should I do if I forget my password?',
-      answer: 'Click "Forgot Password" on the login page. Enter your registered email address and you\'ll receive a password reset link. Click the link and create a new strong password. If you don\'t receive the email, check your spam folder or contact support.',
-      helpful: 45,
-      notHelpful: 3
-    },
-    {
-      id: 'faq11',
-      category: 'Technical Issues',
-      question: 'The website is loading slowly. What should I do?',
-      answer: 'Try these steps: 1) Clear your browser cache and cookies, 2) Disable browser extensions, 3) Try a different browser, 4) Check your internet connection, 5) Try accessing from a different device. If the issue persists, contact our technical support team.',
-      helpful: 34,
-      notHelpful: 7
-    },
-    {
-      id: 'faq12',
-      category: 'Technical Issues',
-      question: 'I\'m not receiving email notifications',
-      answer: 'Check these: 1) Verify your email address in Settings, 2) Check spam/junk folder, 3) Add noreply@asterdex.com to your contacts, 4) Check notification preferences in Settings > Notifications, 5) Ensure your email provider isn\'t blocking our emails.',
-      helpful: 56,
-      notHelpful: 4
+  const loadTickets = async () => {
+    try {
+      setIsLoadingTickets(true);
+      const response = await apiClient.get<{ success: boolean; data: SupportTicket[] }>('/user/support/tickets');
+      if (response.data.success) {
+        setAllTickets(response.data.data || []);
+      }
+    } catch (error: any) {
+      console.error('Error loading tickets:', error);
+      if (error.response?.status !== 401) {
+        toast.error('Failed to load support tickets');
+      }
+      setAllTickets([]);
+    } finally {
+      setIsLoadingTickets(false);
     }
-  ];
+  };
 
-  const helpDocuments = [
-    {
-      id: 'doc1',
-      category: 'Getting Started',
-      title: 'Complete Beginner\'s Guide',
-      description: 'Step-by-step guide to getting started with Asterdex',
-      icon: '📘',
-      duration: '10 min read'
-    },
-    {
-      id: 'doc2',
-      category: 'Getting Started',
-      title: 'KYC Verification Walkthrough',
-      description: 'How to complete your KYC verification successfully',
-      icon: '✅',
-      duration: '5 min read'
-    },
-    {
-      id: 'doc3',
-      category: 'Investments',
-      title: 'Understanding Investment Packages',
-      description: 'Detailed breakdown of all package tiers and benefits',
-      icon: '💎',
-      duration: '8 min read'
-    },
-    {
-      id: 'doc4',
-      category: 'Investments',
-      title: 'ROI Calculation Guide',
-      description: 'Learn how your daily returns are calculated',
-      icon: '📊',
-      duration: '6 min read'
-    },
-    {
-      id: 'doc5',
-      category: 'Earnings',
-      title: 'Maximizing Your Earnings',
-      description: 'Strategies to increase your income potential',
-      icon: '💰',
-      duration: '12 min read'
-    },
-    {
-      id: 'doc6',
-      category: 'Earnings',
-      title: 'Binary Bonus System Explained',
-      description: 'Understanding the binary matching bonus structure',
-      icon: '🌳',
-      duration: '7 min read'
-    },
-    {
-      id: 'doc7',
-      category: 'Team Building',
-      title: 'Building a Successful Team',
-      description: 'Best practices for growing your network',
-      icon: '👥',
-      duration: '15 min read'
-    },
-    {
-      id: 'doc8',
-      category: 'Team Building',
-      title: 'Rank Advancement Guide',
-      description: 'How to achieve higher ranks and unlock bonuses',
-      icon: '🏆',
-      duration: '10 min read'
-    },
-    {
-      id: 'doc9',
-      category: 'Wallets & Transactions',
-      title: 'Deposit & Withdrawal Guide',
-      description: 'How to manage your funds safely',
-      icon: '💳',
-      duration: '8 min read'
-    },
-    {
-      id: 'doc10',
-      category: 'Security',
-      title: 'Account Security Best Practices',
-      description: 'Protect your account with these security tips',
-      icon: '🔒',
-      duration: '6 min read'
+  const loadFAQs = async () => {
+    try {
+      setIsLoadingFaqs(true);
+      const response = await apiClient.get<{ success: boolean; data: FAQItem[] }>('/user/support/faqs');
+      if (response.data.success) {
+        setAllFAQs(response.data.data || []);
+      }
+    } catch (error: any) {
+      console.error('Error loading FAQs:', error);
+      toast.error('Failed to load FAQs');
+      setAllFAQs([]);
+    } finally {
+      setIsLoadingFaqs(false);
     }
-  ];
+  };
+
+  const loadHelpDocs = async () => {
+    try {
+      setIsLoadingDocs(true);
+      const response = await apiClient.get<{ success: boolean; data: HelpDoc[] }>('/user/support/help-docs');
+      if (response.data.success) {
+        setHelpDocuments(response.data.data || []);
+      }
+    } catch (error: any) {
+      console.error('Error loading help docs:', error);
+      toast.error('Failed to load help documentation');
+      setHelpDocuments([]);
+    } finally {
+      setIsLoadingDocs(false);
+    }
+  };
 
   // Scroll chat to bottom
   useEffect(() => {
@@ -436,7 +211,7 @@ const Support: React.FC = () => {
                            ticket.id.toLowerCase().includes(ticketSearchTerm.toLowerCase());
       return matchesFilter && matchesSearch;
     });
-  }, [ticketFilter, ticketSearchTerm]);
+  }, [allTickets, ticketFilter, ticketSearchTerm]);
 
   // Filtered FAQs
   const filteredFAQs = useMemo(() => {
@@ -446,7 +221,7 @@ const Support: React.FC = () => {
                            faq.answer.toLowerCase().includes(faqSearchTerm.toLowerCase());
       return matchesCategory && matchesSearch;
     });
-  }, [selectedFaqCategory, faqSearchTerm]);
+  }, [allFAQs, selectedFaqCategory, faqSearchTerm]);
 
   // Filtered Docs
   const filteredDocs = useMemo(() => {
@@ -456,11 +231,18 @@ const Support: React.FC = () => {
                            doc.description.toLowerCase().includes(docSearchTerm.toLowerCase());
       return matchesCategory && matchesSearch;
     });
-  }, [selectedDocCategory, docSearchTerm]);
+  }, [helpDocuments, selectedDocCategory, docSearchTerm]);
 
   // FAQ Categories
-  const faqCategories = ['all', ...Array.from(new Set(allFAQs.map(faq => faq.category)))];
-  const docCategories = ['all', ...Array.from(new Set(helpDocuments.map(doc => doc.category)))];
+  const faqCategories = useMemo(() => {
+    const categories = Array.from(new Set(allFAQs.map(faq => faq.category)));
+    return ['all', ...categories];
+  }, [allFAQs]);
+
+  const docCategories = useMemo(() => {
+    const categories = Array.from(new Set(helpDocuments.map(doc => doc.category)));
+    return ['all', ...categories];
+  }, [helpDocuments]);
 
   // Handlers
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -503,7 +285,7 @@ const Support: React.FC = () => {
     toast.success('File removed');
   };
 
-  const handleCreateTicket = () => {
+  const handleCreateTicket = async () => {
     try {
       // Clear previous errors
       setTicketErrors({});
@@ -516,21 +298,31 @@ const Support: React.FC = () => {
         priority: newTicket.priority
       });
 
-      console.log('Creating ticket:', newTicket, uploadedFiles);
-      // In real app, this would call API with FormData including files
-
-      toast.success('Ticket created successfully! You will receive updates via email.');
-
-      setShowCreateTicket(false);
-      setNewTicket({
-        category: '',
-        subject: '',
-        description: '',
-        priority: 'medium',
-        attachments: []
+      // Call API to create ticket
+      const response = await apiClient.post('/user/support/tickets', {
+        category: newTicket.category,
+        subject: newTicket.subject,
+        description: newTicket.description,
+        priority: newTicket.priority,
+        attachments: newTicket.attachments
       });
-      setUploadedFiles([]);
-    } catch (error) {
+
+      if (response.data.success) {
+        toast.success('Ticket created successfully! You will receive updates via email.');
+        setShowCreateTicket(false);
+        setNewTicket({
+          category: '',
+          subject: '',
+          description: '',
+          priority: 'medium',
+          attachments: []
+        });
+        setUploadedFiles([]);
+
+        // Reload tickets
+        loadTickets();
+      }
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         const errors: { [key: string]: string } = {};
         error.errors.forEach((err) => {
@@ -540,6 +332,9 @@ const Support: React.FC = () => {
         });
         setTicketErrors(errors);
         toast.error('Please fix the validation errors');
+      } else {
+        console.error('Error creating ticket:', error);
+        toast.error(error.response?.data?.error || 'Failed to create ticket');
       }
     }
   };
@@ -573,30 +368,64 @@ const Support: React.FC = () => {
     }, 2000);
   };
 
-  const handleSendTicketReply = () => {
-    if (!replyMessage.trim()) return;
+  const handleSendTicketReply = async () => {
+    if (!replyMessage.trim() || !selectedTicket) return;
 
-    console.log('Sending reply:', replyMessage, replyAttachments);
-    // In real app, this would call API
+    try {
+      const response = await apiClient.post(`/user/support/tickets/${selectedTicket.id}/reply`, {
+        message: replyMessage,
+        attachments: replyAttachments
+      });
 
-    setReplyMessage('');
-    setReplyAttachments([]);
-    alert('Reply sent successfully!');
-  };
+      if (response.data.success) {
+        toast.success('Reply sent successfully!');
+        setReplyMessage('');
+        setReplyAttachments([]);
 
-  const handleCloseTicket = () => {
-    if (confirm('Are you sure you want to close this ticket? You can reopen it later if needed.')) {
-      console.log('Closing ticket:', selectedTicket?.id);
-      // In real app, this would call API
-      setSelectedTicket(null);
-      alert('Ticket closed successfully!');
+        // Reload tickets to get updated messages
+        loadTickets();
+
+        // Update selected ticket
+        const updatedTickets = allTickets.find(t => t.id === selectedTicket.id);
+        if (updatedTickets) {
+          setSelectedTicket(updatedTickets);
+        }
+      }
+    } catch (error: any) {
+      console.error('Error sending reply:', error);
+      toast.error(error.response?.data?.error || 'Failed to send reply');
     }
   };
 
-  const handleFAQFeedback = (faqId: string, feedback: 'helpful' | 'not_helpful') => {
+  const handleCloseTicket = async () => {
+    if (!selectedTicket) return;
+
+    if (confirm('Are you sure you want to close this ticket? You can reopen it later if needed.')) {
+      try {
+        const response = await apiClient.put(`/user/support/tickets/${selectedTicket.id}/close`);
+
+        if (response.data.success) {
+          toast.success('Ticket closed successfully!');
+          setSelectedTicket(null);
+          loadTickets();
+        }
+      } catch (error: any) {
+        console.error('Error closing ticket:', error);
+        toast.error(error.response?.data?.error || 'Failed to close ticket');
+      }
+    }
+  };
+
+  const handleFAQFeedback = async (faqId: string, feedback: 'helpful' | 'not_helpful') => {
     setFaqFeedback(prev => ({ ...prev, [faqId]: feedback }));
-    console.log('FAQ feedback:', faqId, feedback);
-    // In real app, this would call API
+
+    try {
+      await apiClient.post(`/user/support/faqs/${faqId}/feedback`, {
+        helpful: feedback === 'helpful'
+      });
+    } catch (error: any) {
+      console.error('Error submitting FAQ feedback:', error);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -942,49 +771,56 @@ const Support: React.FC = () => {
             </div>
 
             {/* Tickets List */}
-            <div className="space-y-3">
-              {filteredTickets.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="text-6xl mb-4">🎫</div>
-                  <p className="text-gray-600 mb-2">No tickets found</p>
-                  <p className="text-sm text-gray-500">Create a ticket to get support from our team</p>
-                </div>
-              ) : (
-                filteredTickets.map((ticket) => (
-                  <div
-                    key={ticket.id}
-                    onClick={() => setSelectedTicket(ticket)}
-                    className="p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow cursor-pointer"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-semibold text-gray-900">{ticket.subject}</h3>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(ticket.status)}`}>
-                            {ticket.status.replace('_', ' ').toUpperCase()}
-                          </span>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(ticket.priority)}`}>
-                            {ticket.priority.toUpperCase()}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
-                          <span>ID: {ticket.id}</span>
-                          <span>•</span>
-                          <span>{ticket.category}</span>
-                          <span>•</span>
-                          <span>Created: {formatDateTime(ticket.createdDate)}</span>
-                          <span>•</span>
-                          <span>Updated: {formatDateTime(ticket.lastUpdate)}</span>
-                        </div>
-                      </div>
-                      <button className="text-blue-600 hover:text-blue-700">
-                        View →
-                      </button>
-                    </div>
+            {isLoadingTickets ? (
+              <div className="text-center py-12">
+                <div className="text-4xl mb-4">⏳</div>
+                <p className="text-gray-600">Loading tickets...</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredTickets.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="text-6xl mb-4">🎫</div>
+                    <p className="text-gray-600 mb-2">No tickets found</p>
+                    <p className="text-sm text-gray-500">Create a ticket to get support from our team</p>
                   </div>
-                ))
-              )}
-            </div>
+                ) : (
+                  filteredTickets.map((ticket) => (
+                    <div
+                      key={ticket.id}
+                      onClick={() => setSelectedTicket(ticket)}
+                      className="p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow cursor-pointer"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="font-semibold text-gray-900">{ticket.subject}</h3>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(ticket.status)}`}>
+                              {ticket.status.replace('_', ' ').toUpperCase()}
+                            </span>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(ticket.priority)}`}>
+                              {ticket.priority.toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                            <span>ID: {ticket.id}</span>
+                            <span>•</span>
+                            <span>{ticket.category}</span>
+                            <span>•</span>
+                            <span>Created: {formatDateTime(ticket.createdDate)}</span>
+                            <span>•</span>
+                            <span>Updated: {formatDateTime(ticket.lastUpdate)}</span>
+                          </div>
+                        </div>
+                        <button className="text-blue-600 hover:text-blue-700">
+                          View →
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         </Card>
 
@@ -1019,59 +855,73 @@ const Support: React.FC = () => {
               </div>
 
               {/* FAQ List */}
-              <div className="space-y-3">
-                {filteredFAQs.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    No FAQs found matching your search
-                  </div>
-                ) : (
-                  filteredFAQs.map((faq) => (
-                    <div key={faq.id} className="border border-gray-200 rounded-lg">
-                      <button
-                        onClick={() => setExpandedFaq(expandedFaq === faq.id ? null : faq.id)}
-                        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                      >
-                        <span className="font-medium text-left text-gray-900">{faq.question}</span>
-                        <span className="text-gray-500 text-xl">
-                          {expandedFaq === faq.id ? '−' : '+'}
-                        </span>
-                      </button>
-                      {expandedFaq === faq.id && (
-                        <div className="px-4 pb-4">
-                          <div className="pt-2 border-t border-gray-100">
-                            <p className="text-gray-700 mb-4">{faq.answer}</p>
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-500">Was this helpful?</span>
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => handleFAQFeedback(faq.id, 'helpful')}
-                                  className={`px-3 py-1 rounded-lg text-sm transition-colors ${
-                                    faqFeedback[faq.id] === 'helpful'
-                                      ? 'bg-green-100 text-green-700'
-                                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                  }`}
-                                >
-                                  👍 Yes ({faq.helpful})
-                                </button>
-                                <button
-                                  onClick={() => handleFAQFeedback(faq.id, 'not_helpful')}
-                                  className={`px-3 py-1 rounded-lg text-sm transition-colors ${
-                                    faqFeedback[faq.id] === 'not_helpful'
-                                      ? 'bg-red-100 text-red-700'
-                                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                  }`}
-                                >
-                                  👎 No ({faq.notHelpful})
-                                </button>
+              {isLoadingFaqs ? (
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-4">⏳</div>
+                  <p className="text-gray-600">Loading FAQs...</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredFAQs.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      No FAQs found matching your search
+                    </div>
+                  ) : (
+                    filteredFAQs.map((faq) => (
+                      <div key={faq.id} className="border border-gray-200 rounded-lg">
+                        <button
+                          onClick={() => setExpandedFaq(expandedFaq === faq.id ? null : faq.id)}
+                          className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                        >
+                          <span className="font-medium text-left text-gray-900">{faq.question}</span>
+                          <span className="text-gray-500 text-xl">
+                            {expandedFaq === faq.id ? '−' : '+'}
+                          </span>
+                        </button>
+                        {expandedFaq === faq.id && (
+                          <div className="px-4 pb-4">
+                            <div className="pt-2 border-t border-gray-100">
+                              <p className="text-gray-700 mb-4">{faq.answer}</p>
+                              {faq.videoUrl && (
+                                <div className="mb-4">
+                                  <a href={faq.videoUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-700">
+                                    🎥 Watch video tutorial
+                                  </a>
+                                </div>
+                              )}
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-500">Was this helpful?</span>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => handleFAQFeedback(faq.id, 'helpful')}
+                                    className={`px-3 py-1 rounded-lg text-sm transition-colors ${
+                                      faqFeedback[faq.id] === 'helpful'
+                                        ? 'bg-green-100 text-green-700'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    }`}
+                                  >
+                                    👍 Yes {faq.helpful ? `(${faq.helpful})` : ''}
+                                  </button>
+                                  <button
+                                    onClick={() => handleFAQFeedback(faq.id, 'not_helpful')}
+                                    className={`px-3 py-1 rounded-lg text-sm transition-colors ${
+                                      faqFeedback[faq.id] === 'not_helpful'
+                                        ? 'bg-red-100 text-red-700'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    }`}
+                                  >
+                                    👎 No {faq.notHelpful ? `(${faq.notHelpful})` : ''}
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
           </Card>
         </div>
@@ -1107,34 +957,41 @@ const Support: React.FC = () => {
               </div>
 
               {/* Docs Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {filteredDocs.length === 0 ? (
-                  <div className="col-span-2 text-center py-8 text-gray-500">
-                    No documentation found matching your search
-                  </div>
-                ) : (
-                  filteredDocs.map((doc) => (
-                    <div
-                      key={doc.id}
-                      className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow cursor-pointer"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="text-3xl">{doc.icon}</div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900 mb-1">{doc.title}</h3>
-                          <p className="text-sm text-gray-600 mb-2">{doc.description}</p>
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-500">{doc.duration}</span>
-                            <span className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                              Read more →
-                            </span>
+              {isLoadingDocs ? (
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-4">⏳</div>
+                  <p className="text-gray-600">Loading documentation...</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {filteredDocs.length === 0 ? (
+                    <div className="col-span-2 text-center py-8 text-gray-500">
+                      No documentation found matching your search
+                    </div>
+                  ) : (
+                    filteredDocs.map((doc) => (
+                      <div
+                        key={doc.id}
+                        className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow cursor-pointer"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="text-3xl">{doc.icon}</div>
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900 mb-1">{doc.title}</h3>
+                            <p className="text-sm text-gray-600 mb-2">{doc.description}</p>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-500">{doc.duration}</span>
+                              <span className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                                Read more →
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))
-                )}
-              </div>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
           </Card>
         </div>

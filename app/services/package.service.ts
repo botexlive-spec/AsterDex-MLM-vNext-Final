@@ -1,6 +1,7 @@
 /**
- * Package Service
+ * Package Service - Lifetime ROI System
  * Handles all package-related operations using MySQL backend API
+ * NEW LOGIC: Lifetime ROI, No expiry, No limits
  */
 
 import apiClient from '../utils/api-client';
@@ -10,48 +11,63 @@ import {
   PackagePurchaseRequest,
   PackagePurchaseResponse,
   PackageStats,
-  PackageClaimRequest,
-  PackageClaimResponse,
 } from '../types/package.types';
 
 /**
- * Get all active packages available for purchase
+ * Get the SINGLE global investment package
+ * ✅ NEW ARCHITECTURE: Single package with $100-$100K slider
  */
 export const getAvailablePackages = async (): Promise<Package[]> => {
   try {
-    console.log('🔍 Fetching available packages from backend...');
+    console.log('🔍 Fetching global investment package from backend...');
 
-    const response = await apiClient.get<{ packages: any[] }>('/packages');
+    const response = await apiClient.get<{ package: any }>('/packages');
 
     if (response.error) {
-      console.error('❌ Error fetching packages:', response.error);
+      console.error('❌ Error fetching package:', response.error);
       throw new Error(response.error);
     }
 
-    const packages = response.data?.packages || [];
-    console.log(`✅ Found ${packages.length} active packages`);
+    const pkg = response.data?.package;
+    if (!pkg) {
+      console.error('❌ No package returned from API');
+      throw new Error('Package not found');
+    }
 
-    // Calculate return values for each package
-    const packagesWithCalculations = packages.map((pkg: any) => ({
+    console.log(`✅ Loaded global package: ${pkg.name}`);
+
+    // Map single package to array format (for compatibility)
+    const packageData: Package = {
       id: pkg.id,
       name: pkg.name,
-      min_investment: pkg.min_investment,
-      max_investment: pkg.max_investment,
-      daily_return_percentage: pkg.daily_roi_percentage,
-      max_return_percentage: 200, // 200% total return (2x investment)
-      duration_days: pkg.duration_days,
+      description: `${pkg.daily_roi_percentage}% daily ROI - Unlimited potential`,
+      min_investment: pkg.min_investment, // $100
+      max_investment: pkg.max_investment, // $100,000
+      daily_return_percentage: pkg.daily_roi_percentage, // 0.4%
       level_income_percentages: pkg.level_income_percentages || [],
-      matching_bonus_percentage: pkg.matching_bonus_percentage,
+      matching_bonus_percentage: 0, // Disabled
       is_active: pkg.is_active,
-      price: pkg.min_investment, // For compatibility
-      daily_return: (pkg.min_investment * pkg.daily_roi_percentage) / 100,
-      total_return: pkg.min_investment * 2, // 200% return
-    }));
+      price: pkg.min_investment,
+      // Slider configuration
+      slider_min: pkg.slider_min || 100,
+      slider_max: pkg.slider_max || 100000,
+      slider_step: pkg.slider_step || 100,
+      // New architecture fields
+      levels: pkg.levels || 15,
+      commission_type: pkg.commission_type || 'roi_on_roi',
+      binary_enabled: false,
+      booster_available: pkg.booster_available || false,
+      monthly_reward_available: pkg.monthly_reward_available || false,
+      // Lifetime ROI
+      is_lifetime: true,
+      has_expiry: false,
+      has_limit: false,
+    };
 
-    return packagesWithCalculations;
+    return [packageData]; // Return as array for compatibility
   } catch (error: any) {
-    console.error('Error fetching packages:', error);
-    throw new Error(error.message || 'Failed to load packages');
+    console.error('Error fetching package:', error);
+    throw new Error(error.message || 'Failed to load package');
   }
 };
 
@@ -61,7 +77,7 @@ export const getAvailablePackages = async (): Promise<Package[]> => {
 export const getPackageById = async (packageId: string): Promise<Package | null> => {
   try {
     const packages = await getAvailablePackages();
-    const pkg = packages.find(p => p.id === packageId);
+    const pkg = packages.find(p => p.id.toString() === packageId.toString());
 
     if (!pkg) return null;
 
@@ -74,6 +90,7 @@ export const getPackageById = async (packageId: string): Promise<Package | null>
 
 /**
  * Purchase a package with wallet balance
+ * ✅ NEW: Includes idempotency support
  */
 export const purchasePackage = async (
   request: PackagePurchaseRequest
@@ -81,14 +98,18 @@ export const purchasePackage = async (
   try {
     console.log('🛒 Purchasing package:', request);
 
+    // Generate idempotency key to prevent duplicates
+    const idempotencyKey = `inv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
     // Call backend API to purchase package
     const response = await apiClient.post<{
       success: boolean;
       message: string;
-      package: any;
+      investment: any;
     }>('/packages/purchase', {
       package_id: request.package_id,
       investment_amount: request.amount,
+      idempotency_key: idempotencyKey,
     });
 
     if (response.error) {
@@ -102,21 +123,27 @@ export const purchasePackage = async (
     // Map backend response to frontend format
     return {
       user_package: {
-        id: result.package.name, // Use name as temporary ID
-        user_id: '', // Backend doesn't return this
+        id: result.investment?.id || '',
+        user_id: '',
         package_id: request.package_id,
-        package: result.package,
-        amount_invested: result.package.investment_amount,
-        start_date: new Date().toISOString(),
-        end_date: result.package.expiry_date,
-        daily_return: result.package.daily_roi,
-        total_return: result.package.total_roi_limit,
-        claimed_return: 0,
+        package: result.investment?.package_name ? {
+          id: request.package_id,
+          name: result.investment.package_name,
+          price: result.investment.investment_amount,
+          daily_return_percentage: result.investment.daily_roi ?
+            (result.investment.daily_roi / result.investment.investment_amount) * 100 : 5,
+        } : undefined,
+        amount_invested: result.investment?.investment_amount || request.amount,
+        start_date: result.investment?.activation_date || new Date().toISOString(),
+        daily_return: result.investment?.daily_roi || (request.amount * 0.05),
         status: 'active',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        // ✅ LIFETIME ROI - NO END DATE, NO LIMITS
+        is_lifetime: true,
+        total_roi_earned: 0,
       },
-      transaction_id: 'tx_' + Date.now(), // Backend doesn't return transaction ID
+      transaction_id: result.investment?.id || idempotencyKey,
       message: result.message,
     };
   } catch (error: any) {
@@ -126,45 +153,54 @@ export const purchasePackage = async (
 };
 
 /**
- * Get user's active packages
+ * Get user's active investments (packages)
+ * ✅ NEW: Returns lifetime ROI investments with stop/withdraw status
  */
 export const getUserPackages = async (
-  status?: 'active' | 'completed' | 'cancelled' | 'paused'
+  status?: 'active' | 'stopped' | 'withdrawn' | 'cancelled'
 ): Promise<UserPackage[]> => {
   try {
-    console.log('🔍 Fetching user packages...');
+    console.log('🔍 Fetching user investments...');
 
-    const response = await apiClient.get<{ packages: any[] }>('/packages/my-packages');
+    const response = await apiClient.get<{ investments: any[] }>('/packages/my-packages');
 
     if (response.error) {
       throw new Error(response.error);
     }
 
-    const packages = response.data?.packages || [];
-    console.log(`✅ Found ${packages.length} user packages`);
+    const investments = response.data?.investments || [];
+    console.log(`✅ Found ${investments.length} user investments`);
 
-    // Map backend format to frontend format
-    const mappedPackages = packages.map((pkg: any) => ({
-      id: pkg.id,
-      user_id: '', // Backend doesn't return this
-      package_id: pkg.package_id || '',
-      package: {
-        id: pkg.package_id || '',
-        name: pkg.package_name,
-        price: pkg.investment_amount,
-        daily_return_percentage: (pkg.daily_roi_amount / pkg.investment_amount) * 100,
-        duration_days: pkg.days_remaining || 0,
-      },
-      amount_invested: pkg.investment_amount,
-      start_date: pkg.activation_date,
-      end_date: pkg.expiry_date,
-      daily_return: pkg.daily_roi_amount,
-      total_return: pkg.total_roi_limit,
-      claimed_return: pkg.total_roi_earned,
-      last_claim_date: null, // Backend doesn't track this
-      status: pkg.status,
-      created_at: pkg.activation_date,
-      updated_at: pkg.activation_date,
+    // Map backend format to frontend format (LIFETIME ROI)
+    const mappedPackages = investments.map((inv: any) => ({
+      id: inv.id,
+      user_id: '',
+      package_id: inv.package_id || '',
+      package: inv.package_name ? {
+        id: inv.package_id || '',
+        name: inv.package_name,
+        price: inv.investment_amount,
+        daily_return_percentage: inv.daily_roi_amount ?
+          (inv.daily_roi_amount / inv.investment_amount) * 100 : 5,
+      } : undefined,
+      amount_invested: inv.investment_amount,
+      start_date: inv.activation_date,
+      daily_return: inv.daily_roi_amount,
+      status: inv.status,
+      created_at: inv.activation_date,
+      updated_at: inv.activation_date,
+      // ✅ LIFETIME ROI FIELDS
+      is_lifetime: true,
+      total_roi_earned: inv.total_roi_earned || 0,
+      days_active: inv.days_active || 0,
+      can_stop: inv.can_stop || false,
+      can_withdraw: inv.can_withdraw || false,
+      stop_date: inv.stop_date,
+      penalty_percentage: inv.penalty_percentage,
+      principal_remaining: inv.principal_remaining,
+      withdrawal_date: inv.withdrawal_date,
+      // Booster fields
+      booster_days_remaining: inv.booster_days_remaining || 0,
     }));
 
     // Filter by status if provided
@@ -174,93 +210,20 @@ export const getUserPackages = async (
 
     return mappedPackages;
   } catch (error: any) {
-    console.error('Error fetching user packages:', error);
-    throw new Error(error.message || 'Failed to load your packages');
+    console.error('Error fetching user investments:', error);
+    throw new Error(error.message || 'Failed to load your investments');
   }
 };
 
 /**
- * Calculate available returns to claim for a user package
- * This is client-side calculation based on the last claim date
- */
-export const calculateAvailableReturns = (userPackage: UserPackage): number => {
-  try {
-    const now = new Date();
-    const startDate = new Date(userPackage.start_date);
-    const endDate = new Date(userPackage.end_date);
-    const lastClaimDate = userPackage.last_claim_date
-      ? new Date(userPackage.last_claim_date)
-      : startDate;
-
-    // Check if package is active and within valid date range
-    if (userPackage.status !== 'active') return 0;
-    if (now < startDate) return 0;
-
-    // Calculate days elapsed since last claim
-    const effectiveStartDate = new Date(Math.max(lastClaimDate.getTime(), startDate.getTime()));
-    const effectiveEndDate = new Date(Math.min(now.getTime(), endDate.getTime()));
-
-    const daysElapsed = Math.floor(
-      (effectiveEndDate.getTime() - effectiveStartDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
-
-    if (daysElapsed <= 0) return 0;
-
-    // Calculate returns: days * daily_return
-    const availableReturn = daysElapsed * userPackage.daily_return;
-
-    // Ensure we don't exceed total return
-    const remainingReturn = userPackage.total_return - userPackage.claimed_return;
-    return Math.min(availableReturn, remainingReturn);
-  } catch (error) {
-    console.error('Error calculating available returns:', error);
-    return 0;
-  }
-};
-
-/**
- * Claim available returns from a user package
- * NOTE: This endpoint needs to be added to the backend
- */
-export const claimPackageReturns = async (
-  request: PackageClaimRequest
-): Promise<PackageClaimResponse> => {
-  try {
-    console.log('💰 Claiming package returns:', request);
-
-    // TODO: Backend endpoint needed: POST /api/packages/claim-returns
-    // For now, return error message
-    throw new Error('Claim returns feature is not yet implemented in backend. Please contact support.');
-
-    /* When backend endpoint is ready, uncomment this:
-    const response = await apiClient.post<{
-      claimed_amount: number;
-      transaction_id: string;
-      new_wallet_balance: number;
-    }>('/packages/claim-returns', {
-      user_package_id: request.user_package_id,
-    });
-
-    if (response.error) {
-      throw new Error(response.error);
-    }
-
-    return response.data!;
-    */
-  } catch (error: any) {
-    console.error('Error claiming returns:', error);
-    throw new Error(error.message || 'Failed to claim returns');
-  }
-};
-
-/**
- * Get package statistics for user dashboard
+ * Get investment statistics for user dashboard
+ * ✅ NEW: Updated for lifetime ROI system
  */
 export const getPackageStats = async (): Promise<PackageStats> => {
   try {
-    console.log('📊 Calculating package stats...');
+    console.log('📊 Calculating investment stats...');
 
-    // Get all user packages
+    // Get all user investments
     const packages = await getUserPackages();
 
     // Calculate stats
@@ -268,25 +231,24 @@ export const getPackageStats = async (): Promise<PackageStats> => {
       total_invested: 0,
       active_packages: 0,
       total_earned: 0,
-      available_to_claim: 0,
+      total_roi_earned: 0,
     };
 
     packages.forEach((pkg: UserPackage) => {
       stats.total_invested += pkg.amount_invested;
+      stats.total_earned += pkg.total_roi_earned || 0;
+      stats.total_roi_earned += pkg.total_roi_earned || 0;
 
       if (pkg.status === 'active') {
         stats.active_packages++;
-        stats.available_to_claim += calculateAvailableReturns(pkg);
       }
-
-      stats.total_earned += pkg.claimed_return;
     });
 
-    console.log('✅ Package stats calculated:', stats);
+    console.log('✅ Investment stats calculated:', stats);
     return stats;
   } catch (error: any) {
-    console.error('Error fetching package stats:', error);
-    throw new Error(error.message || 'Failed to load package statistics');
+    console.error('Error fetching investment stats:', error);
+    throw new Error(error.message || 'Failed to load investment statistics');
   }
 };
 
@@ -306,12 +268,29 @@ export const getFeaturedPackages = async (): Promise<Package[]> => {
 
 /**
  * Check if user can purchase a package (has sufficient balance)
+ * ✅ NEW: Validates $100 minimum and multiples of $100
  */
 export const canPurchasePackage = async (
   packageId: string,
   amount: number
 ): Promise<{ canPurchase: boolean; reason?: string }> => {
   try {
+    // ✅ NEW: $100 minimum validation
+    if (amount < 100) {
+      return {
+        canPurchase: false,
+        reason: 'Minimum investment is $100',
+      };
+    }
+
+    // ✅ NEW: Multiples of $100 validation
+    if (amount % 100 !== 0) {
+      return {
+        canPurchase: false,
+        reason: 'Investment must be in multiples of $100 (e.g., $100, $200, $300...)',
+      };
+    }
+
     // Get package
     const pkg = await getPackageById(packageId);
     if (!pkg) {
@@ -322,13 +301,13 @@ export const canPurchasePackage = async (
     if (amount < (pkg.min_investment || pkg.price)) {
       return {
         canPurchase: false,
-        reason: `Minimum investment is ${pkg.min_investment || pkg.price}`,
+        reason: `Minimum investment for this package is $${pkg.min_investment || pkg.price}`,
       };
     }
     if (pkg.max_investment && amount > pkg.max_investment) {
       return {
         canPurchase: false,
-        reason: `Maximum investment is ${pkg.max_investment}`,
+        reason: `Maximum investment for this package is $${pkg.max_investment}`,
       };
     }
 
@@ -344,7 +323,7 @@ export const canPurchasePackage = async (
     if (walletBalance < amount) {
       return {
         canPurchase: false,
-        reason: `Insufficient balance. You need ${amount - walletBalance} more.`,
+        reason: `Insufficient balance. You need $${(amount - walletBalance).toFixed(2)} more.`,
       };
     }
 
@@ -352,5 +331,102 @@ export const canPurchasePackage = async (
   } catch (error: any) {
     console.error('Error checking purchase eligibility:', error);
     return { canPurchase: false, reason: error.message || 'Failed to verify eligibility' };
+  }
+};
+
+/**
+ * Stop an active investment
+ * ✅ NEW: Stop with penalty (15% within 30 days, 5% after)
+ */
+export const stopInvestment = async (
+  investmentId: string,
+  reason?: string
+): Promise<{ success: boolean; message: string; details: any }> => {
+  try {
+    console.log('🛑 Stopping investment:', investmentId);
+
+    const response = await apiClient.post<{
+      success: boolean;
+      message: string;
+      stop_details: any;
+    }>('/investments/stop', {
+      investment_id: investmentId,
+      reason: reason || 'User requested stop',
+    });
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    console.log('✅ Investment stopped successfully');
+    return {
+      success: true,
+      message: response.data?.message || 'Investment stopped successfully',
+      details: response.data?.stop_details,
+    };
+  } catch (error: any) {
+    console.error('Error stopping investment:', error);
+    throw new Error(error.message || 'Failed to stop investment');
+  }
+};
+
+/**
+ * Withdraw principal after stopping
+ * ✅ NEW: Withdraw remaining principal to wallet
+ */
+export const withdrawPrincipal = async (
+  investmentId: string,
+  notes?: string
+): Promise<{ success: boolean; message: string; details: any }> => {
+  try {
+    console.log('💰 Withdrawing principal:', investmentId);
+
+    const response = await apiClient.post<{
+      success: boolean;
+      message: string;
+      withdrawal_details: any;
+    }>('/investments/withdraw', {
+      investment_id: investmentId,
+      notes: notes || 'Principal withdrawal',
+    });
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    console.log('✅ Principal withdrawn successfully');
+    return {
+      success: true,
+      message: response.data?.message || 'Principal withdrawn successfully',
+      details: response.data?.withdrawal_details,
+    };
+  } catch (error: any) {
+    console.error('Error withdrawing principal:', error);
+    throw new Error(error.message || 'Failed to withdraw principal');
+  }
+};
+
+/**
+ * Get stop investment preview (penalty calculation)
+ * ✅ NEW: Preview penalty before stopping
+ */
+export const getStopPreview = async (
+  investmentId: string
+): Promise<{ preview: any }> => {
+  try {
+    console.log('🔍 Getting stop preview:', investmentId);
+
+    const response = await apiClient.get<{ preview: any }>(`/investments/${investmentId}/stop-details`);
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return {
+      preview: response.data?.preview,
+    };
+  } catch (error: any) {
+    console.error('Error getting stop preview:', error);
+    throw new Error(error.message || 'Failed to get stop preview');
   }
 };

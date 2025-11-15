@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Button, Badge } from '../../components/ui/DesignSystem';
 import { Helmet } from 'react-helmet-async';
 import toast from 'react-hot-toast';
-import { getAllRankRewards, getUserRankAchievements, calculateRankEligibility } from '../../services/admin-rank.service';
+import { getAllRanksWithProgress, getUserRankAchievements, getRankEligibility } from '../../services/user-rank.service';
 import { getUserDashboard } from '../../services/mlm-client';
 import { useAuth } from "../../context/AuthContext";
 
@@ -235,73 +235,71 @@ const RanksNew: React.FC = () => {
       setError(null);
 
       try {
-        // Add 10-second timeout
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Request timed out after 10 seconds')), 10000)
-        );
+        console.log('📊 Fetching user rank data...');
 
-        // Fetch rank eligibility (includes current rank, progress, all ranks)
-        const eligibilityPromise = calculateRankEligibility(user.id);
-        const achievementsPromise = getUserRankAchievements(user.id);
-        const dashboardPromise = getUserDashboard(user.id);
+        // Fetch all data in parallel
+        const [ranksData, achievementsData] = await Promise.all([
+          getAllRanksWithProgress(),
+          getUserRankAchievements()
+        ]);
 
-        const [eligibilityData, achievementsData, dashboardData] = await Promise.race([
-          Promise.all([eligibilityPromise, achievementsPromise, dashboardPromise]),
-          timeoutPromise
-        ]) as any;
-
-        console.log('✅ Rank eligibility data received:', eligibilityData);
-        console.log('✅ Achievements data received:', achievementsData);
-        console.log('✅ Dashboard data received:', dashboardData);
+        console.log('✅ Ranks with progress received:', ranksData);
+        console.log('✅ Achievements received:', achievementsData);
 
         // Merge database ranks with UI config
-        const mergedRanks = eligibilityData.eligibleRanks.map((rankElig: any, index: number) => {
-          const uiConfig = rankUIConfig[index] || rankUIConfig[0];
+        const mergedRanks = ranksData.ranks.map((dbRank: any, index: number) => {
+          const uiConfig = rankUIConfig.find(ui => ui.name === dbRank.rank_name) || rankUIConfig[index] || rankUIConfig[0];
           return {
-            id: rankElig.rank.rank_order,
-            name: rankElig.rank.rank_name,
+            id: dbRank.rank_order,
+            name: dbRank.rank_name,
             icon: uiConfig.icon,
             color: uiConfig.color,
             gradientFrom: uiConfig.gradientFrom,
             gradientTo: uiConfig.gradientTo,
             requirements: {
-              personalInvestment: rankElig.rank.min_personal_sales,
-              teamVolume: rankElig.rank.min_team_volume,
-              directReferrals: rankElig.rank.min_direct_referrals,
-              activeTeamMembers: rankElig.rank.min_active_directs
+              personalInvestment: parseFloat(dbRank.min_personal_sales || 0),
+              teamVolume: parseFloat(dbRank.min_team_volume || 0),
+              directReferrals: parseInt(dbRank.min_direct_referrals || 0),
+              activeTeamMembers: parseInt(dbRank.min_active_directs || 0)
             },
-            rewardAmount: rankElig.rank.reward_amount,
+            rewardAmount: parseFloat(dbRank.reward_amount || 0),
             benefits: uiConfig.benefits || [],
-            unlocked: rankElig.qualified
+            unlocked: dbRank.isUnlocked || false,
+            isCurrent: dbRank.isCurrent || false,
+            progress: dbRank.progress || {
+              overall: 0,
+              personalInvestment: 0,
+              teamVolume: 0,
+              directReferrals: 0,
+              activeDirects: 0
+            }
           };
         });
 
         setAllRanks(mergedRanks);
 
         // Set current rank
-        const currentRankData = mergedRanks.find((r: Rank) =>
-          eligibilityData.currentRank && r.name === eligibilityData.currentRank
-        );
-        setCurrentRank(currentRankData || mergedRanks[0]);
+        const currentRankData = mergedRanks.find((r: any) => r.isCurrent) || mergedRanks[0];
+        setCurrentRank(currentRankData);
 
-        // Set current progress from dashboard
+        // Set current progress from API
         setCurrentProgress({
-          personalInvestment: dashboardData.totalInvestment || 0,
-          teamVolume: dashboardData.teamVolume || 0,
-          directReferrals: dashboardData.directReferrals || 0,
-          activeTeamMembers: dashboardData.activeTeamMembers || 0
+          personalInvestment: ranksData.currentUserStats.personalInvestment || 0,
+          teamVolume: ranksData.currentUserStats.teamVolume || 0,
+          directReferrals: ranksData.currentUserStats.directReferrals || 0,
+          activeTeamMembers: ranksData.currentUserStats.activeDirects || 0
         });
 
         // Transform achievement history
-        const transformedAchievements = achievementsData.map((achievement: any) => ({
-          rankId: 0, // We don't have rank ID in the response
+        const transformedAchievements = achievementsData.achievements.map((achievement: any) => ({
+          rankId: 0,
           rankName: achievement.rank_name,
-          achievedDate: new Date(achievement.created_at).toISOString().split('T')[0],
-          rewardClaimed: achievement.reward_amount
+          achievedDate: new Date(achievement.achieved_at).toISOString().split('T')[0],
+          rewardClaimed: parseFloat(achievement.reward_amount || 0)
         }));
         setAchievementHistory(transformedAchievements);
 
-        toast.success('Rank data loaded');
+        toast.success('Rank data loaded successfully!');
       } catch (error: any) {
         console.error('❌ Error fetching rank data:', error);
         setError(error.message || 'Failed to load rank data');

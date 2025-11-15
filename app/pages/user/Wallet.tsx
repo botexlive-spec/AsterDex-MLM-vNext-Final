@@ -1,8 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getWalletBalance, getTransactionHistory, Transaction, WalletBalance } from '../../services/wallet.service';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import apiClient from '../../utils/api-client';
+
+// Types
+interface WalletBalance {
+  total: number;
+  available: number;
+  locked: number;
+  pending: number;
+}
+
+interface Transaction {
+  id: string;
+  transaction_type: string;
+  amount: number;
+  status: string;
+  description: string;
+  created_at: string;
+}
 
 export const Wallet: React.FC = () => {
   const navigate = useNavigate();
@@ -23,14 +40,19 @@ export const Wallet: React.FC = () => {
     try {
       setLoading(true);
 
-      // Load wallet balance and recent transactions in parallel
-      const [balanceData, transactionsData] = await Promise.all([
-        getWalletBalance(),
-        getTransactionHistory(10, 0) // Get last 10 transactions
+      // Load wallet balance and recent transactions from MySQL backend
+      const [balanceRes, transactionsRes] = await Promise.all([
+        apiClient.get<WalletBalance>('/api/wallet-simple/balance'),
+        apiClient.get<Transaction[]>('/api/wallet-simple/transactions?limit=10')
       ]);
 
-      setBalance(balanceData);
-      setTransactions(transactionsData);
+      if (balanceRes.data) {
+        setBalance(balanceRes.data);
+      }
+
+      if (transactionsRes.data) {
+        setTransactions(transactionsRes.data);
+      }
     } catch (error: any) {
       console.error('Error loading wallet data:', error);
       toast.error(error.message || 'Failed to load wallet data');

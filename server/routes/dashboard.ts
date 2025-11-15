@@ -1,5 +1,6 @@
 /**
  * Dashboard API Routes
+ * Updated: Fixed expiry_date issue for lifetime ROI system
  */
 
 import { Router, Request, Response } from 'express';
@@ -64,20 +65,19 @@ router.get('/', async (req: Request, res: Response) => {
         );
         const totalTeam = parseInt(totalTeamResult.rows[0]?.total_count || 0);
 
-        // Get active user packages
+        // Get active user packages (Lifetime ROI - no expiry)
         const packagesResult = await query(
-          `SELECT COUNT(*) as active_count,
-          SUM(CASE WHEN DATEDIFF(expiry_date, NOW()) <= 7 AND DATEDIFF(expiry_date, NOW()) > 0 THEN 1 ELSE 0 END) as expiring_soon
-          FROM user_packages WHERE userId = ? AND status = 'active'`,
+          `SELECT COUNT(*) as active_count
+          FROM user_packages WHERE user_id = ? AND status = 'active'`,
           [decoded.id]
         );
-        const activePackages = packagesResult.rows[0] || { active_count: 0, expiring_soon: 0 };
+        const activePackages = packagesResult.rows[0] || { active_count: 0 };
 
         // Get today's earnings
         const todayEarningsResult = await query(
           `SELECT COALESCE(SUM(amount), 0) as today_earnings
           FROM mlm_transactions
-          WHERE userId = ? AND DATE(createdAt) = CURDATE() AND status = 'completed'`,
+          WHERE user_id = ? AND DATE(created_at) = CURDATE() AND status = 'completed'`,
           [decoded.id]
         );
         const todayEarnings = parseFloat(todayEarningsResult.rows[0]?.today_earnings || 0);
@@ -86,7 +86,7 @@ router.get('/', async (req: Request, res: Response) => {
         const weekEarningsResult = await query(
           `SELECT COALESCE(SUM(amount), 0) as week_earnings
           FROM mlm_transactions
-          WHERE userId = ? AND createdAt >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND status = 'completed'`,
+          WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND status = 'completed'`,
           [decoded.id]
         );
         const weekEarnings = parseFloat(weekEarningsResult.rows[0]?.week_earnings || 0);
@@ -100,6 +100,24 @@ router.get('/', async (req: Request, res: Response) => {
         const currentRankIndex = rankOrder.indexOf(user.current_rank || 'starter');
         const nextRankName = currentRankIndex < rankOrder.length - 1 ? rankOrder[currentRankIndex + 1] : user.current_rank;
         const rankProgress = Math.min(Math.floor((totalTeam / 100) * 100), 100); // Simple calculation based on team size
+
+        // Get active packages list
+        const activePackagesList = await query(
+          `SELECT * FROM user_packages WHERE user_id = ? AND status = 'active' LIMIT 10`,
+          [decoded.id]
+        );
+
+        // Get recent transactions
+        const recentTransactions = await query(
+          `SELECT * FROM mlm_transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT 10`,
+          [decoded.id]
+        );
+
+        // Get direct referrals
+        const directReferrals = await query(
+          `SELECT id, email, full_name, created_at, total_investment FROM users WHERE sponsor_id = ? ORDER BY created_at DESC LIMIT 10`,
+          [decoded.id]
+        );
 
         console.log('📊 Dashboard API - Fetching fresh data from DB for user:', user.email);
 
@@ -127,15 +145,20 @@ router.get('/', async (req: Request, res: Response) => {
             total_team: totalTeam,
             left_binary_volume: leftVolume,
             right_binary_volume: rightVolume,
+            total_volume: leftVolume + rightVolume,
           },
           packages: {
             active_count: parseInt(activePackages.active_count || 0),
-            expiring_soon: parseInt(activePackages.expiring_soon || 0),
           },
+          active_packages: activePackagesList.rows || [],
+          recent_transactions: recentTransactions.rows || [],
+          direct_referrals: directReferrals.rows || [],
           next_rank: {
             current: user.current_rank || 'starter',
             next: nextRankName,
+            rank: nextRankName,
             progress: rankProgress,
+            min_volume: 100000, // Placeholder - should come from rank requirements
           },
         };
       },

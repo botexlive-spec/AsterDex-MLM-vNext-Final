@@ -4,14 +4,19 @@ import toast, { Toaster } from 'react-hot-toast';
 import { Button, Card, Input } from '../../components/ui/DesignSystem';
 import { get, post } from '../../utils/httpClient';
 
+type CryptoType = 'USDT' | 'USDC' | 'BTC' | 'ETH';
+type NetworkType = 'ERC20' | 'TRC20' | 'BEP20';
+
 export default function WithdrawSimple() {
   const { user } = useAuth();
   const [amount, setAmount] = useState('');
   const [walletAddress, setWalletAddress] = useState('');
+  const [crypto, setCrypto] = useState<CryptoType>('USDT');
+  const [network, setNetwork] = useState<NetworkType>('TRC20');
   const [loading, setLoading] = useState(false);
   const [balance, setBalance] = useState(0);
   const [minWithdrawal, setMinWithdrawal] = useState(50);
-  const [deductionPercent, setDeductionPercent] = useState(15);
+  const [deductionPercent, setDeductionPercent] = useState(0);
   const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
@@ -29,15 +34,15 @@ export default function WithdrawSimple() {
 
       // Fetch limits
       const limitsRes = await get('/api/wallet-simple/withdrawal/limits');
-      setMinWithdrawal(Number(limitsRes?.minimum_withdrawal || 50));
-      setDeductionPercent(Number(limitsRes?.deduction_before_30_days || 15));
+      setMinWithdrawal(Number(limitsRes?.minimum_withdrawal || 10));
+      setDeductionPercent(Number(limitsRes?.deduction_percentage || 0));
 
     } catch (error) {
       console.error('Failed to load data:', error);
       toast.error('Failed to load withdrawal data');
       setBalance(0);
-      setMinWithdrawal(50);
-      setDeductionPercent(15);
+      setMinWithdrawal(10);
+      setDeductionPercent(0);
     } finally {
       setLoadingData(false);
     }
@@ -72,8 +77,8 @@ export default function WithdrawSimple() {
       setLoading(true);
       const response = await post('/api/wallet-simple/withdrawal', {
         amount: numAmount,
-        withdrawal_type: 'roi',
-        wallet_address: walletAddress
+        wallet_address: walletAddress,
+        network: network
       });
 
       if (response?.success) {
@@ -154,6 +159,40 @@ export default function WithdrawSimple() {
                 <p className="text-[#64748b] text-sm mt-1">
                   Min: ${minWithdrawal.toFixed(2)} | Max: ${balance.toFixed(2)}
                 </p>
+              </div>
+
+              {/* Cryptocurrency and Network Selection */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#f8fafc] mb-2">
+                    Cryptocurrency
+                  </label>
+                  <select
+                    value={crypto}
+                    onChange={(e) => setCrypto(e.target.value as CryptoType)}
+                    className="w-full px-4 py-3 bg-[#334155] border border-[#475569] rounded-lg text-[#f8fafc] focus:outline-none focus:border-[#8b5cf6] focus:ring-2 focus:ring-[#8b5cf6]/20"
+                  >
+                    <option value="USDT">USDT (Tether)</option>
+                    <option value="USDC">USDC</option>
+                    <option value="BTC">Bitcoin</option>
+                    <option value="ETH">Ethereum</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#f8fafc] mb-2">
+                    Network
+                  </label>
+                  <select
+                    value={network}
+                    onChange={(e) => setNetwork(e.target.value as NetworkType)}
+                    className="w-full px-4 py-3 bg-[#334155] border border-[#475569] rounded-lg text-[#f8fafc] focus:outline-none focus:border-[#8b5cf6] focus:ring-2 focus:ring-[#8b5cf6]/20"
+                  >
+                    <option value="ERC20">ERC20 (Ethereum)</option>
+                    <option value="TRC20">TRC20 (TRON)</option>
+                    <option value="BEP20">BEP20 (BSC)</option>
+                  </select>
+                </div>
               </div>
 
               {/* Wallet Address */}

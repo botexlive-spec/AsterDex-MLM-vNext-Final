@@ -164,7 +164,7 @@ export const DashboardNew: React.FC = () => {
           right: dashboardData.statistics.right_volume,
           total: dashboardData.statistics.total_volume
         });
-        console.log('📊 DashboardNew - Packages:', dashboardData.active_packages.length, 'active');
+        console.log('📊 DashboardNew - Packages:', dashboardData.active_packages?.length || 0, 'active');
         console.log('📊 DashboardNew - Transactions:', dashboardData.recent_transactions?.length || 0, 'recent');
         console.log('📊 DashboardNew - Full API Response:', dashboardData);
 
@@ -186,20 +186,20 @@ export const DashboardNew: React.FC = () => {
           totalEarningsWeek: dashboardData.statistics.week_earnings || 0,
           totalEarningsMonth: dashboardData.statistics.month_earnings || 0,
           teamSize: {
-            directs: teamData.summary.direct_members || 0,  // ✅ From MySQL
-            total: teamData.summary.total_team || 0  // ✅ From MySQL
+            directs: dashboardData.statistics.direct_referrals || 0,
+            total: dashboardData.statistics.total_team || 0
           },
           binaryVolume: {
-            left: dashboardData.statistics.left_volume || 0,
-            right: dashboardData.statistics.right_volume || 0
+            left: dashboardData.statistics.left_binary_volume || 0,
+            right: dashboardData.statistics.right_binary_volume || 0
           },
           nextRank: {
-            current: dashboardData.user.current_rank.replace('_', ' ').toUpperCase(),
-            next: dashboardData.next_rank.rank.replace('_', ' ').toUpperCase(),
-            progress: Math.round((dashboardData.statistics.total_volume / dashboardData.next_rank.min_volume) * 100)
+            current: (dashboardData.user.current_rank || 'starter').replace('_', ' ').toUpperCase(),
+            next: (dashboardData.next_rank?.rank || dashboardData.next_rank?.next || 'bronze').replace('_', ' ').toUpperCase(),
+            progress: Math.round(((dashboardData.statistics.total_volume || 0) / (dashboardData.next_rank?.min_volume || 100000)) * 100)
           },
           activePackages: {
-            count: dashboardData.active_packages.length || 0,
+            count: dashboardData.active_packages?.length || 0,
             expiring: 0
           },
         });

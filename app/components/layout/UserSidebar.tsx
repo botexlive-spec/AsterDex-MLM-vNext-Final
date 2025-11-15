@@ -35,6 +35,13 @@ const menuItems: MenuItem[] = [
     planFeatureKey: 'investment_plan',
   },
   {
+    id: 'my-investments',
+    label: 'My Investments',
+    icon: '📈',
+    path: '/my-investments',
+    planFeatureKey: 'investment_plan',
+  },
+  {
     id: 'robot',
     label: 'Trading Robot',
     icon: '🤖',
@@ -130,6 +137,12 @@ const adminMenuItems: MenuItem[] = [
     path: '/admin/financial',
   },
   {
+    id: 'admin-withdrawals',
+    label: 'Withdrawal Approval',
+    icon: '💸',
+    path: '/admin/withdrawals',
+  },
+  {
     id: 'admin-commissions',
     label: 'Commission Management',
     icon: '💵',
@@ -170,6 +183,12 @@ const adminMenuItems: MenuItem[] = [
     label: 'Enhanced Reports',
     icon: '📊',
     path: '/admin/reports-enhanced',
+  },
+  {
+    id: 'admin-investment-reports',
+    label: 'Investment Reports',
+    icon: '💰',
+    path: '/admin/investment-reports',
   },
   {
     id: 'admin-communications',

@@ -24,7 +24,7 @@ interface WithdrawalRequest {
   created_at: string;
 }
 
-export const WithdrawalApproval: React.FC = () => {
+const WithdrawalApproval: React.FC = () => {
   const { isAdmin } = useAuth();
   const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,11 +45,14 @@ export const WithdrawalApproval: React.FC = () => {
   const fetchWithdrawals = async () => {
     try {
       setLoading(true);
-      const data = await get<WithdrawalRequest[]>('/api/wallet/withdrawals/pending');
-      setWithdrawals(data);
+      // Fetch ALL withdrawals (pending, approved, rejected) so filtering works
+      const response = await get<{ success: boolean; data: WithdrawalRequest[] }>('/api/admin/withdrawals/all');
+      console.log('✅ Loaded withdrawals:', response.data?.length || 0);
+      setWithdrawals(response.data || []);
     } catch (error: any) {
       console.error('Failed to fetch withdrawals:', error);
       toast.error(error.message || 'Failed to load withdrawal requests');
+      setWithdrawals([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -63,7 +66,7 @@ export const WithdrawalApproval: React.FC = () => {
     try {
       setProcessingId(withdrawalId);
       const response = await post<{ success: boolean; message: string }>(
-        `/api/wallet/withdrawals/${withdrawalId}/approve`,
+        `/api/admin/withdrawals/approve/${withdrawalId}`,
         {}
       );
 
@@ -100,7 +103,7 @@ export const WithdrawalApproval: React.FC = () => {
     try {
       setProcessingId(withdrawalId);
       const response = await post<{ success: boolean; message: string }>(
-        `/api/wallet/withdrawals/${withdrawalId}/reject`,
+        `/api/admin/withdrawals/reject/${withdrawalId}`,
         { reason: reason.trim() }
       );
 
@@ -206,7 +209,7 @@ export const WithdrawalApproval: React.FC = () => {
             <div>
               <p className="text-white/80 text-sm">Total Amount</p>
               <p className="text-2xl font-bold text-white">
-                ${withdrawals.reduce((sum, w) => sum + w.final_amount, 0).toFixed(2)}
+                ${withdrawals.reduce((sum, w) => sum + Number(w.final_amount || 0), 0).toFixed(2)}
               </p>
             </div>
             <div className="text-4xl">💰</div>
@@ -284,20 +287,20 @@ export const WithdrawalApproval: React.FC = () => {
                       </Badge>
                     </td>
                     <td className="py-3 px-4 text-right text-[#f8fafc]">
-                      ${withdrawal.requested_amount.toFixed(2)}
+                      ${Number(withdrawal.requested_amount || 0).toFixed(2)}
                     </td>
                     <td className="py-3 px-4 text-right text-red-400">
-                      {withdrawal.deduction_percentage > 0 ? (
+                      {Number(withdrawal.deduction_percentage || 0) > 0 ? (
                         <>
-                          ${withdrawal.deduction_amount.toFixed(2)}
-                          <div className="text-xs">({withdrawal.deduction_percentage}%)</div>
+                          ${Number(withdrawal.deduction_amount || 0).toFixed(2)}
+                          <div className="text-xs">({Number(withdrawal.deduction_percentage || 0)}%)</div>
                         </>
                       ) : (
                         '$0.00'
                       )}
                     </td>
                     <td className="py-3 px-4 text-right text-green-400 font-bold">
-                      ${withdrawal.final_amount.toFixed(2)}
+                      ${Number(withdrawal.final_amount || 0).toFixed(2)}
                     </td>
                     <td className="py-3 px-4 text-center">
                       {getStatusBadge(withdrawal.status)}
@@ -382,3 +385,5 @@ export const WithdrawalApproval: React.FC = () => {
     </div>
   );
 };
+
+export default WithdrawalApproval;

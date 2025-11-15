@@ -70,13 +70,23 @@ export const Reports: React.FC = () => {
           setTimeout(() => reject(new Error('Request timed out after 10 seconds')), 10000)
         );
 
-        const [transactions, teamMembers] = await Promise.race([
+        const [transactionResponse, teamMembersResponse] = await Promise.race([
           Promise.all([
             getTransactionHistory(1000, 0),
             getTeamMembers(user.id)
           ]),
           timeoutPromise
         ]) as any[];
+
+        // Extract transactions array from response object
+        const transactions = Array.isArray(transactionResponse)
+          ? transactionResponse
+          : (transactionResponse?.transactions || []);
+
+        // Extract team members array from response object
+        const teamMembers = Array.isArray(teamMembersResponse)
+          ? teamMembersResponse
+          : (teamMembersResponse?.members || teamMembersResponse?.teamMembers || []);
 
         console.log('✅ Transactions:', transactions?.length || 0);
         console.log('✅ Team members:', teamMembers?.length || 0);

@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import toast, { Toaster } from 'react-hot-toast';
 import { Button, Card, Input, Alert, Badge } from '../../components/ui/DesignSystem';
 import { Modal } from '../../components/ui/Modal';
+import apiClient from '../../utils/api-client';
 
 type PaymentMethod = 'crypto' | 'bank' | 'upi' | 'card';
 type CryptoType = 'USDT' | 'USDC' | 'BTC' | 'ETH';
@@ -18,8 +19,64 @@ interface Transaction {
   txHash?: string;
 }
 
+interface DepositStats {
+  totalDeposits: number;
+  pendingDeposits: number;
+  thisMonth: number;
+}
+
+interface DepositSettings {
+  minDeposit: number;
+  maxDeposit: number;
+  depositFeePercent: number;
+  cryptoEnabled: boolean;
+  bankEnabled: boolean;
+  upiEnabled: boolean;
+  cardEnabled: boolean;
+}
+
+interface BankDetails {
+  accountName: string;
+  accountNumber: string;
+  routingNumber: string;
+  bankName: string;
+  swiftCode: string;
+}
+
 export const Deposit: React.FC = () => {
   const navigate = useNavigate();
+
+  // Loading states
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  const [isLoadingAddress, setIsLoadingAddress] = useState(false);
+  const [isLoadingBankDetails, setIsLoadingBankDetails] = useState(false);
+
+  // Data states
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [stats, setStats] = useState<DepositStats>({
+    totalDeposits: 0,
+    pendingDeposits: 0,
+    thisMonth: 0
+  });
+  const [settings, setSettings] = useState<DepositSettings>({
+    minDeposit: 10,
+    maxDeposit: 50000,
+    depositFeePercent: 1.5,
+    cryptoEnabled: true,
+    bankEnabled: true,
+    upiEnabled: true,
+    cardEnabled: true
+  });
+  const [depositAddress, setDepositAddress] = useState('');
+  const [bankDetails, setBankDetails] = useState<BankDetails>({
+    accountName: '',
+    accountNumber: '',
+    routingNumber: '',
+    bankName: '',
+    swiftCode: ''
+  });
 
   // Form state
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('crypto');
@@ -34,26 +91,122 @@ export const Deposit: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [transactionId, setTransactionId] = useState('');
 
-  // Mock transaction history
-  const [transactions] = useState<Transaction[]>([
-    { id: 'DEP001', date: new Date(Date.now() - 86400000), amount: 500, method: 'USDT (ERC20)', status: 'completed', txHash: '0xabcd...1234' },
-    { id: 'DEP002', date: new Date(Date.now() - 172800000), amount: 1000, method: 'Bank Transfer', status: 'completed' },
-    { id: 'DEP003', date: new Date(Date.now() - 259200000), amount: 250, method: 'USDC (TRC20)', status: 'pending', txHash: '0xefgh...5678' },
-  ]);
+  // Load data on mount
+  useEffect(() => {
+    loadDepositHistory();
+    loadDepositStats();
+    loadDepositSettings();
+  }, []);
 
-  // Crypto addresses per network
-  const cryptoAddresses: Record<NetworkType, string> = {
-    ERC20: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEbF',
-    TRC20: 'TXYZabcd1234567890ABCDEFGHIJKLMNOP',
-    BEP20: '0xABCDEF1234567890abcdef1234567890ABCDEF12',
+  // Load deposit address when network changes
+  useEffect(() => {
+    if (paymentMethod === 'crypto' && showDepositAddress) {
+      loadDepositAddress();
+    }
+  }, [network, paymentMethod, showDepositAddress]);
+
+  // Load bank details when payment method changes to bank
+  useEffect(() => {
+    if (paymentMethod === 'bank') {
+      loadBankDetails();
+    }
+  }, [paymentMethod]);
+
+  const loadDepositHistory = async () => {
+    try {
+      setIsLoadingTransactions(true);
+      const response = await apiClient.get<{ success: boolean; data: any[] }>('/user/deposits/history?limit=10');
+      if (response?.data?.success && response.data.data) {
+        const formattedTransactions = response.data.data.map((tx: any) => ({
+          id: tx.id,
+          date: new Date(tx.date),
+          amount: parseFloat(tx.amount),
+          method: tx.method,
+          status: tx.status,
+          txHash: tx.txHash
+        }));
+        setTransactions(formattedTransactions);
+      } else {
+        setTransactions([]);
+      }
+    } catch (error: any) {
+      console.error('Error loading deposit history:', error);
+      // Don't show error toast if it's just an auth issue or empty data
+      if (error.response?.status !== 401) {
+        console.warn('Deposit history unavailable');
+      }
+      setTransactions([]);
+    } finally {
+      setIsLoadingTransactions(false);
+    }
   };
 
-  const depositAddress = cryptoAddresses[network];
+  const loadDepositStats = async () => {
+    try {
+      setIsLoadingStats(true);
+      const response = await apiClient.get<{ success: boolean; data: DepositStats }>('/user/deposits/stats');
+      if (response.data.success) {
+        setStats(response.data.data);
+      }
+    } catch (error: any) {
+      console.error('Error loading deposit stats:', error);
+      if (error.response?.status !== 401) {
+        toast.error('Failed to load deposit statistics');
+      }
+    } finally {
+      setIsLoadingStats(false);
+    }
+  };
+
+  const loadDepositSettings = async () => {
+    try {
+      setIsLoadingSettings(true);
+      const response = await apiClient.get<{ success: boolean; data: DepositSettings }>('/user/deposits/settings');
+      if (response.data.success) {
+        setSettings(response.data.data);
+      }
+    } catch (error: any) {
+      console.error('Error loading deposit settings:', error);
+      toast.error('Failed to load deposit settings');
+    } finally {
+      setIsLoadingSettings(false);
+    }
+  };
+
+  const loadDepositAddress = async () => {
+    try {
+      setIsLoadingAddress(true);
+      const response = await apiClient.get<{ success: boolean; data: { address: string } }>(`/user/deposits/addresses?network=${network}`);
+      if (response.data.success) {
+        setDepositAddress(response.data.data.address);
+      }
+    } catch (error: any) {
+      console.error('Error loading deposit address:', error);
+      toast.error('Failed to load deposit address');
+    } finally {
+      setIsLoadingAddress(false);
+    }
+  };
+
+  const loadBankDetails = async () => {
+    try {
+      setIsLoadingBankDetails(true);
+      const response = await apiClient.get<{ success: boolean; data: BankDetails }>('/user/deposits/bank-details');
+      if (response.data.success) {
+        setBankDetails(response.data.data);
+      }
+    } catch (error: any) {
+      console.error('Error loading bank details:', error);
+      toast.error('Failed to load bank details');
+    } finally {
+      setIsLoadingBankDetails(false);
+    }
+  };
 
   // Validation & Fee Calculation
-  const minDeposit = 10;
-  const maxDeposit = 50000;
-  const depositFeePercent = 1.5; // 1.5% deposit fee
+  const minDeposit = settings.minDeposit;
+  const maxDeposit = settings.maxDeposit;
+  const depositFeePercent = settings.depositFeePercent;
 
   const numAmount = parseFloat(amount || '0');
   const fee = (numAmount * depositFeePercent) / 100;
@@ -74,26 +227,34 @@ export const Deposit: React.FC = () => {
     setShowConfirmModal(true);
   };
 
-  const confirmDeposit = () => {
+  const confirmDeposit = async () => {
     setShowConfirmModal(false);
     setIsProcessing(true);
 
-    // Simulate payment processing
-    const promise = new Promise((resolve) => setTimeout(resolve, 3000));
+    try {
+      const response = await apiClient.post('/user/deposits/create', {
+        amount: numAmount,
+        paymentMethod,
+        crypto: paymentMethod === 'crypto' ? crypto : undefined,
+        network: paymentMethod === 'crypto' ? network : undefined
+      });
 
-    toast.promise(promise, {
-      loading: 'Processing deposit...',
-      success: 'Deposit request submitted successfully!',
-      error: 'Failed to process deposit',
-    });
+      if (response.data.success) {
+        toast.success('Deposit request submitted successfully!');
+        setTransactionId(response.data.data.transactionId);
+        setShowSuccessModal(true);
+        setAmount('');
 
-    promise.then(() => {
+        // Reload data
+        loadDepositHistory();
+        loadDepositStats();
+      }
+    } catch (error: any) {
+      console.error('Error creating deposit:', error);
+      toast.error(error.response?.data?.error || 'Failed to process deposit');
+    } finally {
       setIsProcessing(false);
-      const txId = 'DEP' + Math.random().toString(36).substring(2, 9).toUpperCase();
-      setTransactionId(txId);
-      setShowSuccessModal(true);
-      setAmount('');
-    });
+    }
   };
 
   const getStatusBadge = (status: Transaction['status']) => {
@@ -104,6 +265,17 @@ export const Deposit: React.FC = () => {
     } as const;
     return <Badge variant={variants[status]}>{status.toUpperCase()}</Badge>;
   };
+
+  if (isLoadingSettings) {
+    return (
+      <div className="min-h-screen bg-[#0f172a] p-5 max-w-7xl mx-auto flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">⏳</div>
+          <p className="text-[#94a3b8]">Loading deposit settings...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0f172a] p-5 max-w-7xl mx-auto">
@@ -130,10 +302,10 @@ export const Deposit: React.FC = () => {
               <label className="block text-sm font-medium text-[#f8fafc] mb-3">Select Payment Method</label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {[
-                  { value: 'crypto' as const, icon: '🪙', label: 'Crypto' },
-                  { value: 'bank' as const, icon: '🏦', label: 'Bank' },
-                  { value: 'upi' as const, icon: '💳', label: 'UPI' },
-                  { value: 'card' as const, icon: '💵', label: 'Card' },
+                  { value: 'crypto' as const, icon: '🪙', label: 'Crypto', enabled: settings.cryptoEnabled },
+                  { value: 'bank' as const, icon: '🏦', label: 'Bank', enabled: settings.bankEnabled },
+                  { value: 'upi' as const, icon: '💳', label: 'UPI', enabled: settings.upiEnabled },
+                  { value: 'card' as const, icon: '💵', label: 'Card', enabled: settings.cardEnabled },
                 ].map((method) => (
                   <button
                     key={method.value}
@@ -141,8 +313,11 @@ export const Deposit: React.FC = () => {
                       setPaymentMethod(method.value);
                       setShowDepositAddress(false); // Reset when changing payment method
                     }}
+                    disabled={!method.enabled}
                     className={`p-4 rounded-lg border-2 transition-all ${
-                      paymentMethod === method.value
+                      !method.enabled
+                        ? 'opacity-50 cursor-not-allowed border-[#475569] bg-[#334155] text-[#64748b]'
+                        : paymentMethod === method.value
                         ? 'border-[#00C7D1] bg-[#00C7D1]/10 text-[#00C7D1]'
                         : 'border-[#475569] bg-[#334155] text-[#cbd5e1] hover:border-[#00C7D1]/50'
                     }`}
@@ -243,36 +418,43 @@ export const Deposit: React.FC = () => {
                 {/* Deposit Address & QR Code - Show only after selection */}
                 {showDepositAddress && (
                   <Card className="bg-[#334155] mb-6">
-                    <div className="text-center">
-                      <h4 className="text-[#f8fafc] font-bold mb-4">Deposit Address</h4>
+                    {isLoadingAddress ? (
+                      <div className="text-center py-8">
+                        <div className="text-4xl mb-4">⏳</div>
+                        <p className="text-[#94a3b8]">Loading deposit address...</p>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <h4 className="text-[#f8fafc] font-bold mb-4">Deposit Address</h4>
 
-                      {/* QR Code */}
-                      <div className="flex justify-center mb-4">
-                        <div className="bg-white p-4 rounded-lg">
-                          <QRCodeSVG value={depositAddress} size={200} level="H" includeMargin={true} />
+                        {/* QR Code */}
+                        <div className="flex justify-center mb-4">
+                          <div className="bg-white p-4 rounded-lg">
+                            <QRCodeSVG value={depositAddress} size={200} level="H" includeMargin={true} />
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Address */}
-                      <div className="flex items-center gap-2 p-3 bg-[#1e293b] rounded-lg border border-[#475569]">
-                        <code className="flex-1 text-[#00C7D1] text-sm font-mono break-all text-left">
-                          {depositAddress}
-                        </code>
-                        <Button variant="outline" size="sm" onClick={handleCopyAddress}>
-                          📋 Copy
-                        </Button>
-                      </div>
+                        {/* Address */}
+                        <div className="flex items-center gap-2 p-3 bg-[#1e293b] rounded-lg border border-[#475569]">
+                          <code className="flex-1 text-[#00C7D1] text-sm font-mono break-all text-left">
+                            {depositAddress}
+                          </code>
+                          <Button variant="outline" size="sm" onClick={handleCopyAddress}>
+                            📋 Copy
+                          </Button>
+                        </div>
 
-                      <Alert variant="warning" className="mt-4 text-left">
-                        <strong>⚠️ Important:</strong>
-                        <ul className="mt-2 ml-5 list-disc text-sm">
-                          <li>Send only {crypto} on {network} network to this address</li>
-                          <li>Minimum deposit: ${minDeposit} USD</li>
-                          <li>Deposits are credited after 3 network confirmations</li>
-                          <li>Wrong network = permanent loss of funds</li>
-                        </ul>
-                      </Alert>
-                    </div>
+                        <Alert variant="warning" className="mt-4 text-left">
+                          <strong>⚠️ Important:</strong>
+                          <ul className="mt-2 ml-5 list-disc text-sm">
+                            <li>Send only {crypto} on {network} network to this address</li>
+                            <li>Minimum deposit: ${minDeposit} USD</li>
+                            <li>Deposits are credited after 3 network confirmations</li>
+                            <li>Wrong network = permanent loss of funds</li>
+                          </ul>
+                        </Alert>
+                      </div>
+                    )}
                   </Card>
                 )}
               </>
@@ -281,32 +463,41 @@ export const Deposit: React.FC = () => {
             {/* Bank Transfer */}
             {paymentMethod === 'bank' && (
               <Card className="bg-[#334155] mb-6">
-                <h4 className="text-[#f8fafc] font-bold mb-4">Bank Transfer Details</h4>
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between p-3 bg-[#1e293b] rounded-lg">
-                    <span className="text-[#94a3b8]">Account Name:</span>
-                    <span className="text-[#f8fafc] font-medium">Finaster Platform Inc.</span>
+                {isLoadingBankDetails ? (
+                  <div className="text-center py-8">
+                    <div className="text-4xl mb-4">⏳</div>
+                    <p className="text-[#94a3b8]">Loading bank details...</p>
                   </div>
-                  <div className="flex justify-between p-3 bg-[#1e293b] rounded-lg">
-                    <span className="text-[#94a3b8]">Account Number:</span>
-                    <span className="text-[#f8fafc] font-medium">1234567890</span>
-                  </div>
-                  <div className="flex justify-between p-3 bg-[#1e293b] rounded-lg">
-                    <span className="text-[#94a3b8]">Routing Number:</span>
-                    <span className="text-[#f8fafc] font-medium">987654321</span>
-                  </div>
-                  <div className="flex justify-between p-3 bg-[#1e293b] rounded-lg">
-                    <span className="text-[#94a3b8]">Bank Name:</span>
-                    <span className="text-[#f8fafc] font-medium">Global Bank</span>
-                  </div>
-                  <div className="flex justify-between p-3 bg-[#1e293b] rounded-lg">
-                    <span className="text-[#94a3b8]">SWIFT Code:</span>
-                    <span className="text-[#f8fafc] font-medium">GLBUS33</span>
-                  </div>
-                </div>
-                <Alert variant="info" className="mt-4">
-                  <strong>ℹ️ Note:</strong> Bank transfers take 1-3 business days. Please include your User ID (USR123456) in the transfer reference.
-                </Alert>
+                ) : (
+                  <>
+                    <h4 className="text-[#f8fafc] font-bold mb-4">Bank Transfer Details</h4>
+                    <div className="space-y-3 text-sm">
+                      <div className="flex justify-between p-3 bg-[#1e293b] rounded-lg">
+                        <span className="text-[#94a3b8]">Account Name:</span>
+                        <span className="text-[#f8fafc] font-medium">{bankDetails.accountName}</span>
+                      </div>
+                      <div className="flex justify-between p-3 bg-[#1e293b] rounded-lg">
+                        <span className="text-[#94a3b8]">Account Number:</span>
+                        <span className="text-[#f8fafc] font-medium">{bankDetails.accountNumber}</span>
+                      </div>
+                      <div className="flex justify-between p-3 bg-[#1e293b] rounded-lg">
+                        <span className="text-[#94a3b8]">Routing Number:</span>
+                        <span className="text-[#f8fafc] font-medium">{bankDetails.routingNumber}</span>
+                      </div>
+                      <div className="flex justify-between p-3 bg-[#1e293b] rounded-lg">
+                        <span className="text-[#94a3b8]">Bank Name:</span>
+                        <span className="text-[#f8fafc] font-medium">{bankDetails.bankName}</span>
+                      </div>
+                      <div className="flex justify-between p-3 bg-[#1e293b] rounded-lg">
+                        <span className="text-[#94a3b8]">SWIFT Code:</span>
+                        <span className="text-[#f8fafc] font-medium">{bankDetails.swiftCode}</span>
+                      </div>
+                    </div>
+                    <Alert variant="info" className="mt-4">
+                      <strong>ℹ️ Note:</strong> Bank transfers take 1-3 business days. Please include your User ID in the transfer reference.
+                    </Alert>
+                  </>
+                )}
               </Card>
             )}
 
@@ -361,42 +552,49 @@ export const Deposit: React.FC = () => {
         <div>
           <Card className="bg-[#1e293b]">
             <h3 className="text-lg font-bold text-[#f8fafc] mb-4">Recent Deposits</h3>
-            <div className="space-y-3">
-              {transactions.length > 0 ? (
-                transactions.map((tx) => (
-                  <div key={tx.id} className="p-3 bg-[#334155] rounded-lg border border-[#475569]">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[#f8fafc] font-medium">{tx.method}</span>
-                      {getStatusBadge(tx.status)}
-                    </div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-[#94a3b8]">Amount:</span>
-                      <span className="text-[#10b981] font-bold">${tx.amount.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-[#94a3b8]">ID:</span>
-                      <span className="text-[#cbd5e1] font-mono text-xs">{tx.id}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#94a3b8]">Date:</span>
-                      <span className="text-[#cbd5e1] text-xs">
-                        {tx.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </span>
-                    </div>
-                    {tx.txHash && (
-                      <div className="mt-2 pt-2 border-t border-[#475569]">
-                        <span className="text-xs text-[#94a3b8]">TX: {tx.txHash}</span>
+            {isLoadingTransactions ? (
+              <div className="text-center py-8">
+                <div className="text-4xl mb-4">⏳</div>
+                <p className="text-[#94a3b8] text-sm">Loading transactions...</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {transactions.length > 0 ? (
+                  transactions.map((tx) => (
+                    <div key={tx.id} className="p-3 bg-[#334155] rounded-lg border border-[#475569]">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[#f8fafc] font-medium">{tx.method}</span>
+                        {getStatusBadge(tx.status)}
                       </div>
-                    )}
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-[#94a3b8]">Amount:</span>
+                        <span className="text-[#10b981] font-bold">${tx.amount.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-[#94a3b8]">ID:</span>
+                        <span className="text-[#cbd5e1] font-mono text-xs">{tx.id}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-[#94a3b8]">Date:</span>
+                        <span className="text-[#cbd5e1] text-xs">
+                          {tx.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </span>
+                      </div>
+                      {tx.txHash && (
+                        <div className="mt-2 pt-2 border-t border-[#475569]">
+                          <span className="text-xs text-[#94a3b8]">TX: {tx.txHash}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-[#94a3b8]">
+                    <div className="text-4xl mb-2">📥</div>
+                    <p className="text-sm">No deposits yet</p>
                   </div>
-                ))
-              ) : (
-                <div className="text-center py-8 text-[#94a3b8]">
-                  <div className="text-4xl mb-2">📥</div>
-                  <p className="text-sm">No deposits yet</p>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
 
             <Button variant="outline" onClick={() => navigate('/transactions')} className="w-full mt-4">
               View All Transactions
@@ -406,20 +604,27 @@ export const Deposit: React.FC = () => {
           {/* Quick Stats */}
           <Card className="bg-[#1e293b] mt-6">
             <h3 className="text-lg font-bold text-[#f8fafc] mb-4">Quick Stats</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-[#94a3b8]">Total Deposits:</span>
-                <span className="text-[#f8fafc] font-bold">$1,750.00</span>
+            {isLoadingStats ? (
+              <div className="text-center py-4">
+                <div className="text-2xl mb-2">⏳</div>
+                <p className="text-[#94a3b8] text-sm">Loading stats...</p>
               </div>
-              <div className="flex justify-between">
-                <span className="text-[#94a3b8]">This Month:</span>
-                <span className="text-[#10b981] font-bold">$500.00</span>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-[#94a3b8]">Total Deposits:</span>
+                  <span className="text-[#f8fafc] font-bold">${Number(stats.totalDeposits || 0).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#94a3b8]">This Month:</span>
+                  <span className="text-[#10b981] font-bold">${Number(stats.thisMonth || 0).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#94a3b8]">Pending:</span>
+                  <span className="text-[#f59e0b] font-bold">${Number(stats.pendingDeposits || 0).toFixed(2)}</span>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-[#94a3b8]">Pending:</span>
-                <span className="text-[#f59e0b] font-bold">$250.00</span>
-              </div>
-            </div>
+            )}
           </Card>
         </div>
       </div>

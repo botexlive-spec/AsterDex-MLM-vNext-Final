@@ -25,8 +25,8 @@ router.get('/', async (req: Request, res: Response) => {
     const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
 
     // Get query parameters
-    const limit = parseInt(req.query.limit as string) || 50;
-    const offset = parseInt(req.query.offset as string) || 0;
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 50;
+    const offset = req.query.offset ? parseInt(req.query.offset as string, 10) : 0;
     const type = req.query.type as string; // optional filter by transaction type
 
     // Build query with optional type filter
@@ -40,9 +40,9 @@ router.get('/', async (req: Request, res: Response) => {
         package_id,
         description,
         status,
-        createdAt
+        created_at
       FROM mlm_transactions
-      WHERE userId = ?
+      WHERE user_id = ?
     `;
 
     const queryParams: any[] = [decoded.id];
@@ -52,13 +52,13 @@ router.get('/', async (req: Request, res: Response) => {
       queryParams.push(type);
     }
 
-    transactionQuery += ' ORDER BY createdAt DESC LIMIT ? OFFSET ?';
-    queryParams.push(limit, offset);
+    // Use template literal for LIMIT/OFFSET (safe since they're validated integers)
+    transactionQuery += ` ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
 
     const transactionsResult = await query(transactionQuery, queryParams);
 
     // Get total count
-    let countQuery = 'SELECT COUNT(*) as total FROM mlm_transactions WHERE userId = ?';
+    let countQuery = 'SELECT COUNT(*) as total FROM mlm_transactions WHERE user_id = ?';
     const countParams: any[] = [decoded.id];
 
     if (type) {

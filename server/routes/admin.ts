@@ -4,40 +4,13 @@
  */
 
 import { Router, Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { query } from '../db';
-import { distributeROI } from '../cron/roi-distribution';
+import { distributeLifetimeROI } from '../cron/lifetime-roi-distribution';
+import { authenticateAdmin } from '../middleware/auth';
 
 const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'finaster_jwt_secret_key_change_in_production_2024';
-
-/**
- * Middleware to verify JWT token and admin role
- */
-function authenticateAdmin(req: Request, res: Response, next: any) {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'No token provided' });
-  }
-
-  const token = authHeader.substring(7);
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string; role: string };
-
-    if (decoded.role !== 'admin') {
-      return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
-    }
-
-    (req as any).admin = decoded;
-    next();
-  } catch (error) {
-    return res.status(401).json({ error: 'Invalid token' });
-  }
-}
 
 // ============================================================
 // USER MANAGEMENT ENDPOINTS
@@ -201,23 +174,55 @@ router.post('/users', authenticateAdmin, async (req: Request, res: Response) => 
       return res.status(409).json({ error: 'Email already exists' });
     }
 
-    // Check if parent exists
-    const parentResult = await query('SELECT id FROM users WHERE id = ?', [parentId]);
+    // Check if parent exists (accept email or UUID)
+    console.log('👤 [Admin] Looking for parent user:', parentId);
+    const parentResult = await query(
+      'SELECT id, email FROM users WHERE id = ? OR email = ?',
+      [parentId, parentId]
+    );
+    console.log('👤 [Admin] Parent query result:', { rowCount: parentResult.rows.length, rows: parentResult.rows });
+
     if (parentResult.rows.length === 0) {
+      console.log('❌ [Admin] Parent user not found:', parentId);
       return res.status(404).json({ error: 'Parent user not found' });
     }
 
-    // Check if parent has a binary node
-    const parentBinaryNode = await query(
+    // Get the actual parent ID (in case email was provided)
+    const actualParentId = parentResult.rows[0].id;
+    console.log('✅ [Admin] Found parent user:', { actualParentId, email: parentResult.rows[0].email });
+
+    // Check if parent has a binary node, create one if they don't
+    let parentBinaryNode = await query(
       'SELECT id, leftChildId, rightChildId FROM mlm_binary_node WHERE referralId = ?',
-      [parentId]
+      [actualParentId]
     );
 
+    let parentNode;
     if (parentBinaryNode.rows.length === 0) {
-      return res.status(400).json({ error: 'Parent does not have a binary tree node' });
-    }
+      console.log('⚠️  [Admin] Parent has no binary node, creating one...');
 
-    const parentNode = parentBinaryNode.rows[0];
+      // First, create/verify referral record
+      const referralCheck = await query('SELECT id FROM mlm_referral WHERE id = ?', [actualParentId]);
+      if (referralCheck.rows.length === 0) {
+        await query(
+          'INSERT INTO mlm_referral (id, userId, sponsor_id, left_leg_id, right_leg_id) VALUES (?, ?, NULL, NULL, NULL)',
+          [actualParentId, actualParentId]
+        );
+        console.log('✅ [Admin] Created referral record for parent');
+      }
+
+      // Create binary node for parent (as root node)
+      const parentNodeId = crypto.randomUUID();
+      await query(
+        'INSERT INTO mlm_binary_node (id, referralId, parentId, leftChildId, rightChildId) VALUES (?, ?, NULL, NULL, NULL)',
+        [parentNodeId, actualParentId]
+      );
+      console.log('✅ [Admin] Created binary node for parent:', parentNodeId);
+
+      parentNode = { id: parentNodeId, leftChildId: null, rightChildId: null };
+    } else {
+      parentNode = parentBinaryNode.rows[0];
+    }
 
     // Check if position is already occupied
     const occupiedChildId = position === 'left' ? parentNode.leftChildId : parentNode.rightChildId;
@@ -246,7 +251,7 @@ router.post('/users', authenticateAdmin, async (req: Request, res: Response) => 
         passwordHash,
         full_name,
         'user',
-        parentId,
+        actualParentId,
         referral_code,
         initialInvestment,
         initialInvestment,
@@ -283,14 +288,14 @@ router.post('/users', authenticateAdmin, async (req: Request, res: Response) => 
       [nodeId, parentNode.id]
     );
 
-    console.log(`✅ [Admin] Placed user at ${position} of parent ${parentId}`);
+    console.log(`✅ [Admin] Placed user at ${position} of parent ${actualParentId}`);
 
     // Update sponsor's level unlocks (generation plan)
-    if (parentId) {
+    if (actualParentId) {
       try {
         const { updateUserLevelUnlocks } = await import('../services/generation-plan.service');
-        await updateUserLevelUnlocks(parentId);
-        console.log(`✅ [Admin] Updated level unlocks for sponsor ${parentId}`);
+        await updateUserLevelUnlocks(actualParentId);
+        console.log(`✅ [Admin] Updated level unlocks for sponsor ${actualParentId}`);
       } catch (error) {
         console.error(`⚠️  Failed to update level unlocks for sponsor:`, error);
         // Don't fail user creation if level unlock update fails
@@ -453,16 +458,45 @@ router.post('/users/:id/reset-password', authenticateAdmin, async (req: Request,
 
 /**
  * GET /api/admin/packages
- * Get all packages
+ * Get the SINGLE global investment package for admin editing
+ * NEW ARCHITECTURE: Single package only
  */
 router.get('/packages', authenticateAdmin, async (req: Request, res: Response) => {
   try {
-    const result = await query('SELECT * FROM packages ORDER BY min_investment ASC');
+    console.log('📦 [Admin Packages] Fetching global package...');
+    const result = await query('SELECT * FROM packages WHERE id = 1 LIMIT 1');
+    console.log('📦 [Admin Packages] Query result:', result.rows.length, 'rows');
 
-    res.json({ packages: result.rows });
+    if (result.rows.length === 0) {
+      console.log('❌ [Admin Packages] No package found');
+      return res.status(404).json({ error: 'Global package not found' });
+    }
+
+    const pkg = result.rows[0];
+    console.log('📦 [Admin Packages] Package found:', pkg.name);
+
+    // Return single package with all editable fields
+    console.log('✅ [Admin Packages] Sending response');
+    res.json({
+      package: {
+        id: pkg.id,
+        name: pkg.name,
+        min_investment: parseFloat(pkg.min_investment),
+        max_investment: parseFloat(pkg.max_investment),
+        daily_roi_percentage: parseFloat(pkg.daily_roi_percentage),
+        duration_days: pkg.duration_days,
+        level_income_percentages: pkg.level_income_percentages || [],
+        matching_bonus_percentage: parseFloat(pkg.matching_bonus_percentage),
+        is_active: pkg.is_active,
+        levels: 15,
+        binary_enabled: false,
+        created_at: pkg.created_at,
+        updated_at: pkg.updated_at,
+      }
+    });
   } catch (error: any) {
-    console.error('❌ Get packages error:', error);
-    res.status(500).json({ error: 'Failed to get packages' });
+    console.error('❌ [Admin Packages] Error:', error);
+    res.status(500).json({ error: 'Failed to get package' });
   }
 });
 
@@ -871,11 +905,13 @@ router.get('/analytics/revenue', authenticateAdmin, async (req: Request, res: Re
  */
 router.post('/distribute-roi', authenticateAdmin, async (req: Request, res: Response) => {
   try {
-    console.log('🔄 Manual ROI distribution triggered by admin');
-    const result = await distributeROI();
+    console.log('🔄 Manual Lifetime ROI distribution triggered by admin');
+    // Import here to avoid circular dependency
+    const { distributeLifetimeROI } = await import('../cron/lifetime-roi-distribution');
+    const result = await distributeLifetimeROI();
     res.json({
       success: true,
-      message: 'ROI distribution completed successfully',
+      message: 'Lifetime ROI distribution completed successfully',
       ...result
     });
   } catch (error: any) {
@@ -885,6 +921,309 @@ router.post('/distribute-roi', authenticateAdmin, async (req: Request, res: Resp
       error: 'Failed to distribute ROI',
       message: error.message
     });
+  }
+});
+
+// ============================================================
+// INVESTMENT MANAGEMENT
+// ============================================================
+
+/**
+ * GET /api/admin/investments
+ * Get all user investments with filters and pagination
+ */
+router.get('/investments', authenticateAdmin, async (req: Request, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const offset = (page - 1) * limit;
+    const status = req.query.status as string || '';
+    const userId = req.query.user_id as string || '';
+
+    let whereClause = 'WHERE 1=1';
+    const params: any[] = [];
+
+    if (status) {
+      whereClause += ' AND up.status = ?';
+      params.push(status);
+    }
+
+    if (userId) {
+      whereClause += ' AND up.user_id = ?';
+      params.push(userId);
+    }
+
+    // Get total count
+    const countResult = await query(
+      `SELECT COUNT(*) as total FROM user_packages up ${whereClause}`,
+      params
+    );
+    const total = parseInt(countResult.rows[0]?.total || 0);
+
+    // Get investments
+    const investmentsResult = await query(
+      `SELECT up.*, u.email, u.full_name, p.name as package_name,
+              DATEDIFF(NOW(), up.activation_date) as days_active
+       FROM user_packages up
+       JOIN users u ON up.user_id = u.id
+       JOIN packages p ON up.package_id = p.id
+       ${whereClause}
+       ORDER BY up.created_at DESC
+       LIMIT ${limit} OFFSET ${offset}`,
+      params
+    );
+
+    res.json({
+      investments: investmentsResult.rows,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ Get investments error:', error);
+    res.status(500).json({ error: 'Failed to get investments' });
+  }
+});
+
+/**
+ * GET /api/admin/investments/:id
+ * Get single investment details with full history
+ */
+router.get('/investments/:id', authenticateAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Get investment details
+    const investmentResult = await query(
+      `SELECT up.*, u.email, u.full_name, p.name as package_name,
+              DATEDIFF(NOW(), up.activation_date) as days_active
+       FROM user_packages up
+       JOIN users u ON up.user_id = u.id
+       JOIN packages p ON up.package_id = p.id
+       WHERE up.id = ?
+       LIMIT 1`,
+      [id]
+    );
+
+    if (investmentResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Investment not found' });
+    }
+
+    // Get ROI distribution history
+    const roiHistory = await query(
+      `SELECT * FROM roi_distributions
+       WHERE user_package_id = ?
+       ORDER BY distribution_date DESC
+       LIMIT 100`,
+      [id]
+    );
+
+    // Get stop record if exists
+    const stopRecord = await query(
+      `SELECT * FROM investment_stops WHERE user_package_id = ? LIMIT 1`,
+      [id]
+    );
+
+    // Get withdrawal record if exists
+    const withdrawalRecord = await query(
+      `SELECT * FROM investment_withdrawals WHERE user_package_id = ? LIMIT 1`,
+      [id]
+    );
+
+    res.json({
+      investment: investmentResult.rows[0],
+      roi_history: roiHistory.rows,
+      stop_record: stopRecord.rows[0] || null,
+      withdrawal_record: withdrawalRecord.rows[0] || null
+    });
+  } catch (error: any) {
+    console.error('❌ Get investment details error:', error);
+    res.status(500).json({ error: 'Failed to get investment details' });
+  }
+});
+
+/**
+ * POST /api/admin/investments/:id/stop
+ * Admin stop user investment with auto-deduction
+ */
+router.post('/investments/:id/stop', authenticateAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    // Get investment details
+    const investmentResult = await query(
+      `SELECT * FROM user_packages WHERE id = ? LIMIT 1`,
+      [id]
+    );
+
+    if (investmentResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Investment not found' });
+    }
+
+    const investment = investmentResult.rows[0];
+
+    if (investment.status !== 'active') {
+      return res.status(400).json({
+        error: `Investment cannot be stopped. Current status: ${investment.status}`
+      });
+    }
+
+    // Calculate penalty
+    const activationDate = new Date(investment.activation_date);
+    const stopDate = new Date();
+    const daysActive = Math.floor((stopDate.getTime() - activationDate.getTime()) / (1000 * 60 * 60 * 24));
+    const penaltyPercentage = daysActive <= 30 ? 15.00 : 5.00;
+    const investmentAmount = parseFloat(investment.investment_amount);
+    const penaltyAmount = (investmentAmount * penaltyPercentage) / 100;
+    const principalRemaining = investmentAmount - penaltyAmount;
+    const totalROIEarned = parseFloat(investment.total_roi_earned || 0);
+
+    console.log(`🛑 Admin stopping investment ${id}:`);
+    console.log(`   Days active: ${daysActive}`);
+    console.log(`   Penalty: ${penaltyPercentage}% ($${penaltyAmount.toFixed(2)})`);
+
+    // Update investment status
+    await query(
+      `UPDATE user_packages
+       SET status = 'stopped',
+           stop_date = ?,
+           stop_penalty_percentage = ?,
+           principal_remaining = ?,
+           updated_at = NOW()
+       WHERE id = ?`,
+      [stopDate, penaltyPercentage, principalRemaining, id]
+    );
+
+    // Log stop in audit trail
+    await query(
+      `INSERT INTO investment_stops
+       (user_package_id, user_id, stop_date, investment_amount, total_roi_earned,
+        days_active, penalty_percentage, penalty_amount, principal_remaining, reason, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [
+        id,
+        investment.user_id,
+        stopDate,
+        investmentAmount,
+        totalROIEarned,
+        daysActive,
+        penaltyPercentage,
+        penaltyAmount,
+        principalRemaining,
+        reason || 'Admin stopped investment'
+      ]
+    );
+
+    console.log(`✅ Admin stopped investment ${id}`);
+
+    res.json({
+      success: true,
+      message: 'Investment stopped successfully by admin',
+      stop_details: {
+        investment_id: id,
+        days_active: daysActive,
+        penalty_percentage: penaltyPercentage,
+        penalty_amount: penaltyAmount,
+        principal_remaining: principalRemaining
+      }
+    });
+
+  } catch (error: any) {
+    console.error('❌ Admin stop investment error:', error);
+    res.status(500).json({ error: 'Failed to stop investment' });
+  }
+});
+
+/**
+ * PUT /api/admin/investments/:id/roi
+ * Manually adjust ROI for an investment
+ */
+router.put('/investments/:id/roi', authenticateAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { adjustment_amount, reason } = req.body;
+
+    if (!adjustment_amount) {
+      return res.status(400).json({ error: 'Adjustment amount is required' });
+    }
+
+    const amount = parseFloat(adjustment_amount);
+
+    // Get investment details
+    const investmentResult = await query(
+      `SELECT * FROM user_packages WHERE id = ? LIMIT 1`,
+      [id]
+    );
+
+    if (investmentResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Investment not found' });
+    }
+
+    const investment = investmentResult.rows[0];
+
+    // Update investment ROI
+    await query(
+      `UPDATE user_packages
+       SET total_roi_earned = total_roi_earned + ?,
+           updated_at = NOW()
+       WHERE id = ?`,
+      [amount, id]
+    );
+
+    // Get current wallet balance
+    const userResult = await query(
+      'SELECT wallet_balance FROM users WHERE id = ? LIMIT 1',
+      [investment.user_id]
+    );
+    const currentBalance = parseFloat(userResult.rows[0].wallet_balance);
+    const newBalance = currentBalance + amount;
+
+    // Update user wallet
+    await query(
+      `UPDATE users
+       SET wallet_balance = wallet_balance + ?,
+           total_earnings = total_earnings + ?,
+           roi_earnings = roi_earnings + ?
+       WHERE id = ?`,
+      [amount, amount, amount, investment.user_id]
+    );
+
+    // Create transaction record
+    await query(
+      `INSERT INTO mlm_transactions
+       (user_id, transaction_type, amount, description, status,
+        reference_type, reference_id, balance_before, balance_after,
+        created_at, updated_at)
+       VALUES (?, 'roi_adjustment', ?, ?, 'completed', 'investment', ?, ?, ?, NOW(), NOW())`,
+      [
+        investment.user_id,
+        amount,
+        `Admin ROI adjustment - ${reason || 'Manual adjustment'}`,
+        id,
+        currentBalance,
+        newBalance
+      ]
+    );
+
+    console.log(`✅ Admin adjusted ROI for investment ${id}: $${amount}`);
+
+    res.json({
+      success: true,
+      message: 'ROI adjusted successfully',
+      adjustment: {
+        investment_id: id,
+        amount: amount,
+        new_wallet_balance: newBalance
+      }
+    });
+
+  } catch (error: any) {
+    console.error('❌ Admin ROI adjustment error:', error);
+    res.status(500).json({ error: 'Failed to adjust ROI' });
   }
 });
 

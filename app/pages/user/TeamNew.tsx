@@ -5,108 +5,26 @@ import { useAuth } from '../../context/AuthContext';
 import { getTeamMembers } from '../../services/team.service';
 import { ResponsiveTable } from '../../components/ResponsiveTable';
 
-// Mock data for team members
-const mockTeamMembers = [
-  {
-    id: 1,
-    name: 'John Doe',
-    email: 'john@example.com',
-    joinDate: '2024-01-15',
-    level: 1,
-    status: 'active',
-    investment: 5000,
-    totalInvestment: 15000,
-    directReferrals: 3,
-    teamSize: 12,
-    leftLeg: 5,
-    rightLeg: 7,
-    volume: 25000,
-    parentId: null,
-  },
-  {
-    id: 2,
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    joinDate: '2024-02-20',
-    level: 1,
-    status: 'active',
-    investment: 2000,
-    totalInvestment: 8000,
-    directReferrals: 2,
-    teamSize: 5,
-    leftLeg: 2,
-    rightLeg: 3,
-    volume: 12000,
-    parentId: null,
-  },
-  {
-    id: 3,
-    name: 'Mike Johnson',
-    email: 'mike@example.com',
-    joinDate: '2024-03-10',
-    level: 2,
-    status: 'inactive',
-    investment: 1000,
-    totalInvestment: 3000,
-    directReferrals: 1,
-    teamSize: 2,
-    leftLeg: 1,
-    rightLeg: 1,
-    volume: 5000,
-    parentId: 1,
-  },
-  {
-    id: 4,
-    name: 'Sarah Williams',
-    email: 'sarah@example.com',
-    joinDate: '2024-04-05',
-    level: 1,
-    status: 'active',
-    investment: 10000,
-    totalInvestment: 20000,
-    directReferrals: 4,
-    teamSize: 18,
-    leftLeg: 8,
-    rightLeg: 10,
-    volume: 42000,
-    parentId: null,
-  },
-  {
-    id: 5,
-    name: 'Tom Brown',
-    email: 'tom@example.com',
-    joinDate: '2024-05-12',
-    level: 2,
-    status: 'pending',
-    investment: 0,
-    totalInvestment: 0,
-    directReferrals: 0,
-    teamSize: 0,
-    leftLeg: 0,
-    rightLeg: 0,
-    volume: 0,
-    parentId: 1,
-  },
-  {
-    id: 6,
-    name: 'Lisa Anderson',
-    email: 'lisa@example.com',
-    joinDate: '2024-06-01',
-    level: 3,
-    status: 'active',
-    investment: 3000,
-    totalInvestment: 3000,
-    directReferrals: 0,
-    teamSize: 0,
-    leftLeg: 0,
-    rightLeg: 0,
-    volume: 3000,
-    parentId: 3,
-  },
-];
+// Team member interface
+interface TeamMember {
+  id: number;
+  name: string;
+  email: string;
+  joinDate: string;
+  level: number;
+  status: string;
+  investment: number;
+  totalInvestment: number;
+  directReferrals: number;
+  teamSize: number;
+  leftLeg: number;
+  rightLeg: number;
+  volume: number;
+  parentId: number | null;
+}
 
 // Generate level-wise breakdown data
-const generateLevelData = (members: typeof mockTeamMembers) => {
+const generateLevelData = (members: TeamMember[]) => {
   const levels = Array.from({ length: 30 }, (_, i) => ({
     level: i + 1,
     members: members.filter(m => m.level === i + 1).length,
@@ -269,7 +187,7 @@ const TeamNew: React.FC = () => {
   }, [teamMembers, searchTerm, statusFilter, levelFilter, sortBy]);
 
   // Build tree structure
-  const buildTree = (members: typeof mockTeamMembers): TreeNode[] => {
+  const buildTree = (members: TeamMember[]): TreeNode[] => {
     const map = new Map<number, TreeNode>();
     const roots: TreeNode[] = [];
 

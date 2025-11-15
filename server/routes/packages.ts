@@ -33,41 +33,64 @@ function authenticateToken(req: Request, res: Response, next: any) {
 
 /**
  * GET /api/packages
- * Get all available packages
+ * Get the SINGLE global investment package (slider-based)
+ * NEW ARCHITECTURE: One package with $100-$100K slider
  */
 router.get('/', async (req: Request, res: Response) => {
   try {
+    // Get the single global package (ID=1)
     const result = await query(
-      'SELECT * FROM packages WHERE is_active = true ORDER BY min_investment ASC'
+      'SELECT * FROM packages WHERE id = 1 AND is_active = true LIMIT 1'
     );
 
-    const packages = result.rows.map((pkg: any) => ({
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Global package not found' });
+    }
+
+    const pkg = result.rows[0];
+
+    // Return single package optimized for slider UI
+    const packageData = {
       id: pkg.id,
       name: pkg.name,
-      min_investment: parseFloat(pkg.min_investment),
-      max_investment: parseFloat(pkg.max_investment),
-      daily_roi_percentage: parseFloat(pkg.daily_roi_percentage),
-      duration_days: pkg.duration_days,
+      min_investment: parseFloat(pkg.min_investment), // $100
+      max_investment: parseFloat(pkg.max_investment), // $100,000
+      daily_roi_percentage: parseFloat(pkg.daily_roi_percentage), // 0.4%
+      duration_days: pkg.duration_days, // 36500 (100 years / lifetime)
       level_income_percentages: pkg.level_income_percentages || [],
-      matching_bonus_percentage: parseFloat(pkg.matching_bonus_percentage),
+      levels: 15, // 15-level commission
+      binary_enabled: false, // No binary
       is_active: pkg.is_active,
-    }));
+      // Slider configuration
+      slider_min: 100,
+      slider_max: 100000,
+      slider_step: 100,
+      // Display info
+      commission_type: 'roi_on_roi', // ROI on ROI (not ROI on investment)
+      booster_available: true,
+      monthly_reward_available: true,
+    };
 
-    res.json({ packages });
+    res.json({ package: packageData });
   } catch (error: any) {
-    console.error('❌ Get packages error:', error);
-    res.status(500).json({ error: 'Failed to get packages' });
+    console.error('❌ Get package error:', error);
+    res.status(500).json({ error: 'Failed to get package' });
   }
 });
 
 /**
  * POST /api/packages/purchase
- * Purchase a package
+ * Purchase a package - LIFETIME ROI SYSTEM
+ * New rules:
+ * - Minimum $100
+ * - Only multiples of $100
+ * - No expiry date (lifetime ROI)
+ * - No ROI limit (infinite until user stops)
  */
 router.post('/purchase', authenticateToken, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
-    const { package_id, investment_amount } = req.body;
+    const { package_id, investment_amount, idempotency_key } = req.body;
 
     // Validate input
     if (!package_id || !investment_amount) {
@@ -76,26 +99,57 @@ router.post('/purchase', authenticateToken, async (req: Request, res: Response) 
 
     const amount = parseFloat(investment_amount);
 
-    // Get package details
+    // ✅ IDEMPOTENCY: Check if this investment already exists
+    if (idempotency_key) {
+      const existingInvestment = await query(
+        'SELECT id, status FROM user_packages WHERE user_id = ? AND idempotency_key = ? LIMIT 1',
+        [userId, idempotency_key]
+      );
+
+      if (existingInvestment.rows.length > 0) {
+        const existing = existingInvestment.rows[0];
+        return res.status(200).json({
+          success: true,
+          message: 'Investment already created (idempotency check)',
+          investment_id: existing.id,
+          status: existing.status,
+          duplicate_prevented: true
+        });
+      }
+    }
+
+    // ✅ SINGLE PACKAGE VALIDATION: $100 - $100,000 in $100 multiples
+    if (amount < 100) {
+      return res.status(400).json({
+        error: 'Minimum investment is $100',
+        validation: { min: 100, max: 100000, step: 100 }
+      });
+    }
+
+    if (amount > 100000) {
+      return res.status(400).json({
+        error: 'Maximum investment is $100,000',
+        validation: { min: 100, max: 100000, step: 100 }
+      });
+    }
+
+    if (amount % 100 !== 0) {
+      return res.status(400).json({
+        error: 'Investment must be in multiples of $100',
+        validation: { min: 100, max: 100000, step: 100 }
+      });
+    }
+
+    // Get the single global package (should always be ID=1)
     const packageResult = await query(
-      'SELECT * FROM packages WHERE id = ? AND is_active = true LIMIT 1',
-      [package_id]
+      'SELECT * FROM packages WHERE id = 1 AND is_active = true LIMIT 1'
     );
 
     if (packageResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Package not found' });
+      return res.status(404).json({ error: 'Global investment package not found' });
     }
 
     const packageData = packageResult.rows[0];
-    const minInvestment = parseFloat(packageData.min_investment);
-    const maxInvestment = parseFloat(packageData.max_investment);
-
-    // Validate investment amount
-    if (amount < minInvestment || amount > maxInvestment) {
-      return res.status(400).json({
-        error: `Investment must be between $${minInvestment} and $${maxInvestment}`
-      });
-    }
 
     // Get user data
     const userResult = await query(
@@ -119,23 +173,22 @@ router.post('/purchase', authenticateToken, async (req: Request, res: Response) 
       });
     }
 
-    // Calculate ROI details
+    // Calculate daily ROI
     const dailyROI = (amount * parseFloat(packageData.daily_roi_percentage)) / 100;
-    const totalROILimit = amount * 2; // 200% total return
-    const durationDays = packageData.duration_days;
 
-    // Start transaction
+    // ✅ NEW: Lifetime ROI - no expiry date, no ROI limit
     const activationDate = new Date();
-    const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + durationDays);
 
-    // Insert user package
+    // Generate idempotency key if not provided
+    const finalIdempotencyKey = idempotency_key || `inv_${userId}_${package_id}_${Date.now()}`;
+
+    // Insert user package with lifetime ROI fields
     const userPackageResult = await query(
       `INSERT INTO user_packages
-       (userId, package_id, investment_amount, daily_roi_amount, total_roi_earned,
-        total_roi_limit, status, activation_date, expiry_date, createdAt, updatedAt)
-       VALUES (?, ?, ?, ?, 0, ?, 'active', ?, ?, NOW(), NOW())`,
-      [userId, package_id, amount, dailyROI, totalROILimit, activationDate, expiryDate]
+       (user_id, package_id, investment_amount, daily_roi_amount, total_roi_earned,
+        status, activation_date, booster_activation_date, idempotency_key, created_at, updated_at)
+       VALUES (?, ?, ?, ?, 0, 'active', ?, ?, ?, NOW(), NOW())`,
+      [userId, package_id, amount, dailyROI, activationDate, activationDate, finalIdempotencyKey]
     );
 
     const userPackageId = userPackageResult.insertId;
@@ -146,12 +199,19 @@ router.post('/purchase', authenticateToken, async (req: Request, res: Response) 
       [amount, amount, userId]
     );
 
-    // Create transaction record
+    // Get current wallet balance for transaction tracking
+    const currentBalance = parseFloat(user.wallet_balance);
+    const newBalance = currentBalance - amount;
+
+    // Create transaction record with balance tracking
     await query(
       `INSERT INTO mlm_transactions
-       (userId, transaction_type, amount, description, status, createdAt, updatedAt)
-       VALUES (?, 'package_purchase', ?, ?, 'completed', NOW(), NOW())`,
-      [userId, amount, `Purchased ${packageData.name} - $${amount}`]
+       (user_id, transaction_type, amount, description, status,
+        reference_type, reference_id, balance_before, balance_after,
+        created_at, updated_at)
+       VALUES (?, 'withdrawal', ?, ?, 'completed', 'investment', ?, ?, ?, NOW(), NOW())`,
+      [userId, amount, `Investment Purchase - ${packageData.name} - $${amount}`,
+       String(userPackageId), currentBalance, newBalance]
     );
 
     // Distribute 30-level income commissions with eligibility checks
@@ -179,14 +239,14 @@ router.post('/purchase', authenticateToken, async (req: Request, res: Response) 
 
       // Check if this is user's first investment (initialize booster)
       const firstPackageCheck = await query(
-        'SELECT COUNT(*) as count FROM user_packages WHERE userId = ?',
+        'SELECT COUNT(*) as count FROM user_packages WHERE user_id = ?',
         [userId]
       );
 
       if (parseInt(firstPackageCheck.rows[0].count) === 1) {
-        // This is first investment, initialize booster
-        await initializeBooster(userId);
-        console.log(`🚀 Booster initialized for user ${userId}`);
+        // This is first investment, initialize booster with investment details
+        await initializeBooster(userId, String(userPackageId), amount);
+        console.log(`🚀 Booster initialized for user ${userId} (Investment: $${amount})`);
       }
 
       // Get user's sponsor and update their booster count if they have active booster
@@ -222,14 +282,16 @@ router.post('/purchase', authenticateToken, async (req: Request, res: Response) 
 
     res.json({
       success: true,
-      message: 'Package purchased successfully',
-      package: {
-        name: packageData.name,
+      message: 'Lifetime ROI investment created successfully',
+      investment: {
+        id: String(userPackageId),
+        package_name: packageData.name,
         investment_amount: amount,
         daily_roi: dailyROI,
-        total_roi_limit: totalROILimit,
-        duration_days: durationDays,
-        expiry_date: expiryDate
+        activation_date: activationDate,
+        status: 'active',
+        lifetime_roi: true, // No expiry, no limit
+        note: 'Investment will generate daily ROI indefinitely until you choose to stop it'
       }
     });
 
@@ -241,7 +303,7 @@ router.post('/purchase', authenticateToken, async (req: Request, res: Response) 
 
 /**
  * GET /api/packages/my-packages
- * Get user's purchased packages
+ * Get user's purchased packages - LIFETIME ROI SYSTEM
  */
 router.get('/my-packages', authenticateToken, async (req: Request, res: Response) => {
   try {
@@ -251,29 +313,46 @@ router.get('/my-packages', authenticateToken, async (req: Request, res: Response
       `SELECT up.*, p.name as package_name, p.daily_roi_percentage
        FROM user_packages up
        JOIN packages p ON up.package_id = p.id
-       WHERE up.userId = ?
-       ORDER BY up.createdAt DESC`,
+       WHERE up.user_id = ?
+       ORDER BY up.created_at DESC`,
       [userId]
     );
 
-    const packages = result.rows.map((pkg: any) => ({
-      id: pkg.id,
-      package_name: pkg.package_name,
-      investment_amount: parseFloat(pkg.investment_amount),
-      daily_roi_amount: parseFloat(pkg.daily_roi_amount),
-      total_roi_earned: parseFloat(pkg.total_roi_earned),
-      total_roi_limit: parseFloat(pkg.total_roi_limit),
-      status: pkg.status,
-      activation_date: pkg.activation_date,
-      expiry_date: pkg.expiry_date,
-      days_remaining: Math.max(0, Math.ceil((new Date(pkg.expiry_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))),
-      progress_percentage: ((parseFloat(pkg.total_roi_earned) / parseFloat(pkg.total_roi_limit)) * 100).toFixed(2)
-    }));
+    const packages = result.rows.map((pkg: any) => {
+      const activationDate = new Date(pkg.activation_date);
+      const now = new Date();
+      const daysActive = Math.floor((now.getTime() - activationDate.getTime()) / (1000 * 60 * 60 * 24));
 
-    res.json({ packages });
+      // Calculate 30-day booster timer
+      const boosterDaysRemaining = pkg.status === 'active' && pkg.booster_activation_date
+        ? Math.max(0, 30 - Math.floor((now.getTime() - new Date(pkg.booster_activation_date).getTime()) / (1000 * 60 * 60 * 24)))
+        : 0;
+
+      return {
+        id: pkg.id,
+        package_name: pkg.package_name,
+        investment_amount: parseFloat(pkg.investment_amount),
+        daily_roi_amount: parseFloat(pkg.daily_roi_amount),
+        total_roi_earned: parseFloat(pkg.total_roi_earned || 0),
+        status: pkg.status,
+        activation_date: pkg.activation_date,
+        days_active: daysActive,
+        booster_days_remaining: boosterDaysRemaining,
+        // Lifetime ROI fields
+        is_lifetime: true,
+        stop_date: pkg.stop_date,
+        penalty_percentage: pkg.stop_penalty_percentage ? parseFloat(pkg.stop_penalty_percentage) : null,
+        principal_remaining: pkg.principal_remaining ? parseFloat(pkg.principal_remaining) : null,
+        withdrawal_date: pkg.withdrawal_date,
+        can_stop: pkg.status === 'active',
+        can_withdraw: pkg.status === 'stopped' && !pkg.withdrawal_date
+      };
+    });
+
+    res.json({ investments: packages }); // Changed from 'packages' to 'investments'
   } catch (error: any) {
-    console.error('❌ Get my packages error:', error);
-    res.status(500).json({ error: 'Failed to get packages' });
+    console.error('❌ Get my investments error:', error);
+    res.status(500).json({ error: 'Failed to get investments' });
   }
 });
 

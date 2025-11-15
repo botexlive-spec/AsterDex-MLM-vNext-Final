@@ -6,6 +6,7 @@
 import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { query } from '../db';
+import { submitWithdrawalRequest, getUserWithdrawals } from '../services/withdrawal.service';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'finaster_mlm_jwt_secret_key_change_in_production_2024';
@@ -72,34 +73,16 @@ router.get('/balance', async (req: Request, res: Response) => {
 
 /**
  * GET /api/wallet-simple/withdrawal/limits
- * Get withdrawal configuration
+ * Get withdrawal configuration - NO DEDUCTION for regular withdrawals
  */
 router.get('/withdrawal/limits', async (req: Request, res: Response) => {
   try {
-    // Get withdrawal configuration from plan_settings
-    const result = await query(
-      'SELECT payload FROM plan_settings WHERE feature_key = ? LIMIT 1',
-      ['principal_withdrawal']
-    );
-
-    if (result.rows.length === 0) {
-      // Return defaults
-      return res.json({
-        minimum_withdrawal: 50,
-        deduction_before_30_days: 15,
-        deduction_after_30_days: 5
-      });
-    }
-
-    const payload = typeof result.rows[0].payload === 'string'
-      ? JSON.parse(result.rows[0].payload)
-      : result.rows[0].payload;
-
-    // Return as plain numbers
+    // Regular withdrawals have NO deduction (0%)
+    // Deduction only applies to stop-investment logic
     res.json({
-      minimum_withdrawal: parseFloat(String(payload.minimum_withdrawal || '50')),
-      deduction_before_30_days: parseFloat(String(payload.deduction_before_30_days || '15')),
-      deduction_after_30_days: parseFloat(String(payload.deduction_after_30_days || '5'))
+      minimum_withdrawal: 10,           // Minimum $10
+      deduction_percentage: 0,          // NO deduction for regular withdrawals
+      networks: ['TRC20', 'BEP20', 'ERC20']
     });
   } catch (error: any) {
     console.error('❌ Withdrawal limits error:', error.message);
@@ -189,46 +172,29 @@ router.get('/transactions', async (req: Request, res: Response) => {
 
 /**
  * GET /api/wallet-simple/withdrawals
- * Get withdrawal history
+ * Get withdrawal history - USES PRODUCTION-READY SERVICE
  */
 router.get('/withdrawals', async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
 
-    const result = await query(
-      `SELECT
-        id,
-        withdrawal_type,
-        requested_amount,
-        deduction_percentage,
-        deduction_amount,
-        final_amount,
-        status,
-        rejection_reason,
-        days_held,
-        created_at
-       FROM withdrawal_requests
-       WHERE user_id = ?
-       ORDER BY created_at DESC
-       LIMIT 50`,
-      [userId]
-    );
+    // Use production-ready withdrawal service
+    const withdrawals = await getUserWithdrawals(userId, undefined, 50);
 
-    // Convert amounts to plain numbers
-    const withdrawals = (result.rows || []).map((w: any) => ({
+    // Convert to clean format
+    const formattedWithdrawals = withdrawals.map((w: any) => ({
       id: String(w.id),
-      withdrawal_type: String(w.withdrawal_type || 'roi'),
       requested_amount: parseFloat(String(w.requested_amount || '0')),
       deduction_percentage: parseFloat(String(w.deduction_percentage || '0')),
       deduction_amount: parseFloat(String(w.deduction_amount || '0')),
       final_amount: parseFloat(String(w.final_amount || '0')),
       status: String(w.status || 'pending'),
+      wallet_address: w.wallet_address,
       rejection_reason: w.rejection_reason ? String(w.rejection_reason) : null,
-      days_held: w.days_held ? parseFloat(String(w.days_held)) : null,
       created_at: w.created_at
     }));
 
-    res.json(withdrawals);
+    res.json(formattedWithdrawals);
   } catch (error: any) {
     console.error('❌ Withdrawals error:', error.message);
     res.status(500).json({ error: 'Failed to get withdrawals' });
@@ -237,12 +203,12 @@ router.get('/withdrawals', async (req: Request, res: Response) => {
 
 /**
  * POST /api/wallet-simple/withdrawal
- * Submit withdrawal request
+ * Submit withdrawal request - NO DEDUCTION (crypto withdrawal)
  */
 router.post('/withdrawal', async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
-    const { amount, withdrawal_type, wallet_address } = req.body;
+    const { amount, wallet_address, network } = req.body;
 
     // Validate inputs
     const numAmount = parseFloat(String(amount || '0'));
@@ -254,117 +220,36 @@ router.post('/withdrawal', async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Wallet address required' });
     }
 
-    // Get user balance
-    const userResult = await query(
-      'SELECT wallet_balance FROM users WHERE id = ? LIMIT 1',
-      [userId]
-    );
-
-    if (!userResult.rows || userResult.rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'User not found' });
+    // Validate network
+    const validNetworks = ['TRC20', 'BEP20', 'ERC20'];
+    const selectedNetwork = network || 'TRC20';
+    if (!validNetworks.includes(selectedNetwork)) {
+      return res.status(400).json({ success: false, message: 'Invalid network selected' });
     }
 
-    const balance = parseFloat(String(userResult.rows[0].wallet_balance || '0'));
+    // Use production-ready withdrawal service (NO DEDUCTION)
+    const result = await submitWithdrawalRequest(
+      userId,
+      numAmount,
+      wallet_address,
+      'crypto',
+      selectedNetwork
+    );
 
-    // Check sufficient balance
-    if (numAmount > balance) {
+    if (!result.success) {
       return res.status(400).json({
         success: false,
-        message: `Insufficient balance. Available: $${balance.toFixed(2)}`
+        message: result.message
       });
     }
-
-    // Get withdrawal limits
-    const limitsResult = await query(
-      'SELECT payload FROM plan_settings WHERE feature_key = ? LIMIT 1',
-      ['principal_withdrawal']
-    );
-
-    let minimumWithdrawal = 50;
-    let deductionBefore30 = 15;
-    let deductionAfter30 = 5;
-
-    if (limitsResult.rows.length > 0) {
-      const payload = typeof limitsResult.rows[0].payload === 'string'
-        ? JSON.parse(limitsResult.rows[0].payload)
-        : limitsResult.rows[0].payload;
-
-      minimumWithdrawal = parseFloat(String(payload.minimum_withdrawal || '50'));
-      deductionBefore30 = parseFloat(String(payload.deduction_before_30_days || '15'));
-      deductionAfter30 = parseFloat(String(payload.deduction_after_30_days || '5'));
-    }
-
-    // Check minimum withdrawal
-    if (numAmount < minimumWithdrawal) {
-      return res.status(400).json({
-        success: false,
-        message: `Minimum withdrawal is $${minimumWithdrawal.toFixed(2)}`
-      });
-    }
-
-    // Calculate deduction (for principal only)
-    let deductionPercentage = 0;
-    let deductionAmount = 0;
-    let finalAmount = numAmount;
-
-    if (withdrawal_type === 'principal') {
-      // For now, use higher deduction (would check days_held in production)
-      deductionPercentage = deductionBefore30;
-      deductionAmount = (numAmount * deductionPercentage) / 100;
-      finalAmount = numAmount - deductionAmount;
-    }
-
-    // Insert withdrawal request
-    const insertResult = await query(
-      `INSERT INTO withdrawal_requests (
-        user_id,
-        withdrawal_type,
-        requested_amount,
-        deduction_percentage,
-        deduction_amount,
-        final_amount,
-        wallet_address,
-        status,
-        created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`,
-      [
-        userId,
-        withdrawal_type || 'roi',
-        numAmount,
-        deductionPercentage,
-        deductionAmount,
-        finalAmount,
-        wallet_address
-      ]
-    );
-
-    // Lock the amount in user balance (deduct from available balance)
-    await query(
-      'UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?',
-      [numAmount, userId]
-    );
-
-    // Create transaction record
-    await query(
-      `INSERT INTO mlm_transactions (
-        user_id,
-        transaction_type,
-        amount,
-        status,
-        description,
-        created_at
-      ) VALUES (?, 'withdrawal', ?, 'pending', ?, NOW())`,
-      [
-        userId,
-        -numAmount,
-        `Withdrawal request - ${withdrawal_type || 'roi'} - ${wallet_address.substring(0, 10)}...`
-      ]
-    );
 
     res.json({
       success: true,
-      message: 'Withdrawal request submitted successfully',
-      withdrawal_id: String(insertResult.insertId)
+      message: result.message,
+      withdrawal_id: result.data?.withdrawal_id,
+      requested_amount: result.data?.requested_amount,
+      final_amount: result.data?.final_amount,
+      network: selectedNetwork
     });
   } catch (error: any) {
     console.error('❌ Withdrawal submission error:', error.message);

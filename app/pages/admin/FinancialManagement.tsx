@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import {
   getAllDeposits,
   getAllWithdrawals,
+  getAllTransactions,
   approveDeposit,
   rejectDeposit,
   approveWithdrawal,
@@ -146,10 +147,11 @@ export const FinancialManagement: React.FC = () => {
       try {
         setLoading(true);
 
-        // Load deposits, withdrawals, and stats in parallel
-        const [depositsData, withdrawalsData, stats] = await Promise.all([
+        // Load deposits, withdrawals, transactions, and stats in parallel
+        const [depositsData, withdrawalsData, transactionsData, stats] = await Promise.all([
           getAllDeposits(),
           getAllWithdrawals(),
+          getAllTransactions(),
           getFinancialStats(),
         ]);
 
@@ -171,7 +173,7 @@ export const FinancialManagement: React.FC = () => {
           id: w.id,
           userId: w.user_id,
           userName: w.user_name || 'Unknown',
-          amount: w.amount,
+          amount: w.final_amount || w.requested_amount || w.amount || 0,
           method: w.withdrawal_method || 'Unknown',
           bankDetails: w.bank_details || undefined,
           walletAddress: w.wallet_address || undefined,
@@ -181,8 +183,21 @@ export const FinancialManagement: React.FC = () => {
           status: w.status,
         }));
 
+        // Format transactions for UI
+        const formattedTransactions: Transaction[] = transactionsData.map((t: any) => ({
+          id: t.id,
+          userId: t.user_id,
+          userName: t.user_name || t.user_email || 'Unknown',
+          type: t.transaction_type,
+          amount: Number(t.amount || 0),
+          status: t.status,
+          date: t.created_at,
+          description: t.description || '',
+        }));
+
         setDeposits(formattedDeposits);
         setWithdrawals(formattedWithdrawals);
+        setTransactions(formattedTransactions);
         setDepositStats(stats);
 
       } catch (error) {
@@ -686,10 +701,12 @@ export const FinancialManagement: React.FC = () => {
                           <p className="text-[#94a3b8] text-sm">{withdrawal.userId}</p>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-right text-[#ef4444] font-semibold">${withdrawal.amount.toLocaleString()}</td>
-                      <td className="px-6 py-4 text-[#cbd5e1]">{withdrawal.method}</td>
+                      <td className="px-6 py-4 text-right text-[#ef4444] font-semibold">
+                        ${withdrawal.amount ? Number(withdrawal.amount).toLocaleString() : '0.00'}
+                      </td>
+                      <td className="px-6 py-4 text-[#cbd5e1]">{withdrawal.method || 'N/A'}</td>
                       <td className="px-6 py-4 text-[#94a3b8] text-sm font-mono">
-                        {withdrawal.bankDetails || withdrawal.walletAddress}
+                        {withdrawal.bankDetails || withdrawal.walletAddress || 'N/A'}
                       </td>
                       <td className="px-6 py-4 text-center">
                         <span className={`px-2 py-1 rounded text-xs ${
@@ -697,11 +714,11 @@ export const FinancialManagement: React.FC = () => {
                           withdrawal.kycStatus === 'pending' ? 'bg-[#f59e0b]/20 text-[#f59e0b]' :
                           'bg-[#ef4444]/20 text-[#ef4444]'
                         }`}>
-                          {withdrawal.kycStatus}
+                          {withdrawal.kycStatus || 'unknown'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right text-[#10b981] font-semibold">
-                        ${withdrawal.availableBalance.toLocaleString()}
+                        ${withdrawal.availableBalance ? Number(withdrawal.availableBalance).toLocaleString() : '0.00'}
                       </td>
                       <td className="px-6 py-4 text-center">
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -854,7 +871,20 @@ export const FinancialManagement: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#334155]">
-                  {filteredTransactions.map((txn) => (
+                  {loading ? (
+                    <tr>
+                      <td colSpan={8} className="px-6 py-12 text-center text-[#94a3b8]">
+                        Loading transactions...
+                      </td>
+                    </tr>
+                  ) : filteredTransactions.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-6 py-12 text-center text-[#94a3b8]">
+                        No transactions found
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredTransactions.map((txn) => (
                     <tr key={txn.id} className="hover:bg-[#334155]/50">
                       <td className="px-6 py-4 text-[#f8fafc] font-mono text-sm">{txn.id}</td>
                       <td className="px-6 py-4 text-[#f8fafc]">{txn.userName}</td>
@@ -874,7 +904,10 @@ export const FinancialManagement: React.FC = () => {
                         {txn.type === 'withdrawal' ? '-' : '+'}${txn.amount.toLocaleString()}
                       </td>
                       <td className="px-6 py-4 text-[#94a3b8] text-sm">{txn.description}</td>
-                      <td className="px-6 py-4 text-[#94a3b8] text-sm">{format(new Date(txn.date), 'MMM dd, yyyy')}</td>
+                      <td className="px-6 py-4 text-[#94a3b8] text-sm">
+                        <div>{format(new Date(txn.date), 'MMM dd, yyyy')}</div>
+                        <div className="text-xs text-[#64748b]">{format(new Date(txn.date), 'hh:mm:ss a')}</div>
+                      </td>
                       <td className="px-6 py-4 text-center">
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                           txn.status === 'completed' ? 'bg-[#10b981]/20 text-[#10b981]' :
@@ -886,14 +919,15 @@ export const FinancialManagement: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 text-center">
                         <button
-                          onClick={() => toast.info('Transaction details modal')}
+                          onClick={() => toast('Transaction details modal', { icon: 'ℹ️' })}
                           className="text-[#00C7D1] hover:text-[#00b3bd] text-sm"
                         >
                           View
                         </button>
                       </td>
                     </tr>
-                  ))}
+                  ))
+                  )}
                 </tbody>
               </table>
             </div>

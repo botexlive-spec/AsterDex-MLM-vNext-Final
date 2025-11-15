@@ -67,8 +67,8 @@ router.get('/members', authenticateToken, async (req: Request, res: Response) =>
           email_verified,
           is_active,
           role,
-          createdAt,
-          updatedAt,
+          created_at,
+          updated_at,
           1 as level
         FROM users
         WHERE sponsor_id = ?
@@ -95,8 +95,8 @@ router.get('/members', authenticateToken, async (req: Request, res: Response) =>
           u.email_verified,
           u.is_active,
           u.role,
-          u.createdAt,
-          u.updatedAt,
+          u.created_at,
+          u.updated_at,
           tt.level + 1
         FROM users u
         INNER JOIN team_tree tt ON u.sponsor_id = tt.id
@@ -121,11 +121,11 @@ router.get('/members', authenticateToken, async (req: Request, res: Response) =>
         email_verified,
         is_active,
         role,
-        createdAt,
-        updatedAt,
+        created_at,
+        updated_at,
         level
       FROM team_tree
-      ORDER BY level ASC, createdAt ASC`,
+      ORDER BY level ASC, created_at ASC`,
       [userId]
     );
 
@@ -240,11 +240,11 @@ router.get('/direct', authenticateToken, async (req: Request, res: Response) => 
         email_verified,
         is_active,
         role,
-        createdAt,
-        updatedAt
+        created_at,
+        updated_at
       FROM users
       WHERE sponsor_id = ?
-      ORDER BY createdAt DESC`,
+      ORDER BY created_at DESC`,
       [userId]
     );
 
@@ -431,13 +431,13 @@ router.get('/level/:level', authenticateToken, async (req: Request, res: Respons
         u.email_verified,
         u.is_active,
         u.role,
-        u.createdAt,
-        u.updatedAt,
+        u.created_at,
+        u.updated_at,
         tt.level
       FROM team_tree tt
       INNER JOIN users u ON tt.id = u.id
       WHERE tt.level = ?
-      ORDER BY u.createdAt DESC`,
+      ORDER BY u.created_at DESC`,
       [userId, targetLevel, targetLevel]
     );
 

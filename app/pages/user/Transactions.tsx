@@ -9,6 +9,7 @@ export const Transactions: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [filter, setFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [dateRange, setDateRange] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -19,12 +20,13 @@ export const Transactions: React.FC = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [transactions, filter, dateRange, searchTerm]);
+  }, [transactions, filter, statusFilter, dateRange, searchTerm]);
 
   const loadTransactions = async () => {
     try {
       setLoading(true);
       const txData = await getTransactionHistory(100, 0); // Get last 100 transactions
+      console.log('Loaded transactions:', txData);
       setTransactions(txData);
     } catch (error: any) {
       console.error('Error loading transactions:', error);
@@ -40,6 +42,11 @@ export const Transactions: React.FC = () => {
     // Filter by type
     if (filter !== 'all') {
       filtered = filtered.filter(tx => tx.transaction_type === filter);
+    }
+
+    // Filter by status
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(tx => tx.status === statusFilter);
     }
 
     // Filter by date range
@@ -64,9 +71,9 @@ export const Transactions: React.FC = () => {
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
       filtered = filtered.filter(tx =>
-        tx.description.toLowerCase().includes(search) ||
-        tx.transaction_type.toLowerCase().includes(search) ||
-        tx.id.toLowerCase().includes(search)
+        tx.description?.toLowerCase().includes(search) ||
+        tx.transaction_type?.toLowerCase().includes(search) ||
+        tx.id?.toLowerCase().includes(search)
       );
     }
 
@@ -105,212 +112,295 @@ export const Transactions: React.FC = () => {
     ).join(' ');
   };
 
+  // Calculate statistics
+  const totalDeposited = filteredTransactions
+    .filter(tx => tx.transaction_type === 'deposit' && tx.amount > 0)
+    .reduce((sum, tx) => sum + tx.amount, 0);
+
+  const totalWithdrawn = filteredTransactions
+    .filter(tx => tx.transaction_type === 'withdrawal')
+    .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+
+  const totalEarned = filteredTransactions
+    .filter(tx => ['level_income', 'matching_bonus', 'roi_income', 'rank_reward', 'roi_distribution'].includes(tx.transaction_type))
+    .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+
   if (loading) {
     return (
-      <div style={{ padding: '40px', textAlign: 'center' }}>
-        <div style={{ fontSize: '48px', marginBottom: '20px' }}>💳</div>
-        <p>Loading transactions...</p>
+      <div className="min-h-screen bg-[#0f1419] text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-5xl mb-4">💳</div>
+          <p className="text-[#94a3b8]">Loading transactions...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-      <button onClick={() => navigate('/dashboard')} style={{ marginBottom: '20px', padding: '10px 20px', cursor: 'pointer' }}>
-        ← Back to Dashboard
-      </button>
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <div>
-          <h1 style={{ margin: '0 0 5px 0' }}>Transaction History</h1>
-          <p style={{ margin: '0', color: '#666' }}>View all your transactions and activity</p>
+    <div className="min-h-screen bg-[#0f1419] text-white p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <button
+            onClick={() => navigate('/wallet')}
+            className="text-[#64748b] hover:text-white mb-4 flex items-center space-x-2 transition-colors"
+          >
+            <span>←</span>
+            <span>Back to Wallet</span>
+          </button>
+          <h1 className="text-3xl font-bold mb-2">Transaction History</h1>
+          <p className="text-[#94a3b8]">View all your transactions and activity</p>
         </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#667eea' }}>
-            {filteredTransactions.length}
-          </div>
-          <div style={{ fontSize: '14px', color: '#666' }}>Total Transactions</div>
-        </div>
-      </div>
 
-      <div style={{ marginTop: '30px', background: '#fff', borderRadius: '8px', border: '1px solid #ddd', padding: '20px' }}>
-        <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', flexWrap: 'wrap' }}>
-          <div style={{ flex: '1', minWidth: '200px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', fontWeight: '600' }}>Filter by Type</label>
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px',
-                borderRadius: '6px',
-                border: '1px solid #ddd',
-                fontSize: '14px'
-              }}
-            >
-              <option value="all">All Transactions</option>
-              <option value="deposit">Deposits</option>
-              <option value="withdrawal">Withdrawals</option>
-              <option value="level_income">Level Commission</option>
-              <option value="matching_bonus">Matching Bonus</option>
-              <option value="roi_income">ROI Earnings</option>
-              <option value="package_investment">Package Purchases</option>
-              <option value="robot_subscription">Robot Subscriptions</option>
-              <option value="rank_reward">Rank Rewards</option>
-              <option value="transfer_in">Transfers In</option>
-              <option value="transfer_out">Transfers Out</option>
-            </select>
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl p-6">
+            <p className="text-sm opacity-80 mb-1">Total Transactions</p>
+            <p className="text-3xl font-bold">{filteredTransactions.length}</p>
           </div>
-
-          <div style={{ flex: '1', minWidth: '200px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', fontWeight: '600' }}>Date Range</label>
-            <select
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px',
-                borderRadius: '6px',
-                border: '1px solid #ddd',
-                fontSize: '14px'
-              }}
-            >
-              <option value="all">All Time</option>
-              <option value="today">Today</option>
-              <option value="week">This Week</option>
-              <option value="month">This Month</option>
-              <option value="year">This Year</option>
-            </select>
+          <div className="bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl p-6">
+            <p className="text-sm opacity-80 mb-1">Total Deposited</p>
+            <p className="text-3xl font-bold">${totalDeposited.toFixed(2)}</p>
           </div>
-
-          <div style={{ flex: '1', minWidth: '200px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', fontWeight: '600' }}>Search</label>
-            <input
-              type="text"
-              placeholder="Search transactions..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px',
-                borderRadius: '6px',
-                border: '1px solid #ddd',
-                fontSize: '14px'
-              }}
-            />
+          <div className="bg-gradient-to-br from-red-600 to-pink-600 rounded-xl p-6">
+            <p className="text-sm opacity-80 mb-1">Total Withdrawn</p>
+            <p className="text-3xl font-bold">${totalWithdrawn.toFixed(2)}</p>
+          </div>
+          <div className="bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl p-6">
+            <p className="text-sm opacity-80 mb-1">Total Earned</p>
+            <p className="text-3xl font-bold">${totalEarned.toFixed(2)}</p>
           </div>
         </div>
 
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid #ddd', background: '#f5f5f5' }}>
-                <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>Date & Time</th>
-                <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>Type</th>
-                <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>Description</th>
-                <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600' }}>Amount</th>
-                <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600' }}>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredTransactions.length === 0 ? (
-                <tr>
-                  <td colSpan={5} style={{ padding: '60px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '48px', marginBottom: '10px' }}>📭</div>
-                    <div style={{ color: '#999', fontSize: '16px' }}>
-                      {transactions.length === 0 ? 'No transactions yet' : 'No transactions match your filters'}
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                filteredTransactions.map((tx) => (
-                  <tr key={tx.id} style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: '12px', color: '#666', fontSize: '14px' }}>
-                      <div>{format(new Date(tx.created_at), 'MMM dd, yyyy')}</div>
-                      <div style={{ fontSize: '12px', color: '#999' }}>
-                        {format(new Date(tx.created_at), 'HH:mm:ss')}
-                      </div>
-                    </td>
-                    <td style={{ padding: '12px' }}>
-                      <span style={{
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        background: `${getTransactionTypeColor(tx.transaction_type)}20`,
-                        color: getTransactionTypeColor(tx.transaction_type),
-                        whiteSpace: 'nowrap'
-                      }}>
-                        {formatTransactionType(tx.transaction_type)}
-                      </span>
-                    </td>
-                    <td style={{ padding: '12px', fontSize: '14px' }}>
-                      <div>{tx.description}</div>
-                      {tx.method && (
-                        <div style={{ fontSize: '12px', color: '#999', marginTop: '2px' }}>
-                          via {tx.method.toUpperCase()}
-                        </div>
-                      )}
-                    </td>
-                    <td style={{
-                      padding: '12px',
-                      textAlign: 'right',
-                      fontWeight: 'bold',
-                      fontSize: '16px',
-                      color: tx.amount >= 0 ? '#4caf50' : '#f44336'
-                    }}>
-                      <div>
-                        {tx.amount >= 0 ? '+' : ''}${Math.abs(tx.amount).toFixed(2)}
-                      </div>
-                    </td>
-                    <td style={{ padding: '12px', textAlign: 'center' }}>
-                      <span style={{
-                        padding: '4px 12px',
-                        borderRadius: '12px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        background: `${getStatusColor(tx.status)}20`,
-                        color: getStatusColor(tx.status)
-                      }}>
-                        {tx.status.toUpperCase()}
-                      </span>
-                      {tx.completed_at && (
-                        <div style={{ fontSize: '11px', color: '#999', marginTop: '4px' }}>
-                          {format(new Date(tx.completed_at), 'MMM dd')}
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        {/* Filters */}
+        <div className="bg-[#1a1f2e] rounded-xl p-6 mb-6">
+          <h3 className="text-lg font-semibold mb-4">Filters</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Search */}
+            <div>
+              <label className="block text-sm font-medium mb-2 text-[#94a3b8]">Search</label>
+              <input
+                type="text"
+                placeholder="Search transactions..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-[#0f1419] border border-[#2d3748] rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500"
+              />
+            </div>
 
-        {filteredTransactions.length > 0 && (
-          <div style={{ marginTop: '20px', padding: '15px', background: '#f5f5f5', borderRadius: '6px', fontSize: '14px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
-              <div>
-                <strong>Total In:</strong>
-                <span style={{ marginLeft: '10px', color: '#4caf50', fontWeight: '600' }}>
-                  +${filteredTransactions.filter(tx => tx.amount > 0).reduce((sum, tx) => sum + tx.amount, 0).toFixed(2)}
-                </span>
-              </div>
-              <div>
-                <strong>Total Out:</strong>
-                <span style={{ marginLeft: '10px', color: '#f44336', fontWeight: '600' }}>
-                  ${filteredTransactions.filter(tx => tx.amount < 0).reduce((sum, tx) => sum + Math.abs(tx.amount), 0).toFixed(2)}
-                </span>
-              </div>
-              <div>
-                <strong>Net:</strong>
-                <span style={{ marginLeft: '10px', color: '#667eea', fontWeight: '600' }}>
-                  ${filteredTransactions.reduce((sum, tx) => sum + tx.amount, 0).toFixed(2)}
-                </span>
-              </div>
+            {/* Type Filter */}
+            <div>
+              <label className="block text-sm font-medium mb-2 text-[#94a3b8]">Type</label>
+              <select
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                className="w-full bg-[#0f1419] border border-[#2d3748] rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500"
+              >
+                <option value="all">All Types</option>
+                <option value="deposit">Deposits</option>
+                <option value="withdrawal">Withdrawals</option>
+                <option value="transfer_in">Transfers In</option>
+                <option value="transfer_out">Transfers Out</option>
+                <option value="level_income">Level Income</option>
+                <option value="matching_bonus">Matching Bonus</option>
+                <option value="roi_income">ROI Income</option>
+                <option value="roi_distribution">ROI Distribution</option>
+                <option value="package_investment">Package Investment</option>
+                <option value="rank_reward">Rank Rewards</option>
+              </select>
+            </div>
+
+            {/* Status Filter */}
+            <div>
+              <label className="block text-sm font-medium mb-2 text-[#94a3b8]">Status</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full bg-[#0f1419] border border-[#2d3748] rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500"
+              >
+                <option value="all">All Status</option>
+                <option value="completed">Completed</option>
+                <option value="pending">Pending</option>
+                <option value="failed">Failed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+
+            {/* Date Range */}
+            <div>
+              <label className="block text-sm font-medium mb-2 text-[#94a3b8]">Date Range</label>
+              <select
+                value={dateRange}
+                onChange={(e) => setDateRange(e.target.value)}
+                className="w-full bg-[#0f1419] border border-[#2d3748] rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500"
+              >
+                <option value="all">All Time</option>
+                <option value="today">Today</option>
+                <option value="week">Last 7 Days</option>
+                <option value="month">Last 30 Days</option>
+                <option value="year">Last Year</option>
+              </select>
             </div>
           </div>
-        )}
+
+          {/* Quick Filters */}
+          <div className="mt-4 flex flex-wrap gap-2">
+            <span className="text-sm text-[#94a3b8] mr-2">Quick filters:</span>
+            <button
+              onClick={() => setDateRange('today')}
+              className="px-3 py-1 bg-[#0f1419] hover:bg-indigo-600 rounded-lg text-sm transition-colors"
+            >
+              Today
+            </button>
+            <button
+              onClick={() => setDateRange('week')}
+              className="px-3 py-1 bg-[#0f1419] hover:bg-indigo-600 rounded-lg text-sm transition-colors"
+            >
+              Last 7 Days
+            </button>
+            <button
+              onClick={() => setDateRange('month')}
+              className="px-3 py-1 bg-[#0f1419] hover:bg-indigo-600 rounded-lg text-sm transition-colors"
+            >
+              Last 30 Days
+            </button>
+            <button
+              onClick={() => setDateRange('year')}
+              className="px-3 py-1 bg-[#0f1419] hover:bg-indigo-600 rounded-lg text-sm transition-colors"
+            >
+              Last Year
+            </button>
+            <button
+              onClick={() => {
+                setFilter('all');
+                setStatusFilter('all');
+                setDateRange('all');
+                setSearchTerm('');
+              }}
+              className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded-lg text-sm transition-colors ml-auto"
+            >
+              Clear All
+            </button>
+          </div>
+        </div>
+
+        {/* Transaction History Table */}
+        <div className="bg-[#1a1f2e] rounded-xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-[#2d3748]">
+            <h3 className="text-lg font-semibold">Transaction History</h3>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-[#2d3748] bg-[#0f1419]">
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#94a3b8]">Transaction ID</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#94a3b8]">Date & Time</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#94a3b8]">Type</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#94a3b8]">Description</th>
+                  <th className="px-6 py-4 text-right text-sm font-semibold text-[#94a3b8]">Amount</th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold text-[#94a3b8]">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredTransactions.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-20 text-center">
+                      <div className="text-5xl mb-4">📭</div>
+                      <div className="text-[#64748b] text-lg">
+                        {transactions.length === 0 ? 'No transactions found' : 'No transactions match your criteria'}
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredTransactions.map((tx) => (
+                    <tr key={tx.id} className="border-b border-[#2d3748] hover:bg-[#0f1419] transition-colors">
+                      <td className="px-6 py-4">
+                        <span className="text-xs text-[#64748b] font-mono">
+                          {tx.id.substring(0, 8)}...
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-white">
+                          {format(new Date(tx.created_at), 'MMM dd, yyyy')}
+                        </div>
+                        <div className="text-xs text-[#64748b]">
+                          {format(new Date(tx.created_at), 'HH:mm:ss')}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className="inline-flex px-3 py-1 rounded-full text-xs font-semibold"
+                          style={{
+                            backgroundColor: `${getTransactionTypeColor(tx.transaction_type)}20`,
+                            color: getTransactionTypeColor(tx.transaction_type),
+                          }}
+                        >
+                          {formatTransactionType(tx.transaction_type)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-white max-w-md">{tx.description}</div>
+                        {tx.method && (
+                          <div className="text-xs text-[#64748b] mt-1">
+                            via {tx.method.toUpperCase()}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div
+                          className="text-base font-bold"
+                          style={{
+                            color: tx.amount >= 0 ? '#10b981' : '#ef4444',
+                          }}
+                        >
+                          {tx.amount >= 0 ? '+' : ''}${Math.abs(tx.amount).toFixed(2)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span
+                          className="inline-flex px-3 py-1 rounded-full text-xs font-semibold"
+                          style={{
+                            backgroundColor: `${getStatusColor(tx.status)}20`,
+                            color: getStatusColor(tx.status),
+                          }}
+                        >
+                          {tx.status.toUpperCase()}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Summary Footer */}
+          {filteredTransactions.length > 0 && (
+            <div className="px-6 py-4 border-t border-[#2d3748] bg-[#0f1419]">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <span className="text-[#94a3b8]">Total In: </span>
+                  <span className="font-bold text-green-500">
+                    +${filteredTransactions.filter(tx => tx.amount > 0).reduce((sum, tx) => sum + tx.amount, 0).toFixed(2)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[#94a3b8]">Total Out: </span>
+                  <span className="font-bold text-red-500">
+                    -${filteredTransactions.filter(tx => tx.amount < 0).reduce((sum, tx) => sum + Math.abs(tx.amount), 0).toFixed(2)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[#94a3b8]">Net: </span>
+                  <span className="font-bold text-indigo-500">
+                    ${filteredTransactions.reduce((sum, tx) => sum + tx.amount, 0).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

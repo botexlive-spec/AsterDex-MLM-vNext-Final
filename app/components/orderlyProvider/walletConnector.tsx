@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import React, { ReactNode } from 'react';
 import { WalletConnectorProvider } from '@orderly.network/wallet-connector';
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import type { NetworkId } from "@orderly.network/types";

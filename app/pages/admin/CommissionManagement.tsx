@@ -392,7 +392,7 @@ export const CommissionManagement: React.FC = () => {
   };
 
   const handleBulkUpload = () => {
-    toast.info('CSV upload feature coming soon');
+    toast('CSV upload feature coming soon');
   };
 
   const handleResetRequest = (type: string) => {
@@ -1294,7 +1294,7 @@ export const CommissionManagement: React.FC = () => {
                 📤 Upload CSV
               </button>
               <button
-                onClick={() => toast.info('Downloading template...')}
+                onClick={() => toast('Downloading template...')}
                 className="bg-[#334155] hover:bg-[#475569] text-[#f8fafc] px-6 py-2 rounded-lg transition-colors"
               >
                 📥 Download Template

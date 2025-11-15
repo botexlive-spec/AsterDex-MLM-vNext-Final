@@ -5,7 +5,7 @@
 
 import express, { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import pool from '../db';
+import { pool } from '../db';
 import { RowDataPacket } from 'mysql2';
 
 const router = express.Router();
@@ -58,7 +58,7 @@ router.get('/logs', async (req: Request, res: Response) => {
         u.email as user_email,
         u.full_name as user_meta
       FROM audit_logs a
-      LEFT JOIN users u ON a.userId = u.id
+      LEFT JOIN users u ON a.user_id = u.id
       WHERE 1=1
     `;
     const params: any[] = [];
@@ -69,16 +69,16 @@ router.get('/logs', async (req: Request, res: Response) => {
     }
 
     if (userId) {
-      query += ' AND a.userId = ?';
+      query += ' AND a.user_id = ?';
       params.push(userId);
     }
 
     if (startDate && endDate) {
-      query += ' AND a.createdAt BETWEEN ? AND ?';
+      query += ' AND a.created_at BETWEEN ? AND ?';
       params.push(startDate, endDate);
     }
 
-    query += ' ORDER BY a.createdAt DESC LIMIT ?';
+    query += ' ORDER BY a.created_at DESC LIMIT ?';
     params.push(parseInt(limit as string));
 
     const [rows] = await pool.query<RowDataPacket[]>(query, params);
@@ -105,8 +105,8 @@ router.get('/logs/:userId', async (req: Request, res: Response) => {
         u.email as user_email,
         u.full_name as user_meta
       FROM audit_logs a
-      LEFT JOIN users u ON a.userId = u.id
-      WHERE a.userId = ?
+      LEFT JOIN users u ON a.user_id = u.id
+      WHERE a.user_id = ?
     `;
     const params: any[] = [userId];
 
@@ -115,7 +115,7 @@ router.get('/logs/:userId', async (req: Request, res: Response) => {
       params.push(action);
     }
 
-    query += ' ORDER BY a.createdAt DESC LIMIT ?';
+    query += ' ORDER BY a.created_at DESC LIMIT ?';
     params.push(parseInt(limit as string));
 
     const [rows] = await pool.query<RowDataPacket[]>(query, params);
@@ -133,7 +133,7 @@ router.get('/logs/:userId', async (req: Request, res: Response) => {
 router.get('/stats', async (req: Request, res: Response) => {
   try {
     const [logs] = await pool.query<RowDataPacket[]>(
-      'SELECT * FROM audit_logs ORDER BY createdAt DESC'
+      'SELECT * FROM audit_logs ORDER BY created_at DESC'
     );
 
     const totalLogs = logs.length;
@@ -147,7 +147,7 @@ router.get('/stats', async (req: Request, res: Response) => {
     // Most active users
     const userActivity: Record<string, number> = {};
     logs.forEach((log: any) => {
-      userActivity[log.userId] = (userActivity[log.userId] || 0) + 1;
+      userActivity[log.user_id] = (userActivity[log.user_id] || 0) + 1;
     });
 
     const [topUsers] = await pool.query<RowDataPacket[]>(
@@ -156,7 +156,7 @@ router.get('/stats', async (req: Request, res: Response) => {
         u.email,
         COUNT(*) as activity_count
       FROM audit_logs a
-      LEFT JOIN users u ON a.userId = u.id
+      LEFT JOIN users u ON a.user_id = u.id
       GROUP BY u.id, u.email
       ORDER BY activity_count DESC
       LIMIT 10`
@@ -166,17 +166,17 @@ router.get('/stats', async (req: Request, res: Response) => {
     const [recentActivity] = await pool.query<RowDataPacket[]>(
       `SELECT COUNT(*) as count
       FROM audit_logs
-      WHERE createdAt >= DATE_SUB(NOW(), INTERVAL 24 HOUR)`
+      WHERE created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)`
     );
 
     // Activity by date (last 7 days)
     const [activityByDate] = await pool.query<RowDataPacket[]>(
       `SELECT
-        DATE(createdAt) as date,
+        DATE(created_at) as date,
         COUNT(*) as count
       FROM audit_logs
-      WHERE createdAt >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-      GROUP BY DATE(createdAt)
+      WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+      GROUP BY DATE(created_at)
       ORDER BY date DESC`
     );
 
@@ -223,7 +223,7 @@ router.post('/log', async (req: Request, res: Response) => {
 
     await pool.query(
       `INSERT INTO audit_logs (
-        userId, action, details, target_user_id, createdAt
+        user_id, action, details, target_user_id, created_at
       ) VALUES (?, ?, ?, ?, NOW())`,
       [adminId, action, details || '', targetUserId || null]
     );

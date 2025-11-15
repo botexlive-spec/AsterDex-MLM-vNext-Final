@@ -112,7 +112,7 @@ export async function getTeamMembers(): Promise<TeamResponse> {
     console.log('🔍 [Team Service] Fetching team members from MySQL API...');
     const startTime = Date.now();
 
-    const data = await apiRequest<TeamResponse>('/team/members');
+    const data = await apiRequest<TeamResponse>('/api/team/members');
 
     const loadTime = Date.now() - startTime;
     console.log(`✅ [Team Service] Loaded ${data.summary.total_team} members in ${loadTime}ms`);

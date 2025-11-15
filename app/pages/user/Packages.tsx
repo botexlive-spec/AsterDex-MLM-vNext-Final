@@ -1,303 +1,42 @@
+/**
+ * NEW SINGLE PACKAGE ARCHITECTURE - Investment with Slider
+ * $100 - $100,000 range with $100 increments
+ * 0.4% daily ROI
+ * 15-level ROI-on-ROI commission
+ */
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAvailablePackages, purchasePackage, canPurchasePackage } from '../../services/package.service';
+import { getAvailablePackages, purchasePackage } from '../../services/package.service';
 import { Package } from '../../types/package.types';
 import toast from 'react-hot-toast';
 import apiClient from '../../utils/api-client';
 
-interface PurchaseModalProps {
-  package: Package | null;
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-  walletBalance: number;
-}
-
-const PurchaseModal: React.FC<PurchaseModalProps> = ({ package: pkg, isOpen, onClose, onSuccess, walletBalance }) => {
-  const [amount, setAmount] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (pkg && isOpen) {
-      setAmount(pkg.min_investment?.toString() || pkg.price.toString());
-    }
-  }, [pkg, isOpen]);
-
-  if (!isOpen || !pkg) return null;
-
-  const handlePurchase = async () => {
-    try {
-      setLoading(true);
-      const investmentAmount = parseFloat(amount);
-
-      if (isNaN(investmentAmount) || investmentAmount <= 0) {
-        toast.error('Please enter a valid investment amount');
-        return;
-      }
-
-      const minInvest = pkg.min_investment || pkg.price;
-      const maxInvest = pkg.max_investment || pkg.price;
-
-      if (investmentAmount < minInvest) {
-        toast.error(`Minimum investment is $${minInvest.toLocaleString()}`);
-        return;
-      }
-
-      if (investmentAmount > maxInvest) {
-        toast.error(`Maximum investment is $${maxInvest.toLocaleString()}`);
-        return;
-      }
-
-      if (investmentAmount > walletBalance) {
-        toast.error(`Insufficient balance. You have $${walletBalance.toLocaleString()}`);
-        return;
-      }
-
-      const result = await purchasePackage({
-        package_id: pkg.id.toString(),
-        amount: investmentAmount,
-        payment_password: '', // Not used in backend, auth is via JWT
-      });
-
-      toast.success(result.message || 'Package purchased successfully!');
-      onSuccess();
-      onClose();
-    } catch (error: any) {
-      console.error('Purchase error:', error);
-      toast.error(error.message || 'Failed to purchase package');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const dailyEarnings = (parseFloat(amount) || 0) * (pkg.daily_return_percentage / 100);
-  const totalReturn = (parseFloat(amount) || 0) * (pkg.max_return_percentage / 100);
-
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'rgba(0, 0, 0, 0.7)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000,
-      padding: '20px'
-    }}>
-      <div style={{
-        background: 'white',
-        borderRadius: '16px',
-        maxWidth: '500px',
-        width: '100%',
-        maxHeight: '90vh',
-        overflow: 'auto',
-        position: 'relative',
-        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
-      }}>
-        {/* Header */}
-        <div style={{
-          padding: '24px',
-          borderBottom: '1px solid #e0e0e0',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          borderRadius: '16px 16px 0 0'
-        }}>
-          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '700' }}>
-            Purchase {pkg.name}
-          </h2>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'rgba(255, 255, 255, 0.2)',
-              border: 'none',
-              borderRadius: '50%',
-              width: '32px',
-              height: '32px',
-              cursor: 'pointer',
-              fontSize: '20px',
-              color: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            ×
-          </button>
-        </div>
-
-        {/* Body */}
-        <div style={{ padding: '24px' }}>
-          {/* Wallet Balance */}
-          <div style={{
-            background: '#f8f9fa',
-            padding: '16px',
-            borderRadius: '12px',
-            marginBottom: '20px',
-            border: '1px solid #e0e0e0'
-          }}>
-            <div style={{ fontSize: '14px', color: '#666', marginBottom: '4px' }}>
-              💰 Available Balance
-            </div>
-            <div style={{ fontSize: '28px', fontWeight: '700', color: '#2c3e50' }}>
-              ${walletBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </div>
-          </div>
-
-          {/* Investment Amount */}
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{
-              display: 'block',
-              fontSize: '14px',
-              fontWeight: '600',
-              color: '#333',
-              marginBottom: '8px'
-            }}>
-              Investment Amount ($)
-            </label>
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              min={pkg.min_investment || pkg.price}
-              max={pkg.max_investment || pkg.price}
-              step="0.01"
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                fontSize: '18px',
-                fontWeight: '600',
-                border: '2px solid #e0e0e0',
-                borderRadius: '8px',
-                outline: 'none',
-                transition: 'border-color 0.2s'
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#667eea'}
-              onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
-            />
-            <div style={{ fontSize: '12px', color: '#666', marginTop: '6px' }}>
-              Min: ${(pkg.min_investment || pkg.price).toLocaleString()} •
-              Max: ${(pkg.max_investment || pkg.price).toLocaleString()}
-            </div>
-          </div>
-
-          {/* Returns Preview */}
-          <div style={{
-            background: '#f0f7ff',
-            padding: '16px',
-            borderRadius: '12px',
-            marginBottom: '20px',
-            border: '1px solid #d0e7ff'
-          }}>
-            <div style={{ marginBottom: '12px' }}>
-              <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
-                📈 Daily Earnings
-              </div>
-              <div style={{ fontSize: '20px', fontWeight: '700', color: '#4caf50' }}>
-                ${dailyEarnings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / day
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
-                💎 Total Return ({pkg.duration_days} days)
-              </div>
-              <div style={{ fontSize: '20px', fontWeight: '700', color: '#2196f3' }}>
-                ${totalReturn.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({pkg.max_return_percentage}% ROI)
-              </div>
-            </div>
-          </div>
-
-          {/* Package Details */}
-          <div style={{
-            padding: '16px',
-            background: '#fafafa',
-            borderRadius: '8px',
-            marginBottom: '24px'
-          }}>
-            <div style={{ fontSize: '12px', fontWeight: '600', color: '#666', marginBottom: '8px' }}>
-              📋 Package Details
-            </div>
-            <div style={{ fontSize: '13px', lineHeight: '1.8', color: '#666' }}>
-              • {pkg.daily_return_percentage}% daily returns for {pkg.duration_days} days<br />
-              • {pkg.max_return_percentage}% total ROI<br />
-              • Automatic daily distribution<br />
-              • Level commissions for your sponsors
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button
-              onClick={onClose}
-              disabled={loading}
-              style={{
-                flex: 1,
-                padding: '14px',
-                background: '#e0e0e0',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                fontWeight: '600',
-                fontSize: '16px',
-                color: '#666',
-                opacity: loading ? 0.5 : 1
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handlePurchase}
-              disabled={loading}
-              style={{
-                flex: 2,
-                padding: '14px',
-                background: loading ? '#ccc' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                fontWeight: '700',
-                fontSize: '16px',
-                color: 'white',
-                boxShadow: loading ? 'none' : '0 4px 12px rgba(102, 126, 234, 0.4)',
-                transition: 'all 0.2s'
-              }}
-            >
-              {loading ? '⏳ Processing...' : '✅ Confirm Purchase'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 export const Packages: React.FC = () => {
   const navigate = useNavigate();
-  const [packages, setPackages] = useState<Package[]>([]);
+  const [pkg, setPackage] = useState<Package | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
+  const [investmentAmount, setInvestmentAmount] = useState(1000); // Default $1,000
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [walletBalance, setWalletBalance] = useState(0);
+  const [purchasing, setPurchasing] = useState(false);
 
   useEffect(() => {
-    loadPackages();
+    loadPackage();
     loadWalletBalance();
   }, []);
 
-  const loadPackages = async () => {
+  const loadPackage = async () => {
     try {
       setLoading(true);
-      const packagesData = await getAvailablePackages();
-      console.log('📦 Loaded packages:', packagesData);
-      setPackages(packagesData);
+      const packages = await getAvailablePackages();
+      if (packages && packages.length > 0) {
+        setPackage(packages[0]); // Single package
+        console.log('📦 Loaded package:', packages[0]);
+      }
     } catch (error: any) {
-      console.error('Error loading packages:', error);
-      toast.error(error.message || 'Failed to load packages');
+      console.error('Error loading package:', error);
+      toast.error(error.message || 'Failed to load investment package');
     } finally {
       setLoading(false);
     }
@@ -314,15 +53,63 @@ export const Packages: React.FC = () => {
     }
   };
 
-  const handleInvest = (pkg: Package) => {
-    setSelectedPackage(pkg);
+  const handleInvest = () => {
+    if (!pkg) return;
+
+    // Validate amount
+    if (investmentAmount < pkg.min_investment) {
+      toast.error(`Minimum investment is $${pkg.min_investment.toLocaleString()}`);
+      return;
+    }
+
+    if (investmentAmount > pkg.max_investment) {
+      toast.error(`Maximum investment is $${pkg.max_investment.toLocaleString()}`);
+      return;
+    }
+
+    if (investmentAmount % (pkg.slider_step || 100) !== 0) {
+      toast.error(`Investment must be in multiples of $${pkg.slider_step || 100}`);
+      return;
+    }
+
+    if (investmentAmount > walletBalance) {
+      toast.error(`Insufficient balance. You have $${walletBalance.toLocaleString()}`);
+      return;
+    }
+
     setShowPurchaseModal(true);
   };
 
-  const handlePurchaseSuccess = () => {
-    loadWalletBalance();
-    toast.success('🎉 Package activated! Daily returns will start tomorrow.');
+  const handleConfirmPurchase = async () => {
+    if (!pkg) return;
+
+    try {
+      setPurchasing(true);
+
+      const result = await purchasePackage({
+        package_id: pkg.id.toString(),
+        amount: investmentAmount,
+        payment_password: '',
+      });
+
+      toast.success(result.message || 'Investment successful!');
+      setShowPurchaseModal(false);
+      loadWalletBalance();
+
+      // Redirect to dashboard after successful purchase
+      setTimeout(() => navigate('/dashboard'), 2000);
+    } catch (error: any) {
+      console.error('Purchase error:', error);
+      toast.error(error.message || 'Failed to process investment');
+    } finally {
+      setPurchasing(false);
+    }
   };
+
+  // Calculate ROI values
+  const dailyROI = pkg ? (investmentAmount * pkg.daily_return_percentage) / 100 : 0;
+  const monthlyROI = dailyROI * 30;
+  const annualROI = dailyROI * 365;
 
   if (loading) {
     return (
@@ -330,18 +117,28 @@ export const Packages: React.FC = () => {
         minHeight: '400px',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
+        alignments: 'center',
         justifyContent: 'center',
         padding: '40px'
       }}>
-        <div style={{ fontSize: '64px', marginBottom: '20px', animation: 'pulse 2s infinite' }}>📦</div>
-        <p style={{ fontSize: '18px', color: '#666' }}>Loading investment packages...</p>
+        <div style={{ fontSize: '64px', marginBottom: '20px' }}>📊</div>
+        <p style={{ fontSize: '18px', color: '#666' }}>Loading investment package...</p>
+      </div>
+    );
+  }
+
+  if (!pkg) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center' }}>
+        <div style={{ fontSize: '64px', marginBottom: '20px' }}>❌</div>
+        <h2>Package Not Available</h2>
+        <p>Please contact support if this problem persists.</p>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '20px', maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
       {/* Header */}
       <div style={{ marginBottom: '30px' }}>
         <button
@@ -353,22 +150,19 @@ export const Packages: React.FC = () => {
             borderRadius: '8px',
             cursor: 'pointer',
             fontWeight: '600',
-            marginBottom: '20px',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px'
+            marginBottom: '20px'
           }}
         >
-          <span>←</span> Back to Dashboard
+          ← Back to Dashboard
         </button>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <h1 style={{ margin: '0 0 8px 0', fontSize: '32px', fontWeight: '700', color: '#2c3e50' }}>
-              Investment Packages
+              {pkg.name}
             </h1>
             <p style={{ margin: 0, fontSize: '16px', color: '#666' }}>
-              Choose a package that fits your investment goals
+              {pkg.description}
             </p>
           </div>
           <div style={{
@@ -387,224 +181,269 @@ export const Packages: React.FC = () => {
         </div>
       </div>
 
-      {/* Packages Grid */}
-      {packages.length === 0 ? (
-        <div style={{
-          padding: '60px',
-          textAlign: 'center',
-          background: '#f5f5f5',
-          borderRadius: '16px',
-          marginTop: '30px'
-        }}>
-          <div style={{ fontSize: '64px', marginBottom: '20px' }}>📦</div>
-          <h3 style={{ fontSize: '24px', marginBottom: '8px', color: '#333' }}>No Packages Available</h3>
-          <p style={{ color: '#666', fontSize: '16px' }}>Please check back later for investment opportunities</p>
-        </div>
-      ) : (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '24px',
-          marginTop: '30px'
-        }}>
-          {packages.map((pkg, index) => {
-            const isPopular = index === 1; // Middle package is popular
-            return (
-              <div
-                key={pkg.id}
-                style={{
-                  border: isPopular ? '2px solid #667eea' : '1px solid #e0e0e0',
-                  borderRadius: '16px',
-                  padding: '24px',
-                  background: 'white',
-                  position: 'relative',
-                  boxShadow: isPopular
-                    ? '0 8px 24px rgba(102, 126, 234, 0.2)'
-                    : '0 2px 8px rgba(0, 0, 0, 0.08)',
-                  transition: 'all 0.3s ease',
-                  transform: isPopular ? 'scale(1.02)' : 'scale(1)'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-4px) scale(1.02)';
-                  e.currentTarget.style.boxShadow = '0 12px 32px rgba(102, 126, 234, 0.3)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = isPopular ? 'scale(1.02)' : 'scale(1)';
-                  e.currentTarget.style.boxShadow = isPopular
-                    ? '0 8px 24px rgba(102, 126, 234, 0.2)'
-                    : '0 2px 8px rgba(0, 0, 0, 0.08)';
-                }}
-              >
-                {isPopular && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '-12px',
-                    right: '24px',
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    color: 'white',
-                    padding: '6px 16px',
-                    borderRadius: '20px',
-                    fontSize: '12px',
-                    fontWeight: '700',
-                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)'
-                  }}>
-                    ⭐ MOST POPULAR
-                  </div>
-                )}
-
-                {/* Package Name */}
-                <h2 style={{
-                  marginTop: isPopular ? '16px' : '0',
-                  marginBottom: '8px',
-                  fontSize: '24px',
-                  fontWeight: '700',
-                  color: '#2c3e50'
-                }}>
-                  {pkg.name}
-                </h2>
-
-                {/* Price Range */}
-                <div style={{
-                  fontSize: '36px',
-                  fontWeight: '700',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  marginBottom: '4px'
-                }}>
-                  ${(pkg.min_investment || pkg.price).toLocaleString()}
-                </div>
-                <div style={{ fontSize: '14px', color: '#666', marginBottom: '20px' }}>
-                  ${(pkg.min_investment || pkg.price).toLocaleString()} - ${(pkg.max_investment || pkg.price).toLocaleString()}
-                </div>
-
-                {/* Returns */}
-                <div style={{
-                  background: '#f0f7ff',
-                  padding: '16px',
-                  borderRadius: '12px',
-                  marginBottom: '20px',
-                  border: '1px solid #d0e7ff'
-                }}>
-                  <div style={{ marginBottom: '12px' }}>
-                    <div style={{ fontSize: '13px', color: '#666', marginBottom: '4px' }}>Daily Returns</div>
-                    <div style={{ fontSize: '24px', fontWeight: '700', color: '#4caf50' }}>
-                      {pkg.daily_return_percentage}% <span style={{ fontSize: '14px', fontWeight: '400', color: '#666' }}>daily for {pkg.duration_days} days</span>
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '13px', color: '#666', marginBottom: '4px' }}>Total ROI</div>
-                    <div style={{ fontSize: '24px', fontWeight: '700', color: '#2196f3' }}>
-                      {pkg.max_return_percentage}% <span style={{ fontSize: '14px', fontWeight: '400', color: '#666' }}>ROI</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Features */}
-                <div style={{ marginBottom: '24px' }}>
-                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#666', marginBottom: '12px' }}>
-                    ✨ Includes:
-                  </div>
-                  <div style={{ fontSize: '14px', lineHeight: '2', color: '#666' }}>
-                    ✓ Daily ROI distribution<br />
-                    ✓ Level income commissions<br />
-                    ✓ Binary matching bonus<br />
-                    ✓ Rank advancement rewards
-                  </div>
-                </div>
-
-                {/* Invest Button */}
-                <button
-                  onClick={() => handleInvest(pkg)}
-                  style={{
-                    width: '100%',
-                    padding: '16px',
-                    background: isPopular
-                      ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                      : '#4caf50',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '12px',
-                    cursor: 'pointer',
-                    fontWeight: '700',
-                    fontSize: '16px',
-                    boxShadow: isPopular
-                      ? '0 4px 12px rgba(102, 126, 234, 0.4)'
-                      : '0 4px 12px rgba(76, 175, 80, 0.3)',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = isPopular
-                      ? '0 6px 16px rgba(102, 126, 234, 0.5)'
-                      : '0 6px 16px rgba(76, 175, 80, 0.4)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = isPopular
-                      ? '0 4px 12px rgba(102, 126, 234, 0.4)'
-                      : '0 4px 12px rgba(76, 175, 80, 0.3)';
-                  }}
-                >
-                  Invest Now →
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Information Section */}
+      {/* Main Investment Card */}
       <div style={{
-        marginTop: '48px',
-        padding: '24px',
-        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-        borderRadius: '16px',
-        border: '1px solid #e0e0e0'
+        background: 'white',
+        borderRadius: '20px',
+        padding: '40px',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+        border: '2px solid #667eea'
       }}>
-        <h4 style={{ margin: '0 0 16px 0', fontSize: '20px', fontWeight: '700', color: '#2c3e50' }}>
-          💡 Investment Information
-        </h4>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
-          <div style={{ padding: '16px', background: 'white', borderRadius: '12px' }}>
-            <div style={{ fontSize: '24px', marginBottom: '8px' }}>🤖</div>
-            <div style={{ fontWeight: '600', marginBottom: '4px', color: '#333' }}>Robot Subscription</div>
-            <div style={{ fontSize: '13px', color: '#666', lineHeight: '1.6' }}>
-              Activate robot ($100) before purchasing packages
-            </div>
+        {/* Investment Amount Display */}
+        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+          <div style={{ fontSize: '16px', color: '#666', marginBottom: '10px' }}>
+            Investment Amount
           </div>
-          <div style={{ padding: '16px', background: 'white', borderRadius: '12px' }}>
-            <div style={{ fontSize: '24px', marginBottom: '8px' }}>📈</div>
-            <div style={{ fontWeight: '600', marginBottom: '4px', color: '#333' }}>Daily Returns</div>
-            <div style={{ fontSize: '13px', color: '#666', lineHeight: '1.6' }}>
-              ROI distributed daily to your wallet automatically
-            </div>
+          <div style={{
+            fontSize: '56px',
+            fontWeight: '700',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            marginBottom: '10px'
+          }}>
+            ${investmentAmount.toLocaleString()}
           </div>
-          <div style={{ padding: '16px', background: 'white', borderRadius: '12px' }}>
-            <div style={{ fontSize: '24px', marginBottom: '8px' }}>🎯</div>
-            <div style={{ fontWeight: '600', marginBottom: '4px', color: '#333' }}>Level Commissions</div>
-            <div style={{ fontSize: '13px', color: '#666', lineHeight: '1.6' }}>
-              Earn from 30 levels of downline investments
-            </div>
-          </div>
-          <div style={{ padding: '16px', background: 'white', borderRadius: '12px' }}>
-            <div style={{ fontSize: '24px', marginBottom: '8px' }}>💰</div>
-            <div style={{ fontWeight: '600', marginBottom: '4px', color: '#333' }}>Withdrawal</div>
-            <div style={{ fontSize: '13px', color: '#666', lineHeight: '1.6' }}>
-              Available balance can be withdrawn anytime (KYC required)
-            </div>
+          <div style={{ fontSize: '14px', color: '#999' }}>
+            Range: ${pkg.min_investment.toLocaleString()} - ${pkg.max_investment.toLocaleString()}
           </div>
         </div>
+
+        {/* Slider */}
+        <div style={{ marginBottom: '40px', padding: '0 20px' }}>
+          <input
+            type="range"
+            min={pkg.slider_min || pkg.min_investment}
+            max={pkg.slider_max || pkg.max_investment}
+            step={pkg.slider_step || 100}
+            value={investmentAmount}
+            onChange={(e) => setInvestmentAmount(parseInt(e.target.value))}
+            style={{
+              width: '100%',
+              height: '8px',
+              borderRadius: '4px',
+              background: `linear-gradient(to right, #667eea 0%, #667eea ${((investmentAmount - pkg.min_investment) / (pkg.max_investment - pkg.min_investment)) * 100}%, #e0e0e0 ${((investmentAmount - pkg.min_investment) / (pkg.max_investment - pkg.min_investment)) * 100}%, #e0e0e0 100%)`,
+              outline: 'none',
+              cursor: 'pointer',
+              appearance: 'none',
+              WebkitAppearance: 'none'
+            }}
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontSize: '12px', color: '#999' }}>
+            <span>${pkg.min_investment.toLocaleString()}</span>
+            <span>$25K</span>
+            <span>$50K</span>
+            <span>$75K</span>
+            <span>${pkg.max_investment.toLocaleString()}</span>
+          </div>
+        </div>
+
+        {/* Quick Amount Buttons */}
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '40px', flexWrap: 'wrap', justifyContent: 'center' }}>
+          {[100, 500, 1000, 5000, 10000, 25000, 50000, 100000].map(amount => (
+            <button
+              key={amount}
+              onClick={() => setInvestmentAmount(amount)}
+              style={{
+                padding: '10px 20px',
+                background: investmentAmount === amount ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#f5f5f5',
+                color: investmentAmount === amount ? 'white' : '#666',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: '600',
+                fontSize: '14px',
+                transition: 'all 0.2s'
+              }}
+            >
+              ${(amount / 1000)}K
+            </button>
+          ))}
+        </div>
+
+        {/* ROI Projections */}
+        <div style={{
+          background: 'linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%)',
+          padding: '30px',
+          borderRadius: '16px',
+          marginBottom: '30px',
+          border: '2px solid #4caf50'
+        }}>
+          <div style={{ fontSize: '20px', fontWeight: '700', color: '#2E7D32', marginBottom: '20px', textAlign: 'center' }}>
+            📈 Your ROI Projections ({pkg.daily_return_percentage}% Daily)
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '14px', color: '#2E7D32', marginBottom: '5px' }}>Daily ROI</div>
+              <div style={{ fontSize: '28px', fontWeight: '700', color: '#4caf50' }}>
+                ${dailyROI.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+            </div>
+
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '14px', color: '#2E7D32', marginBottom: '5px' }}>Monthly ROI</div>
+              <div style={{ fontSize: '28px', fontWeight: '700', color: '#4caf50' }}>
+                ${monthlyROI.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+            </div>
+
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '14px', color: '#2E7D32', marginBottom: '5px' }}>Annual ROI</div>
+              <div style={{ fontSize: '28px', fontWeight: '700', color: '#4caf50' }}>
+                ${annualROI.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ marginTop: '20px', padding: '15px', background: 'white', borderRadius: '8px', fontSize: '13px', color: '#2E7D32' }}>
+            💡 <strong>Unlimited Potential:</strong> Your investment generates {pkg.daily_return_percentage}% daily ROI indefinitely. No expiry date, no ROI limit!
+          </div>
+        </div>
+
+        {/* Features Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px', marginBottom: '30px' }}>
+          <div style={{ padding: '15px', background: '#f8f9fa', borderRadius: '10px' }}>
+            <div style={{ fontSize: '20px', marginBottom: '8px' }}>🔄</div>
+            <div style={{ fontWeight: '600', marginBottom: '4px' }}>Lifetime ROI</div>
+            <div style={{ fontSize: '13px', color: '#666' }}>No expiry date - earn forever</div>
+          </div>
+
+          <div style={{ padding: '15px', background: '#f8f9fa', borderRadius: '10px' }}>
+            <div style={{ fontSize: '20px', marginBottom: '8px' }}>📊</div>
+            <div style={{ fontWeight: '600', marginBottom: '4px' }}>15-Level Commission</div>
+            <div style={{ fontSize: '13px', color: '#666' }}>ROI-on-ROI from downline</div>
+          </div>
+
+          <div style={{ padding: '15px', background: '#f8f9fa', borderRadius: '10px' }}>
+            <div style={{ fontSize: '20px', marginBottom: '8px' }}>🚀</div>
+            <div style={{ fontWeight: '600', marginBottom: '4px' }}>Booster Income</div>
+            <div style={{ fontSize: '13px', color: '#666' }}>Extra 0.1% with 3 directs</div>
+          </div>
+
+          <div style={{ padding: '15px', background: '#f8f9fa', borderRadius: '10px' }}>
+            <div style={{ fontSize: '20px', marginBottom: '8px' }}>🎁</div>
+            <div style={{ fontWeight: '600', marginBottom: '4px' }}>Monthly Rewards</div>
+            <div style={{ fontSize: '13px', color: '#666' }}>40:40:20 business structure</div>
+          </div>
+        </div>
+
+        {/* Invest Button */}
+        <button
+          onClick={handleInvest}
+          disabled={investmentAmount > walletBalance}
+          style={{
+            width: '100%',
+            padding: '20px',
+            background: investmentAmount > walletBalance
+              ? '#ccc'
+              : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '12px',
+            cursor: investmentAmount > walletBalance ? 'not-allowed' : 'pointer',
+            fontWeight: '700',
+            fontSize: '18px',
+            boxShadow: investmentAmount > walletBalance ? 'none' : '0 4px 12px rgba(102, 126, 234, 0.4)',
+            transition: 'all 0.2s'
+          }}
+        >
+          {investmentAmount > walletBalance
+            ? `Insufficient Balance (Need $${(investmentAmount - walletBalance).toLocaleString()})`
+            : `Invest $${investmentAmount.toLocaleString()} Now →`}
+        </button>
       </div>
 
-      {/* Purchase Modal */}
-      <PurchaseModal
-        package={selectedPackage}
-        isOpen={showPurchaseModal}
-        onClose={() => setShowPurchaseModal(false)}
-        onSuccess={handlePurchaseSuccess}
-        walletBalance={walletBalance}
-      />
+      {/* Purchase Confirmation Modal */}
+      {showPurchaseModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '20px',
+            maxWidth: '500px',
+            width: '90%',
+            padding: '30px',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
+          }}>
+            <h2 style={{ marginTop: 0, marginBottom: '20px', color: '#2c3e50' }}>
+              Confirm Investment
+            </h2>
+
+            <div style={{ marginBottom: '20px', padding: '20px', background: '#f8f9fa', borderRadius: '10px' }}>
+              <div style={{ fontSize: '14px', color: '#666', marginBottom: '5px' }}>Investment Amount</div>
+              <div style={{ fontSize: '36px', fontWeight: '700', color: '#667eea', marginBottom: '15px' }}>
+                ${investmentAmount.toLocaleString()}
+              </div>
+
+              <div style={{ borderTop: '1px solid #e0e0e0', paddingTop: '15px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '14px', color: '#666' }}>Daily ROI:</span>
+                  <span style={{ fontSize: '16px', fontWeight: '600', color: '#4caf50' }}>
+                    ${dailyROI.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '14px', color: '#666' }}>New Balance:</span>
+                  <span style={{ fontSize: '16px', fontWeight: '600' }}>
+                    ${(walletBalance - investmentAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => setShowPurchaseModal(false)}
+                disabled={purchasing}
+                style={{
+                  flex: 1,
+                  padding: '14px',
+                  background: '#e0e0e0',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: purchasing ? 'not-allowed' : 'pointer',
+                  fontWeight: '600',
+                  fontSize: '16px',
+                  opacity: purchasing ? 0.5 : 1
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleConfirmPurchase}
+                disabled={purchasing}
+                style={{
+                  flex: 1,
+                  padding: '14px',
+                  background: purchasing ? '#ccc' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: purchasing ? 'not-allowed' : 'pointer',
+                  fontWeight: '700',
+                  fontSize: '16px',
+                  color: 'white',
+                  boxShadow: purchasing ? 'none' : '0 4px 12px rgba(102, 126, 234, 0.4)'
+                }}
+              >
+                {purchasing ? '⏳ Processing...' : '✅ Confirm Investment'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

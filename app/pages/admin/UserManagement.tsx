@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
 import * as adminUserService from '../../services/admin-user.service';
 import * as kycService from '../../services/kyc.service';
 import * as packageService from '../../services/package.service';
@@ -68,6 +69,7 @@ interface ActivityLog {
 
 const UserManagement: React.FC = () => {
   const navigate = useNavigate();
+  const { checkAuth } = useAuth();
 
   // State management
   const [searchTerm, setSearchTerm] = useState('');
@@ -125,6 +127,18 @@ const UserManagement: React.FC = () => {
     investmentMax: '',
     rank: 'All',
     hasActivePackages: 'All',
+  });
+
+  // New user form state
+  const [newUser, setNewUser] = useState({
+    full_name: '',
+    email: '',
+    phone: '',
+    password: '',
+    parentId: '',
+    position: 'left' as 'left' | 'right',
+    initialInvestment: 0,
+    send_welcome_email: false
   });
 
   // Items per page
@@ -475,18 +489,85 @@ const UserManagement: React.FC = () => {
       if (result.success) {
         toast.success('Successfully impersonating user! Redirecting...', { id: toastId });
 
-        // Redirect to user dashboard with absolute URL to force full page reload
+        // Update auth context with impersonation state and navigate smoothly
+        await checkAuth();
+
         setTimeout(() => {
-          console.log('🔄 Redirecting to user dashboard...');
-          console.log('Current URL:', window.location.href);
-          window.location.href = 'http://localhost:5173/dashboard';
-          console.log('Redirect initiated to:', 'http://localhost:5173/dashboard');
-        }, 800);
+          navigate('/dashboard');
+        }, 300);
       } else {
         toast.error(result.error || 'Failed to impersonate user', { id: toastId });
       }
     } catch (error: any) {
       toast.error(error.message || 'Failed to impersonate user', { id: toastId });
+    }
+  };
+
+  // Handle create new user
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!newUser.full_name || !newUser.email || !newUser.password) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const toastId = toast.loading('Creating user...');
+
+    try {
+      const response = await fetch('http://localhost:3001/api/admin/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token')}`
+        },
+        body: JSON.stringify(newUser)
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        toast.success('User created successfully!', { id: toastId });
+
+        // Reset form
+        setNewUser({
+          full_name: '',
+          email: '',
+          phone: '',
+          password: '',
+          parentId: '',
+          position: 'left' as 'left' | 'right',
+          initialInvestment: 0,
+          send_welcome_email: false
+        });
+
+        // Close modal
+        setShowCreateUser(false);
+
+        // Refresh user list
+        const { users } = await adminUserService.getAllUsers({}, 1, 100);
+        const formattedUsers: User[] = users.map((user) => ({
+          id: user.id,
+          name: user.full_name || 'Unknown User',
+          email: user.email,
+          phone: user.phone || 'N/A',
+          joinDate: new Date(user.created_at).toISOString().split('T')[0],
+          status: user.is_active ? 'Active' : 'Suspended',
+          kycStatus: user.kyc_status === 'approved' ? 'Approved' : user.kyc_status === 'rejected' ? 'Rejected' : user.kyc_status === 'pending' ? 'Pending' : 'Not Submitted',
+          totalInvestment: parseFloat(user.total_investment || '0'),
+          walletBalance: parseFloat(user.wallet_balance || '0'),
+          rank: user.current_rank || 'None',
+          sponsor: user.sponsor_name || 'None',
+          hasActivePackages: user.active_packages_count > 0,
+          directReferrals: user.direct_referrals_count || 0,
+        }));
+        setRealUsers(formattedUsers);
+      } else {
+        toast.error(result.error || 'Failed to create user', { id: toastId });
+      }
+    } catch (error: any) {
+      console.error('Error creating user:', error);
+      toast.error(error.message || 'Failed to create user', { id: toastId });
     }
   };
 
@@ -781,7 +862,7 @@ const UserManagement: React.FC = () => {
                         <td className="px-4 py-3 text-sm">
                           <button
                             className="text-blue-600 hover:text-blue-800 mr-3"
-                            onClick={() => toast.info('Edit package feature coming soon')}
+                            onClick={() => toast('Edit package feature coming soon')}
                           >
                             Edit
                           </button>
@@ -1576,7 +1657,7 @@ const UserManagement: React.FC = () => {
 
                 <button
                   onClick={() => {
-                    toast.info('Password reset feature coming soon');
+                    toast('Password reset feature coming soon');
                   }}
                   className="p-4 border-2 border-gray-200 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-all text-left"
                 >
@@ -1587,7 +1668,7 @@ const UserManagement: React.FC = () => {
 
                 <button
                   onClick={() => {
-                    toast.info('Send email feature coming soon');
+                    toast('Send email feature coming soon');
                   }}
                   className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all text-left"
                 >
@@ -1598,7 +1679,7 @@ const UserManagement: React.FC = () => {
 
                 <button
                   onClick={() => {
-                    toast.info('Add admin note feature coming soon');
+                    toast('Add admin note feature coming soon');
                   }}
                   className="p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-left"
                 >
@@ -2139,15 +2220,27 @@ const UserManagement: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm">
-                      <button
-                        onClick={() => {
-                          setSelectedUser(user);
-                          setActiveTab('overview');
-                        }}
-                        className="text-blue-600 hover:text-blue-800 font-medium"
-                      >
-                        View Details
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setActiveTab('overview');
+                          }}
+                          className="text-blue-600 hover:text-blue-800 font-medium"
+                        >
+                          View Details
+                        </button>
+                        <button
+                          onClick={() => handleImpersonateUser(user.id, user.email)}
+                          className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-sm font-medium rounded-md transition-colors shadow-sm"
+                          title="Login as this user"
+                        >
+                          <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          Impersonate
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -2279,28 +2372,36 @@ const UserManagement: React.FC = () => {
             <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full p-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Create New User</h2>
 
-              <form className="space-y-4">
+              <form onSubmit={handleCreateUser} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                     <input
                       type="text"
+                      value={newUser.full_name}
+                      onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="John Doe"
+                      required
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                     <input
                       type="email"
+                      value={newUser.email}
+                      onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="john@example.com"
+                      required
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                     <input
                       type="tel"
+                      value={newUser.phone}
+                      onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="+1 234-567-8900"
                     />
@@ -2309,22 +2410,42 @@ const UserManagement: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                     <input
                       type="password"
+                      value={newUser.password}
+                      onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="••••••••"
+                      required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Sponsor ID</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Parent User Email *</label>
                     <input
                       type="text"
+                      value={newUser.parentId}
+                      onChange={(e) => setNewUser({ ...newUser, parentId: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="USR001"
+                      placeholder="parent@example.com"
+                      required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Initial Balance</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Binary Position *</label>
+                    <select
+                      value={newUser.position}
+                      onChange={(e) => setNewUser({ ...newUser, position: e.target.value as 'left' | 'right' })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    >
+                      <option value="left">Left</option>
+                      <option value="right">Right</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Initial Investment</label>
                     <input
                       type="number"
+                      value={newUser.initialInvestment}
+                      onChange={(e) => setNewUser({ ...newUser, initialInvestment: parseFloat(e.target.value) || 0 })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="0"
                     />
@@ -2335,6 +2456,8 @@ const UserManagement: React.FC = () => {
                   <input
                     type="checkbox"
                     id="sendWelcome"
+                    checked={newUser.send_welcome_email}
+                    onChange={(e) => setNewUser({ ...newUser, send_welcome_email: e.target.checked })}
                     className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
                   <label htmlFor="sendWelcome" className="ml-2 text-sm text-gray-700">

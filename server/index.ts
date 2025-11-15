@@ -18,8 +18,16 @@ import ranksRoutes from './routes/ranks';
 import userRanksRoutes from './routes/user-ranks';
 import walletRoutes from './routes/wallet';
 import walletSimpleRoutes from './routes/wallet-simple';
+import adminWalletRoutes from './routes/admin-wallet';
+import walletBalanceRoutes from './routes/wallet-balance';
+import walletTransferRoutes from './routes/wallet-transfer';
 import kycRoutes from './routes/kyc';
 import supportRoutes from './routes/support';
+import userSupportRoutes from './routes/user-support';
+import userDepositsRoutes from './routes/user-deposits';
+import userWithdrawalsRoutes from './routes/user-withdrawals';
+import adminWithdrawalsRoutes from './routes/admin-withdrawals';
+import adminFinancialRoutes from './routes/admin-financial';
 import configRoutes from './routes/config';
 import reportsRoutes from './routes/reports';
 import reportsEnhancedRoutes from './routes/reports-enhanced';
@@ -31,9 +39,12 @@ import levelUnlocksRoutes from './routes/levelUnlocks';
 import rewardsRoutes from './routes/rewards';
 import binaryRoutes from './routes/binary';
 import stabilityRoutes from './routes/stability.routes';
+import investmentControlRoutes from './routes/investment-control';
+import adminInvestmentReportsRoutes from './routes/admin-investment-reports';
+import userInvestmentReportsRoutes from './routes/user-investment-reports';
 import { pool, query } from './db';
-import { distributeROI } from './cron/roi-distribution';
-import { distributeEnhancedROI } from './cron/roi-distribution-v2';
+import { distributeLifetimeROI } from './cron/lifetime-roi-distribution';
+import { runRankAutoCheck } from './cron/rank-auto-check';
 import { runBinaryMatchingNow } from './cron/binary-matching';
 import { expireBoostersDaily } from './services/booster.service';
 import { calculateAllBusinessVolumes, distributeMonthlyRewards } from './services/rewards.service';
@@ -47,6 +58,9 @@ const PORT = process.env.API_PORT || 3001;
 app.use(cors({
   origin: process.env.VITE_APP_URL || 'http://localhost:5173',
   credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -91,10 +105,18 @@ app.use('/api/genealogy', genealogyRoutes);
 app.use('/api/transactions', transactionsRoutes);
 app.use('/api/ranks', ranksRoutes);
 app.use('/api/user/ranks', userRanksRoutes);
-app.use('/api/wallet', walletRoutes);
+app.use('/api/wallet', walletBalanceRoutes);  // New ledger-based wallet routes (priority)
+app.use('/api/wallet', walletTransferRoutes);  // Internal transfer routes
+app.use('/api/wallet-old', walletRoutes);  // Old wallet routes (fallback)
 app.use('/api/wallet-simple', walletSimpleRoutes);
+app.use('/api/admin/wallet', adminWalletRoutes);
 app.use('/api/kyc', kycRoutes);
 app.use('/api/support', supportRoutes);
+app.use('/api/user/support', userSupportRoutes);
+app.use('/api/user/deposits', userDepositsRoutes);
+app.use('/api/user/withdrawals', userWithdrawalsRoutes);
+app.use('/api/admin/withdrawals', adminWithdrawalsRoutes);
+app.use('/api/admin/financial', adminFinancialRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/reports-enhanced', reportsEnhancedRoutes);
@@ -106,6 +128,9 @@ app.use('/api/level-unlocks', levelUnlocksRoutes);
 app.use('/api/rewards', rewardsRoutes);
 app.use('/api/binary', binaryRoutes);
 app.use('/api/stability', stabilityRoutes);
+app.use('/api/investments', investmentControlRoutes);
+app.use('/api/admin/investment-reports', adminInvestmentReportsRoutes);
+app.use('/api/user/investment-reports', userInvestmentReportsRoutes);
 
 // Error handler
 app.use((err: Error, req: Request, res: Response, next: any) => {
@@ -132,15 +157,16 @@ app.listen(PORT, () => {
   // Cron Jobs
   // ===========================================
 
-  // 1. Enhanced ROI Distribution (daily at 00:00 UTC)
-  // Includes base ROI + booster ROI + ROI-on-ROI distribution
+  // 1. Lifetime ROI Distribution (daily at 00:00 UTC)
+  // Distributes daily ROI indefinitely until user stops investment
+  // Includes base ROI + booster ROI + ROI-on-ROI to sponsors
   cron.schedule('0 0 * * *', async () => {
-    console.log('⏰ [CRON] Enhanced ROI distribution starting...');
+    console.log('⏰ [CRON] Lifetime ROI distribution starting...');
     try {
-      await distributeEnhancedROI();
-      console.log('✅ [CRON] Enhanced ROI distribution completed');
+      await distributeLifetimeROI();
+      console.log('✅ [CRON] Lifetime ROI distribution completed');
     } catch (error) {
-      console.error('❌ [CRON] Enhanced ROI distribution failed:', error);
+      console.error('❌ [CRON] Lifetime ROI distribution failed:', error);
     }
   }, {
     timezone: "UTC"

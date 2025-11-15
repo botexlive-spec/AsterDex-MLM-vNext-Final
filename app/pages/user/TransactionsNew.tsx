@@ -60,24 +60,32 @@ const TransactionsNew: React.FC = () => {
         setError(null);
         console.log('📊 Loading transaction history for user:', user.id);
 
-        // Fetch all transactions (limit 1000)
-        const txData = await getTransactionHistory(1000, 0, user.id);
+        // Fetch all transactions (limit 1000) - don't pass user.id, backend handles auth
+        const txResponse = await getTransactionHistory(1000, 0);
+
+        // Extract transactions array from response object
+        const txData = Array.isArray(txResponse)
+          ? txResponse
+          : (txResponse?.transactions || []);
+
         console.log('✅ Loaded', txData.length, 'transactions');
+        console.log('Sample transaction:', txData[0]);
 
         // Map API response to Transaction interface
         const mappedTransactions: Transaction[] = txData.map((tx: any) => {
-          const createdAt = new Date(tx.createdAt);
-          const type = mapTransactionType(tx.transactionType);
+          // API returns snake_case (created_at, transaction_type)
+          const createdAt = new Date(tx.created_at || tx.createdAt);
+          const type = mapTransactionType(tx.transaction_type || tx.transactionType);
 
           return {
             id: tx.id,
             date: createdAt.toISOString().split('T')[0],
             time: createdAt.toTimeString().split(' ')[0],
             type,
-            description: tx.description || getDefaultDescription(tx.transactionType),
-            amount: tx.amount,
+            description: tx.description || getDefaultDescription(tx.transaction_type || tx.transactionType),
+            amount: parseFloat(tx.amount),
             status: tx.status || 'completed',
-            referenceId: tx.referenceId,
+            referenceId: tx.reference_id || tx.referenceId,
           };
         });
 
@@ -104,11 +112,16 @@ const TransactionsNew: React.FC = () => {
       'booster_income': 'bonus',
       'rank_reward': 'bonus',
       'roi_distribution': 'roi',
+      'roi_income': 'roi',
       'package_purchase': 'package',
+      'package_investment': 'package',
       'deposit': 'deposit',
       'withdrawal': 'withdraw',
+      'transfer_in': 'transfer',
+      'transfer_out': 'transfer',
       'transfer': 'transfer',
       'refund': 'refund',
+      'principal_withdrawal': 'withdraw',
     };
     return typeMap[apiType] || 'transfer';
   };
@@ -121,11 +134,16 @@ const TransactionsNew: React.FC = () => {
       'booster_income': 'Booster Income Bonus',
       'rank_reward': 'Rank Achievement Reward',
       'roi_distribution': 'Daily ROI Earnings',
+      'roi_income': 'ROI Income',
       'package_purchase': 'Package Purchase',
+      'package_investment': 'Investment Package',
       'deposit': 'Account Deposit',
       'withdrawal': 'Withdrawal Request',
+      'transfer_in': 'Transfer Received',
+      'transfer_out': 'Transfer Sent',
       'transfer': 'Transfer Transaction',
       'refund': 'Transaction Refund',
+      'principal_withdrawal': 'Principal Withdrawal',
     };
     return descriptions[apiType] || 'Transaction';
   };

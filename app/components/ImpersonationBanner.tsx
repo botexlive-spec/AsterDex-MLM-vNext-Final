@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext';
 import * as impersonateService from '../services/admin-impersonate.service';
 
 const ImpersonationBanner: React.FC = () => {
   const navigate = useNavigate();
+  const { checkAuth } = useAuth();
   const [impersonationStatus, setImpersonationStatus] = useState(
     impersonateService.getImpersonationStatus()
   );
@@ -28,10 +30,12 @@ const ImpersonationBanner: React.FC = () => {
       if (result.success) {
         toast.success('Returned to admin view', { id: toastId });
 
-        // Redirect back to admin panel with full reload
+        // Update auth context to reflect admin state and navigate smoothly
+        await checkAuth();
+
         setTimeout(() => {
-          window.location.href = '/admin/users';
-        }, 500);
+          navigate('/admin/users');
+        }, 300);
       } else {
         toast.error('Failed to stop impersonation', { id: toastId });
       }

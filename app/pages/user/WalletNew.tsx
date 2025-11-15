@@ -110,8 +110,11 @@ export const WalletNew: React.FC = () => {
 
   const loadTransactions = async () => {
     try {
-      const txHistory = await getTransactionHistory(50);
-      setTransactions(txHistory as any[]);
+      const txResponse = await getTransactionHistory(50);
+      // Extract transactions array from response object
+      const txHistory = Array.isArray(txResponse)
+        ? txResponse
+        : (txResponse?.transactions || []);
     } catch (error: any) {
       console.error('Failed to load transactions:', error);
     }
@@ -119,7 +122,11 @@ export const WalletNew: React.FC = () => {
 
   const loadPendingTransactions = async () => {
     try {
-      const pending = await getPendingTransactions();
+      const pendingResponse = await getPendingTransactions();
+      // Extract pending array from response object
+      const pending = Array.isArray(pendingResponse)
+        ? pendingResponse
+        : (pendingResponse?.transactions || pendingResponse?.pending || []);
       const withdrawals = pending
         .filter(tx => tx.transaction_type === 'withdrawal')
         .map(tx => ({

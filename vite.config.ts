@@ -41,11 +41,12 @@ function htmlTitlePlugin(): Plugin {
 
 export default defineConfig(() => {
   const basePath = process.env.PUBLIC_PATH || "/";
+  const port = process.env.VITE_PORT ? parseInt(process.env.VITE_PORT) : 5173;
 
   return {
     base: basePath,
     server: {
-      port: 5173,
+      port,
       strictPort: true,
       host: true,
     },
@@ -71,8 +72,3 @@ export default defineConfig(() => {
     },
   };
 });
-
-// Force alternative port if 5173 is busy
-if (process.env.VITE_PORT) {
-  config.server.port = parseInt(process.env.VITE_PORT);
-}
